@@ -1310,6 +1310,20 @@ int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue)
 	sctp_sendmsg(socket, (void *) authentication_res_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(authentication_res_buffer);
 
+	/* During processing time on the MME the K for integrity and encryption is created */
+	/* Only integrity is implemented in this simulator to minimize the CPU load */
+
+
+
+	/* TODO */
+	/* sha256 algorithm */
+	/* https://github.com/srsLTE/srsLTE/blob/bf1982e28d0594a2a173a501ff9b1e22fbac442a/lib/src/common/liblte_security.cc */
+	/* srsLTE: liblte_security_generate_k_asme -> generate K_ASME */
+	/* srsLTE: liblte_security_generate_k_nas -> generate encryption and integrity keys */
+
+
+
+
 	/* Receiving MME answer */
 	flags = 0;
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
