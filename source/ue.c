@@ -10,6 +10,7 @@ struct _UE
 	uint8_t plmn[UE_PLMN_LENGTH];
 	uint8_t msin[UE_MSIN_LENGTH];
 	uint8_t net_capabilities[UE_CAPABILITIES_LENGTH];
+	uint8_t nas_session_security_algorithms;
 	uint32_t ue_s1ap_id;
 	uint8_t mme_s1ap_id[4];
 	uint8_t mme_s1ap_id_len;
@@ -107,4 +108,19 @@ uint8_t * get_ue_key(UE * ue)
 uint8_t * get_ue_op_key(UE * ue)
 {
 	return ue->op_key;
+}
+
+void set_nas_session_security_algorithms(UE * ue, uint8_t algs)
+{
+	ue->nas_session_security_algorithms = algs;
+}
+
+uint8_t get_nas_session_enc_alg(UE * ue)
+{
+	return (ue->nas_session_security_algorithms & 0x70) >> 4;
+}
+
+uint8_t get_nas_session_int_alg(UE * ue)
+{
+	return ue->nas_session_security_algorithms & 0x07;
 }

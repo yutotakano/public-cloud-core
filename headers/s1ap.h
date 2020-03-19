@@ -25,10 +25,12 @@ typedef struct _InitialUEMessage InitialUEMessage;
 typedef struct _Authentication_Request Authentication_Request;
 typedef struct _Auth_Challenge Auth_Challenge;
 typedef struct _Authentication_Response Authentication_Response;
+typedef struct _Security_Mode_Command Security_Mode_Command;
 
 void test(eNB * enb);
 
 
 int procedure_S1_Setup(int socket, eNB * enb);
 int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue);
+void crypto_test(eNB * enb, UE * ue);
 #endif

@@ -1,26 +1,18 @@
 #include "crypto.h"
+#include <string.h>
 
 /* Milenage algorithm based on Metaswitch clearwater-seagull implementation */
-
-
 #define LITTLE_ENDIAN	/* For INTEL architecture */
-
-/* Circular byte rotates of 32 bit values */
 
 #define rot1(x) ((x <<  8) | (x >> 24))
 #define rot2(x) ((x << 16) | (x >> 16))
 #define rot3(x) ((x << 24) | (x >>  8))
 
-/* Extract a byte from a 32-bit u32 */
 
 #define byte0(x)    ((uint8_t)(x))
 #define byte1(x)    ((uint8_t)(x >>  8))
 #define byte2(x)    ((uint8_t)(x >> 16))
 #define byte3(x)    ((uint8_t)(x >> 24))
-
-
-/* Put or get a 32 bit u32 (v) in machine order from a byte	*
- * address in (x)                                           */
 
 #ifdef  LITTLE_ENDIAN
 
@@ -28,8 +20,6 @@
 #define u32_out(x,y)  (*(uint32_t*)(x) = y)
 
 #else
-
-/* Invert byte order in a 32 bit variable */
 
 uint32_t inline byte_swap(const uint32_t x)
 {
@@ -46,8 +36,14 @@ void inline u32_out(uint8_t x[], const uint32_t v)
 
 #endif
 
-/*--------------- The lookup tables ----------------------------*/
 
+/* SHA-256 definitions */
+#define CHUNK_SIZE 64
+#define TOTAL_LEN_LEN 8
+
+
+
+/*--------------- The lookup tables ----------------------------*/
 static uint32_t rnd_con[10] = 
 { 
  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
@@ -333,11 +329,9 @@ static uint32_t fl_tab[4][256] =
  } 
 };
 
-/*----------------- The workspace ------------------------------*/
 
-static uint32_t Ekey[44];	/* The expanded key */
+static uint32_t Ekey[44];
 
-/*------ The round Function.  4 table lookups and 4 Exors ------*/
 #define f_rnd(x, n)                     \
   ( ft_tab[0][byte0(x[n])]              \
   ^ ft_tab[1][byte1(x[(n + 1) & 3])]    \
@@ -351,14 +345,12 @@ static uint32_t Ekey[44];	/* The expanded key */
     bo[3] = f_rnd(bi, 3) ^ k[3];    \
     k += 4
 
-/*--- The S Box lookup used in constructing the Key schedule ---*/
 #define ls_box(x)       \
  (  fl_tab[0][byte0(x)] \
   ^ fl_tab[1][byte1(x)] \
   ^ fl_tab[2][byte2(x)] \
   ^ fl_tab[3][byte3(x)] )
 
-/*------------ The last round function (no MixColumn) ----------*/
 #define lf_rnd(x, n)                    \
   ( fl_tab[0][byte0(x[n])]              \
   ^ fl_tab[1][byte1(x[(n + 1) & 3])]    \
@@ -366,15 +358,10 @@ static uint32_t Ekey[44];	/* The expanded key */
   ^ fl_tab[3][byte3(x[(n + 3) & 3])] )
 
 
-/*-----------------------------------------------------------
- * RijndaelKeySchedule
- *   Initialise the key schedule from a supplied key
- */
 void RijndaelKeySchedule(uint8_t key[16])
 {
     uint32_t  t;
-    uint32_t  *ek=Ekey,	    /* pointer to the expanded key   */
-         *rc=rnd_con;   /* pointer to the round constant */
+    uint32_t  *ek=Ekey, *rc=rnd_con;
 
     Ekey[0] = u32_in(key     );
     Ekey[1] = u32_in(key +  4);
@@ -392,10 +379,6 @@ void RijndaelKeySchedule(uint8_t key[16])
     }
 }
 
-/*-----------------------------------------------------------
- * RijndaelEncrypt
- *   Encrypt an input block
- */
 void RijndaelEncrypt(uint8_t in[16], uint8_t out[16])
 {
     uint32_t    b0[4], b1[4], *kp = Ekey;
@@ -430,6 +413,17 @@ void ComputeOPc( uint8_t * op_c, uint8_t * op)
     op_c[i] ^= op[i];
 
   return;
+}
+
+void dumpMem(uint8_t * mem, int len)
+{
+	for(int i = 0; i < len; i++)
+	{
+		if(i % 16 == 0)
+			printf("\n");
+		printf("%.2x ", mem[i]);
+	}
+	printf("\n");
 }
 
 void f1( uint8_t * k, uint8_t * rand, uint8_t * sqn, uint8_t * amf, uint8_t * mac_a, uint8_t * op_c)
@@ -473,13 +467,12 @@ void f1( uint8_t * k, uint8_t * rand, uint8_t * sqn, uint8_t * amf, uint8_t * ma
 	return;
 }
 
-void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * op)
+void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * op_c)
 {
 	uint8_t temp[16];
 	uint8_t out[16];
 	uint8_t rijndaelInput[16];
 	uint8_t i;
-	uint8_t op_c[16];
 
 	RijndaelKeySchedule(k);
 
@@ -493,11 +486,12 @@ void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * 
 	for (i=0; i<16; i++)
 		rijndaelInput[i] = temp[i] ^ op_c[i];
 	rijndaelInput[15] ^= 1;
-	RijndaelEncrypt( rijndaelInput, out );
+	RijndaelEncrypt(rijndaelInput, out);
 	for (i=0; i<16; i++)
 		out[i] ^= op_c[i];
 	for (i=0; i<8; i++)
 		res[i] = out[i+8];
+	memcpy(ak, out, 6);
 	for (i=0; i<6; i++)
 		ak[i]  = out[i];
 
@@ -510,6 +504,7 @@ void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * 
 	RijndaelEncrypt( rijndaelInput, out );
 	for (i=0; i<16; i++)
 		out[i] ^= op_c[i];
+	memcpy(ck, out, 16);
 	for (i=0; i<16; i++)
 		ck[i] = out[i];
 
@@ -528,30 +523,287 @@ void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * 
 	return;
 }
 
-//f1( uint8_t * k, uint8_t * rand, uint8_t * sqn, uint8_t * amf, uint8_t * mac_a, uint8_t * op_c);
 
-//f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * op_c);
 
-void naive_milenage( uint8_t * k, uint8_t * rand, uint8_t * op_c, uint8_t * res)
+/***********/
+/* SHA-256 */
+/***********/
+typedef struct
 {
-  uint8_t temp[16];
-  uint8_t out[16];
-  uint8_t rijndaelInput[16];
-  uint8_t i;
+    uint8_t		hash[32];
+    uint32_t	buffer[16];
+    uint32_t	state[8];
+    uint8_t		length[8];
+} sha256;
+	
+void sha256_initialize(sha256 *sha)
+{
+    int i;
+    for (i = 0; i < 17; ++i) sha->buffer[i] = 0;
+    sha->state[0] = 0x6a09e667;
+    sha->state[1] = 0xbb67ae85;
+    sha->state[2] = 0x3c6ef372;
+    sha->state[3] = 0xa54ff53a;
+    sha->state[4] = 0x510e527f;
+    sha->state[5] = 0x9b05688c;
+    sha->state[6] = 0x1f83d9ab;
+    sha->state[7] = 0x5be0cd19;
+    for (i = 0; i < 8; ++i) sha->length[i] = 0;
+}
 
-  RijndaelKeySchedule( k );
+void sha256_update(sha256 *sha, const uint8_t *message,uint32_t length)
+{
+	int i, j;
+	for (i = 7; i >= 0; --i)
+	{
+		int bits;
+		if (i == 7)
+			bits = length << 3;
+		else if (i == 0 || i == 1 || i == 2)
+			bits = 0;
+		else
+			bits = length >> (53 - 8 * i);
+		bits &= 0xff;
+        if (sha->length[i] + bits > 0xff)
+        {
+            for (j = i - 1; j >= 0 && sha->length[j]++ == 0xff; --j);
+        }
+        sha->length[i] += bits;
+    }
+    while (length > 0)
+    {
+        int index = sha->length[6] % 2 * 32 + sha->length[7] / 8;
+        index = (index + 64 - length % 64) % 64;
+        for (;length > 0 && index < 64; ++message, ++index, --length)
+        {
+            sha->buffer[index / 4] |= *message << (24 - index % 4 * 8);
+        }
+        if (index == 64)
+        {
+            const uint32_t k[64] = {
+                0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+                0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+                0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+                0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+                0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+                0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+                0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+                0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+                0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+                0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+                0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+                0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+                0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+                0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+                0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+                0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+            };
+            uint32_t w[64], a, b, c, d, e, f, g, h;
+            int t;
+            for (t = 0; t < 16; ++t)
+            {
+                w[t] = sha->buffer[t];
+                sha->buffer[t] = 0;
+            }
+            for (t = 16; t < 64; ++t)
+            {
+                uint32_t s0, s1;
+                s0 = (w[t - 15] >> 7 | w[t - 15] << 25);
+                s0 ^= (w[t - 15] >> 18 | w[t - 15] << 14);
+                s0 ^= (w[t - 15] >> 3);
+                s1 = (w[t - 2] >> 17 | w[t - 2] << 15);
+                s1 ^= (w[t - 2] >> 19 | w[t - 2] << 13);
+                s1 ^= (w[t - 2] >> 10);
+                w[t] = (s1 + w[t - 7] + s0 + w[t - 16]) & 0xffffffffU;
+            }
+            a = sha->state[0];
+            b = sha->state[1];
+            c = sha->state[2];
+            d = sha->state[3];
+            e = sha->state[4];
+            f = sha->state[5];
+            g = sha->state[6];
+            h = sha->state[7];
+            for (t = 0; t < 64; ++t)
+            {
+                uint32_t e0, e1, t1, t2;
+                e0 = (a >> 2 | a << 30);
+                e0 ^= (a >> 13 | a << 19);
+                e0 ^= (a >> 22 | a << 10);
+                e1 = (e >> 6 | e << 26);
+                e1 ^= (e >> 11 | e << 21);
+                e1 ^= (e >> 25 | e << 7);
+                t1 = h + e1 + ((e & f) ^ (~e & g)) + k[t] + w[t];
+                t2 = e0 + ((a & b) ^ (a & c) ^ (b & c));
+                h = g;
+                g = f;
+                f = e;
+                e = d + t1;
+                d = c;
+                c = b;
+                b = a;
+                a = t1 + t2;
+            }
+            sha->state[0] = (sha->state[0] + a) & 0xffffffffU;
+            sha->state[1] = (sha->state[1] + b) & 0xffffffffU;
+            sha->state[2] = (sha->state[2] + c) & 0xffffffffU;
+            sha->state[3] = (sha->state[3] + d) & 0xffffffffU;
+            sha->state[4] = (sha->state[4] + e) & 0xffffffffU;
+            sha->state[5] = (sha->state[5] + f) & 0xffffffffU;
+            sha->state[6] = (sha->state[6] + g) & 0xffffffffU;
+            sha->state[7] = (sha->state[7] + h) & 0xffffffffU;
+        }
+    }
+}
 
-  for (i=0; i<16; i++)
-    rijndaelInput[i] = rand[i] ^ op_c[i];
-  RijndaelEncrypt( rijndaelInput, temp );
-  for (i=0; i<16; i++)
-    rijndaelInput[i] = temp[i] ^ op_c[i];
-  rijndaelInput[15] ^= 1;
-  RijndaelEncrypt( rijndaelInput, out );
-  for (i=0; i<16; i++)
-    out[i] ^= op_c[i];
+void sha256_finalize(sha256 *sha, const uint8_t *message, uint32_t length) {
+    int i;
+    uint8_t terminator[64 + 8] = { 0x80 };
+    if (length > 0) sha256_update(sha, message, length);
+    length = 64 - sha->length[6] % 2 * 32 - sha->length[7] / 8;
+    if (length < 9) length += 64;
+    for (i = 0; i < 8; ++i) terminator[length - 8 + i] = sha->length[i];
+    sha256_update(sha, terminator, length);
+    for (i = 0; i < 32; ++i)
+    {
+        sha->hash[i] = (sha->state[i / 4] >> (24 - 8 * (i % 4))) & 0xff;
+    }
+}
 
-  for (i=0; i<8; i++)
-    res[i] = out[i+8];
+void sha256_get(uint8_t hash[32], const uint8_t *message, int length) {	
+    int i;
+    sha256 sha;
+    sha256_initialize(&sha);
+    sha256_finalize(&sha, message, length);
+    for (i = 0; i < 32; ++i) hash[i] = sha.hash[i];
+}
+
+/***************/
+/* HMAC-SHA256 */
+/***************/
+
+typedef struct _hmac_sha256
+{
+    uint8_t	digest[32];
+    uint8_t	key[64];
+    sha256	sha;
+} hmac_sha256;
+
+void hmac_sha256_initialize(hmac_sha256 *hmac, const uint8_t *key, int length)
+{
+    int i;
+    if (length <= 64)
+    {
+        for (i = 0; i < length; ++i) hmac->key[i] = key[i] ^ 0x36;
+        for (; i < 64; ++i) hmac->key[i] = 0x36;
+    }
+	else
+	{
+        sha256_initialize(&(hmac->sha));
+        sha256_finalize(&(hmac->sha), key, length);
+        for (i = 0; i < 32; ++i) hmac->key[i] = hmac->sha.hash[i] ^ 0x36;
+        for (; i < 64; ++i) hmac->key[i] = 0x36;
+    }
+    sha256_initialize(&(hmac->sha));
+    sha256_update(&(hmac->sha), hmac->key, 64);
+}
+
+void hmac_sha256_update(hmac_sha256 *hmac, const uint8_t *message, int length)
+{
+    sha256_update(&(hmac->sha), message, length);
+}
+
+void hmac_sha256_finalize(hmac_sha256 *hmac, const uint8_t *message, int length)
+{
+    int i;
+    sha256_finalize(&(hmac->sha), message, length);
+    for (i = 0; i < 32; ++i) hmac->digest[i] = hmac->sha.hash[i];
+    for (i = 0; i < 64; ++i) hmac->key[i] ^= (0x36 ^ 0x5c);
+    sha256_initialize(&(hmac->sha));
+    sha256_update(&(hmac->sha), hmac->key, 64);
+    sha256_finalize(&(hmac->sha), hmac->digest, 32);
+    for (i = 0; i < 32; ++i) hmac->digest[i] = hmac->sha.hash[i];
+}
+
+void sha_256(uint8_t digest[32], const uint8_t *message, int message_length, const uint8_t *key, int key_length)
+{
+    int i;
+    hmac_sha256 hmac;
+    hmac_sha256_initialize(&hmac, key, key_length);
+    hmac_sha256_finalize(&hmac, message, message_length);
+    for (i = 0; i < 32; ++i) digest[i] = hmac.digest[i];
+}
+
+/* srsLTE implementation */
+/* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.2 */
+void generate_kasme(uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * sqn, uint8_t * plmn, uint8_t plmn_len, uint8_t * k_asme)
+{
+  uint32_t i;
+  uint8_t s[14];
+  uint8_t key[32];
+
+  if (ck != NULL && ik != NULL && ak != NULL && sqn != NULL && k_asme != NULL)
+  {
+    s[0] = 0x10;
+    memcpy(s+1, plmn, plmn_len);
+    s[4] = 0x00;
+    s[5] = 0x03;
+    for (i = 0; i < 6; i++)
+    {
+      s[6 + i] = sqn[i];
+    }
+    s[12] = 0x00;
+    s[13] = 0x06;
+
+    for (i = 0; i < 16; i++)
+    {
+      key[i]      = ck[i];
+      key[16 + i] = ik[i];
+    }
+    sha_256(k_asme, s, 14, key, 32);
+  }
   return;
+}
+
+#define NAS_ENC_ALG 0x01
+#define NAS_INT_ALG 0x02
+/* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.7 */
+/* https://www.etsi.org/deliver/etsi_ts/133400_133499/133401/15.04.00_60/ts_133401v150400p.pdf */
+
+/* srsLTE implementation */
+/* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.7 */
+void generate_nas_enc_keys(uint8_t * k_asme, uint8_t * nas_key_enc, uint8_t alg_identity)
+{
+	uint8_t s[7];
+	uint8_t key_aux[32];
+	// Construct S for KNASenc
+	s[0] = 0x15;       // FC
+	s[1] = NAS_ENC_ALG;       // P0
+	s[2] = 0x00;       // First byte of L0
+	s[3] = 0x01;       // Second byte of L0
+	s[4] = alg_identity; // P1
+	s[5] = 0x00;       // First byte of L1
+	s[6] = 0x01;       // Second byte of L1
+	// Derive KNASenc
+	sha_256(key_aux, s, 7, k_asme, 32);
+	memcpy(nas_key_enc, key_aux + 16, 16);
+	return;
+}
+
+void generate_nas_int_keys(uint8_t * k_asme, uint8_t * nas_key_int, uint8_t alg_identity)
+{
+	uint8_t s[7];
+	uint8_t key_aux[32];
+	// Construct S for KNASint
+	s[0] = 0x15;       // FC
+	s[1] = NAS_INT_ALG;       // P0
+	s[2] = 0x00;       // First byte of L0
+	s[3] = 0x01;       // Second byte of L0
+	s[4] = alg_identity; // P1
+	s[5] = 0x00;       // First byte of L1
+	s[6] = 0x01;       // Second byte of L1
+	// Derive KNASint
+	sha_256(key_aux, s, 7, k_asme, 32);
+	memcpy(nas_key_int, key_aux + 16, 16);
+	return;
 }

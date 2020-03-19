@@ -20,6 +20,9 @@ uint8_t * get_mme_s1ap_id(UE * ue, uint8_t * len);
 void set_mme_s1ap_id(UE * ue, uint8_t * mme_s1ap_id, uint8_t len);
 uint8_t * get_ue_key(UE * ue);
 uint8_t * get_ue_op_key(UE * ue);
+void set_nas_session_security_algorithms(UE * ue, uint8_t algs);
+uint8_t get_nas_session_enc_alg(UE * ue);
+uint8_t get_nas_session_int_alg(UE * ue);
 void printUE(UE * ue);
 
 #endif

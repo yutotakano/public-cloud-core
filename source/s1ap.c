@@ -74,6 +74,7 @@
 #define MO_SIGNALLING 0x30
 #define DOWNLINK_NAS_TRANSPORT 0x0b
 #define AUTHENTICATION_REQUEST 0x52
+#define SECURITY_MODE_COMMAND 0x5d
 #define ID_MME_UE_S1AP_IE_MME 0x0000
 #define ID_ENB_UE_S1AP_IE_UE 0x0008
 #define RES_LENGTH 8
@@ -237,6 +238,18 @@ struct _Auth_Challenge
 	uint8_t IK[16];
 	uint8_t AK[16];
 	uint8_t RES[RES_LENGTH];
+	uint8_t KASME[32];
+	uint8_t NAS_KEY_ENC[16];
+	uint8_t NAS_KEY_INT[16];
+};
+
+struct _Security_Mode_Command
+{
+	uint8_t status;
+	uint8_t procedureCode;
+	uint8_t criticality;
+	uint8_t length;
+	uint8_t * value;
 };
 
 
@@ -288,15 +301,36 @@ void printChallenge(Auth_Challenge * auth)
 	printf("\n");
 	printf("CK: ");
 	for(i = 0; i < 16; i++)
-		printf("%.2x ", auth->RAND[i]);
+		printf("%.2x ", auth->CK[i]);
 	printf("\n");
 	printf("IK: ");
 	for(i = 0; i < 16; i++)
-		printf("%.2x ", auth->RAND[i]);
+		printf("%.2x ", auth->IK[i]);
 	printf("\n");
 	printf("AK: ");
 	for(i = 0; i < 16; i++)
-		printf("%.2x ", auth->RAND[i]);
+		printf("%.2x ", auth->AK[i]);
+	printf("\n");
+	printf("RES: ");
+	for(i = 0; i < 16; i++)
+		printf("%.2x ", auth->RES[i]);
+	printf("\n");
+}
+
+void printChallengeDerivatedKeys(Auth_Challenge * auth)
+{
+	int i;
+	printf("KASME: ");
+	for(i = 0; i < 32; i++)
+		printf("%.2x ", auth->KASME[i]);
+	printf("\n");
+	printf("NAS ENC: ");
+	for(i = 0; i < 16; i++)
+		printf("%.2x ", auth->NAS_KEY_ENC[i]);
+	printf("\n");
+	printf("NAS INT: ");
+	for(i = 0; i < 16; i++)
+		printf("%.2x ", auth->NAS_KEY_INT[i]);
 	printf("\n");
 }
 
@@ -955,33 +989,67 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 		/* Detect NAS_PDU */
 		if(id == ID_NAS_PDU)
 		{
-			flag = 0;
+			flag = -1;
 			printf("\tNAS-PDN: \n");
 			offset_nas_pdu = offset;
 			/* Skip double NAS encapsulation */
 			offset_nas_pdu++;
-			/* Check if is a Authentication Request */
+
+			/* Check NAS Security Header Type */
 			if(value[offset_nas_pdu] == 0x07)
+			{
 				printf("\t\tPlain NAS Message\n\t\tEPS mobility management message\n");
+				offset_nas_pdu++;
+			}
+			else if(value[offset_nas_pdu] == 0x37)
+			{
+				printf("\t\tMessage authentication code: 0x%.2x%.2x%.2x%.2x\n", value[offset_nas_pdu+1], value[offset_nas_pdu+2], value[offset_nas_pdu+3], value[offset_nas_pdu+4]);
+				printf("\t\tSequence Number: %.2x\n", value[offset_nas_pdu+5]);
+				printf("\t\t(Second) Security header type: %.2x\n", value[offset_nas_pdu+6]);
+				offset_nas_pdu += 7;
+			}
 			else
-				flag = 1;
-			offset_nas_pdu++;
+			{
+				offset_nas_pdu++;
+			}
+
+			/* Detect NAS EPS Mobility Management Message Type */
 			if(value[offset_nas_pdu] == AUTHENTICATION_REQUEST)
+			{
 				printf("\t\tAuthentication request message\n");
-			else
+				flag = 0;
+				offset_nas_pdu++;
+			}
+			else if(value[offset_nas_pdu] == SECURITY_MODE_COMMAND)
+			{
+				printf("\t\tSecurity Mode Command\n");
+				/* Get Encryption and Integrity algorithms */
+				set_nas_session_security_algorithms(ue, value[offset_nas_pdu + 1]);
 				flag = 1;
-			offset_nas_pdu++;
+				offset_nas_pdu += 2;
+			}
+			else
+			{
+				flag = -1;
+				offset_nas_pdu++;
+			}
+
 			if(value[offset_nas_pdu] == 0x00)
 				printf("\t\tASME (KSIasme)\n");
 			else
-				flag = 1;
+				flag = -1;
 			offset_nas_pdu++;
-			/* Getting RAND and AUTN */
-			if(flag == 0)
+
+			if(flag == 0 && auth_challenge != NULL) /* Getting RAND and AUTN */
 			{
 				printf("\t\tRAND and AUTN extracted\n");
 				memcpy(auth_challenge->RAND, value + offset_nas_pdu, 16);
 				memcpy(auth_challenge->AUTN, value + offset_nas_pdu + 16, 16);
+				ret = 0;
+			}
+			else if(flag == 1) /* Check UE capabilities */
+			{
+				printf("\t\tUE security capabilities: [%.2x %.2x %.2x]\n", value[offset_nas_pdu], value[offset_nas_pdu+1], value[offset_nas_pdu+2]);
 				ret = 0;
 			}
 		}
@@ -1020,14 +1088,36 @@ int analyze_Authentication_Request(uint8_t * buffer, Auth_Challenge * auth_chall
 
 	if(auth_req.status != 0 || auth_req.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT || auth_req.criticality != CRITICALITY_REJECT)
 	{
-		printError("No Downlonk NAS Transport message\n");
-		ret = 1;
+		printError("No Downlink NAS Transport message (Authentication Request)\n");
+		return 1;
 	}
 
 	/* Analyze and extract RAND and AUTN */
-	printInfo("Analyzing Downlonk NAS Transport message\n");
+	printInfo("Analyzing Downlink NAS Transport message (Authentication Request)\n");
 	ret = analyze_downlink_NAS_Transport(auth_req.value, auth_req.length, auth_challenge, ue);
 	GC_free(auth_req.value);
+	return ret;
+}
+
+int analyze_Security_Mode_Command(uint8_t * buffer, UE * ue)
+{
+	int ret = 1;
+	Security_Mode_Command smc;
+
+	memcpy((void *) &smc, (void *) buffer, 4);
+	smc.value = (uint8_t *) GC_malloc(smc.length);
+	memcpy((void *) smc.value, (void *) buffer+4, smc.length);
+
+	if(smc.status != 0 || smc.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT || smc.criticality != CRITICALITY_REJECT)
+	{
+		printError("No Downlink NAS Transport message (Security Mode Command)\n");
+		return 1;
+	}
+
+	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
+	printInfo("Analyzing Downlink NAS Transport message (Security Mode Command)\n");
+	ret = analyze_downlink_NAS_Transport(smc.value, smc.length, NULL, ue);
+	GC_free(smc.value);
 	return ret;
 }
 
@@ -1266,12 +1356,12 @@ int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue)
 		printError("SCTP (%s)\n", strerror(errno));
 		return 1;
 	}
-	printWarning("AUTHENTICATION REQUEST\n");
+
 	/* Analyze buffer and get AUTHENTICATION REQUEST*/
 	err = analyze_Authentication_Request(buffer, &auth_challenge, ue);
 	if(err == 1)
     {
-    	printError("Authentication Request problems\n");
+    	printError("Authentication Request error\n");
     }
     else
     {
@@ -1280,21 +1370,17 @@ int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue)
 
     /* TESTING */
 
-    uint8_t rand[16] = {0x62, 0x53, 0xce, 0x01, 0xef, 0x52, 0x3a, 0x09, 0x2e, 0x0e, 0x2b, 0x39, 0x9c, 0xc7, 0x7f, 0x1a};
-    uint8_t autn[16] = {0x99, 0xc4, 0x64, 0x26, 0x2c, 0xff, 0x80, 0x00, 0x98, 0xfc, 0x99, 0x1b, 0x2d, 0xab, 0xee, 0x08};
-
-    uint8_t mac_a[8];
+    uint8_t rand[16] = {0x5f, 0x9b, 0x8e, 0x54, 0x29, 0x48, 0x8a, 0x36, 0x03, 0x47, 0x4f, 0x56, 0xd1, 0x45, 0x3d, 0x0c};
+    uint8_t autn[16] = {0x4e, 0x87, 0xae, 0xc2, 0x72, 0x51, 0x80, 0x0, 0x4f, 0x74, 0x26, 0xa3, 0x23, 0xf0, 0x9f, 0x19};
 
     memcpy(auth_challenge.RAND, rand, 16);
     memcpy(auth_challenge.AUTN, autn, 16);
 
-    f1(get_ue_key(ue), rand, autn, autn + 6, mac_a, get_ue_op_key(ue));
+    //f1(get_ue_key(ue), rand, autn, autn + 6, mac_a, get_ue_op_key(ue));
 
 	/* Calculate Challenge */
 	f2345(get_ue_key(ue), auth_challenge.RAND, auth_challenge.RES, auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, get_ue_op_key(ue));
-	//naive_milenage(get_ue_key(ue), auth_challenge.RAND, get_ue_op_key(ue), auth_challenge.RES);
 	printChallenge(&auth_challenge);
-	dumpMemory(mac_a, 8);
 	printOK("RES successfully calculated: ");
 	dumpMemory(auth_challenge.RES, 8);
 
@@ -1310,17 +1396,10 @@ int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue)
 	sctp_sendmsg(socket, (void *) authentication_res_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(authentication_res_buffer);
 
-	/* During processing time on the MME the K for integrity and encryption is created */
+	/* KASME, NAS_ENC and NAS_INT are generated while UE is waiting for Security mode command */
 	/* Only integrity is implemented in this simulator to minimize the CPU load */
-
-
-
-	/* TODO */
-	/* sha256 algorithm */
-	/* https://github.com/srsLTE/srsLTE/blob/bf1982e28d0594a2a173a501ff9b1e22fbac442a/lib/src/common/liblte_security.cc */
-	/* srsLTE: liblte_security_generate_k_asme -> generate K_ASME */
-	/* srsLTE: liblte_security_generate_k_nas -> generate encryption and integrity keys */
-
+	generate_kasme(auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, auth_challenge.AUTN, get_plmn(enb), PLMN_LENGTH, auth_challenge.KASME);
+	printChallengeDerivatedKeys(&auth_challenge);
 
 
 
@@ -1333,9 +1412,55 @@ int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue)
 		printError("SCTP (%s)\n", strerror(errno));
 		return 1;
 	}
-	printWarning("Security mode command\n");
 
-	dumpMemory(buffer, recv_len);
+	/* Analyze buffer and get AUTHENTICATION REQUEST*/
+	err = analyze_Security_Mode_Command(buffer, ue);
+	if(err == 1)
+    {
+    	printError("Security Mode Command\n");
+    }
+    else
+    {
+    	printOK("Security Mode Command\n");
+    }
+
+    /* Temporary encryption and integrity keys generation */
+	generate_nas_enc_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_ENC, get_nas_session_enc_alg(ue));
+	generate_nas_int_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_INT, get_nas_session_int_alg(ue));
+	printChallengeDerivatedKeys(&auth_challenge);
 
 	return 0;
 }
+
+
+void crypto_test(eNB * enb, UE * ue)
+{
+	Auth_Challenge auth_challenge;
+	uint8_t rand[16] = {0x03, 0x62, 0x58, 0x1c, 0x59, 0x21, 0xe6, 0x2a, 0xc4, 0x49, 0xd6, 0x12, 0xda, 0x06, 0xd8, 0x79};
+    uint8_t autn[16] = {0x5, 0x9, 0x2f, 0x46, 0x5d, 0xf7, 0x80, 0x0, 0xf9, 0xe9, 0x41, 0x1e, 0x8f, 0xea, 0x42, 0x2};
+
+    memcpy(auth_challenge.RAND, rand, 16);
+    memcpy(auth_challenge.AUTN, autn, 16);
+
+	/* Calculate Challenge */
+	f2345(get_ue_key(ue), auth_challenge.RAND, auth_challenge.RES, auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, get_ue_op_key(ue));
+	printChallenge(&auth_challenge);
+	printOK("RES successfully calculated: ");
+	dumpMemory(auth_challenge.RES, 8);
+
+	/* KASME, NAS_ENC and NAS_INT are generated while UE is waiting for Security mode command */
+	/* Only integrity is implemented in this simulator to minimize the CPU load */
+	generate_kasme(auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, auth_challenge.AUTN, get_plmn(enb), PLMN_LENGTH, auth_challenge.KASME);
+	
+	set_nas_session_security_algorithms(ue, 0x02);
+
+	generate_nas_enc_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_ENC, get_nas_session_enc_alg(ue));
+	generate_nas_int_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_INT, get_nas_session_int_alg(ue));
+
+	printChallengeDerivatedKeys(&auth_challenge);
+}
+
+
+
+
+
