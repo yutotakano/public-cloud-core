@@ -5,6 +5,8 @@
 #include <string.h>
 #include "ue.h"
 
+#define UE_DEFAULT_CAPABILITIES 0x8020
+
 struct _UE
 {
 	uint8_t plmn[UE_PLMN_LENGTH];
@@ -16,6 +18,12 @@ struct _UE
 	uint8_t mme_s1ap_id_len;
 	uint8_t key[KEY_LENGTH];
 	uint8_t op_key[KEY_LENGTH];
+	uint8_t spgw_ip[IP_LEN];
+	uint32_t gtp_teid;
+	uint32_t random_gtp_teid;
+	char apn_name[32];
+	uint8_t pdn_ip[IP_LEN];
+	uint8_t guti[GUTI_LEN];
 };
 
 void printUE(UE * ue)
@@ -48,7 +56,7 @@ void generate_net_capabilities(uint8_t * net_capabilities, uint16_t capabilities
 	net_capabilities[2] = capabilities & 0xFF;
 }
 
-UE * init_UE(char * mcc, char * mnc, char * msin, uint16_t capabilities, uint32_t ue_s1ap_id, uint8_t * key, uint8_t * op_key)
+UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key)
 {
 	UE * ue;
 	ue = (UE *) GC_malloc(sizeof(UE));
@@ -56,10 +64,18 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint16_t capabilities, uint32_
 		return NULL;
 	generate_plmn_UE(ue->plmn, mcc, mnc);
 	generate_msin(ue->msin, msin);
-	generate_net_capabilities(ue->net_capabilities, capabilities);
-	ue->ue_s1ap_id = ue_s1ap_id;
+	generate_net_capabilities(ue->net_capabilities, UE_DEFAULT_CAPABILITIES);
+	//ue->ue_s1ap_id = (0x00FFFFFF & rand()) | 0x80000000;
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
+	ue->mme_s1ap_id_len = -1;
+	//ue->random_gtp_teid = 0xdde06fca;
+
+	/* GTP Teid and UE_S1AP_ID are random numbers dedicated to the UE connection */
+	/* Because of that can be generated randomly */
+	/* To avoid random number generation collision, these numbers are extracted from the msin value (less significant 24 bits)*/
+	ue->ue_s1ap_id = 0x80000000 | (ue->msin[2] << 16) | (ue->msin[3] << 8) | ue->msin[4];
+	ue->random_gtp_teid =  (ue->msin[1] << 24) | (ue->msin[2] << 16) | (ue->msin[3] << 8) | ue->msin[4];
 	return ue;
 }
 
@@ -96,6 +112,8 @@ uint8_t * get_mme_s1ap_id(UE * ue, uint8_t * len)
 
 void set_mme_s1ap_id(UE * ue, uint8_t * mme_s1ap_id, uint8_t len)
 {
+	if(ue->mme_s1ap_id_len == -1)
+		return;
 	memcpy(ue->mme_s1ap_id, mme_s1ap_id, len);
 	ue->mme_s1ap_id_len = len;
 }
@@ -123,4 +141,63 @@ uint8_t get_nas_session_enc_alg(UE * ue)
 uint8_t get_nas_session_int_alg(UE * ue)
 {
 	return ue->nas_session_security_algorithms & 0x07;
+}
+
+void set_spgw_ip(UE * ue, uint8_t * ip)
+{
+	memcpy(ue->spgw_ip, ip, IP_LEN);
+}
+
+uint8_t * get_spgw_ip(UE * ue)
+{
+	return ue->spgw_ip;
+}
+
+void set_gtp_teid(UE * ue, uint32_t teid)
+{
+	ue->gtp_teid = teid;
+}
+
+uint32_t get_gtp_teid(UE * ue)
+{
+	return ue->gtp_teid;
+}
+
+void set_apn_name(UE * ue, uint8_t * name, uint8_t name_len)
+{
+	uint8_t len = name_len;
+	if(len > 31)
+		len = 31;
+	memcpy(ue->apn_name, name, len);
+	ue->apn_name[len] = 0;
+}
+
+char * get_apn_name(UE * ue)
+{
+	return (char *) ue->apn_name;
+}
+
+void set_pdn_ip(UE * ue, uint8_t * ip)
+{
+	memcpy(ue->pdn_ip, ip, IP_LEN);
+}
+
+uint8_t * get_pdn_ip(UE * ue)
+{
+	return ue->pdn_ip;
+}
+
+void set_guti(UE * ue, uint8_t * guti)
+{
+	memcpy(ue->guti, guti, GUTI_LEN);
+}
+
+uint8_t * get_guti(UE * ue)
+{
+	return ue->guti;
+}
+
+uint32_t get_random_gtp_teid(UE * ue)
+{
+	return ue->random_gtp_teid;
 }

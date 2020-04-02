@@ -1,5 +1,6 @@
 #include "crypto.h"
 #include <string.h>
+#include <openssl/cmac.h>
 
 /* Milenage algorithm based on Metaswitch clearwater-seagull implementation */
 #define LITTLE_ENDIAN	/* For INTEL architecture */
@@ -36,10 +37,19 @@ void inline u32_out(uint8_t x[], const uint32_t v)
 
 #endif
 
+# define hton_int32(x)   \
+	(((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8) |  \
+	((x & 0x00FF0000) >> 8) | ((x & 0xFF000000) >> 24))
+
 
 /* SHA-256 definitions */
 #define CHUNK_SIZE 64
 #define TOTAL_LEN_LEN 8
+
+#define NAS_ENC_ALG 0x01
+#define NAS_INT_ALG 0x02
+/* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.7 */
+/* https://www.etsi.org/deliver/etsi_ts/133400_133499/133401/15.04.00_60/ts_133401v150400p.pdf */
 
 
 
@@ -426,47 +436,6 @@ void dumpMem(uint8_t * mem, int len)
 	printf("\n");
 }
 
-void f1( uint8_t * k, uint8_t * rand, uint8_t * sqn, uint8_t * amf, uint8_t * mac_a, uint8_t * op_c)
-{
-	uint8_t temp[16];
-	uint8_t in1[16];
-	uint8_t out1[16];
-	uint8_t rijndaelInput[16];
-	uint8_t i;
-
-	RijndaelKeySchedule(k);
-
-	for (i=0; i<16; i++)
-		rijndaelInput[i] = rand[i] ^ op_c[i];
-	RijndaelEncrypt( rijndaelInput, temp );
-	for (i=0; i<6; i++)
-	{
-		in1[i]    = sqn[i];
-		in1[i+8]  = sqn[i];
-	}
-	for (i=0; i<2; i++)
-	{
-		in1[i+6]  = amf[i];
-		in1[i+14] = amf[i];
-	}
-
-	/* XOR op_c and in1, rotate by r1=64, and XOR *
-	 * on the constant c1 (which is all zeroes)   */
-	for (i=0; i<16; i++)
-		rijndaelInput[(i+8) % 16] = in1[i] ^ op_c[i];
-
-	/* XOR on the value temp computed before */
-	for (i=0; i<16; i++)
-		rijndaelInput[i] ^= temp[i];
-	RijndaelEncrypt( rijndaelInput, out1 );
-	for (i=0; i<16; i++)
-		out1[i] ^= op_c[i];
-	for (i=0; i<8; i++)
-	mac_a[i] = out1[i];
-
-	return;
-}
-
 void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * op_c)
 {
 	uint8_t temp[16];
@@ -765,11 +734,6 @@ void generate_kasme(uint8_t * ck, uint8_t * ik, uint8_t * ak, uint8_t * sqn, uin
   return;
 }
 
-#define NAS_ENC_ALG 0x01
-#define NAS_INT_ALG 0x02
-/* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.7 */
-/* https://www.etsi.org/deliver/etsi_ts/133400_133499/133401/15.04.00_60/ts_133401v150400p.pdf */
-
 /* srsLTE implementation */
 /* ETSI TS 133 401 V15.4.0 (2018-07) - Annex A.7 */
 void generate_nas_enc_keys(uint8_t * k_asme, uint8_t * nas_key_enc, uint8_t alg_identity)
@@ -805,5 +769,36 @@ void generate_nas_int_keys(uint8_t * k_asme, uint8_t * nas_key_int, uint8_t alg_
 	// Derive KNASint
 	sha_256(key_aux, s, 7, k_asme, 32);
 	memcpy(nas_key_int, key_aux + 16, 16);
+	return;
+}
+
+/* nas_integrity_eia2 uses SSL HMAC algorithm (128-AES) */
+void nas_integrity_eia2(uint8_t * key, uint8_t * message, uint8_t message_length, uint32_t count, uint8_t out[4])
+{
+	uint8_t * msg = NULL;
+	uint32_t local_count;
+	size_t size = 4;
+	uint8_t data[16];
+	CMAC_CTX * cmac_ctx = NULL;
+	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+
+	memset(data, 0, 16);
+	msg = calloc(message_length + 8, sizeof(uint8_t));
+	local_count = hton_int32(count);
+	memcpy(msg, &local_count, 4);
+	memcpy(msg + 8, message, message_length);
+
+
+	cmac_ctx = CMAC_CTX_new();
+	CMAC_Init(cmac_ctx, key, 16, cipher, NULL);
+	CMAC_Update(cmac_ctx, msg, message_length + 8);
+	CMAC_Final(cmac_ctx, data, &size);
+	CMAC_CTX_free(cmac_ctx);
+
+
+
+	memcpy(out, data, 4);
+	free(msg);
+
 	return;
 }

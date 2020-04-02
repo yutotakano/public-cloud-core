@@ -5,12 +5,13 @@
 #define UE_MSIN_LENGTH 5
 #define UE_CAPABILITIES_LENGTH 3
 #define EPS_MOBILITY_IDENTITY_FLAGS 0x09
-#define UE_DEFAULT_CAPABILITIES 0x8020
 #define KEY_LENGTH 16
+#define IP_LEN 4
+#define GUTI_LEN 10
 
 typedef struct _UE UE;
 
-UE * init_UE(char * mcc, char * mnc, char * msin, uint16_t capabilities, uint32_t ue_s1ap_id, uint8_t * key, uint8_t * op_key);
+UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key);
 void free_UE(UE * ue);
 uint8_t * get_ue_plmn(UE * ue);
 uint8_t * get_ue_msin(UE * ue);
@@ -23,6 +24,18 @@ uint8_t * get_ue_op_key(UE * ue);
 void set_nas_session_security_algorithms(UE * ue, uint8_t algs);
 uint8_t get_nas_session_enc_alg(UE * ue);
 uint8_t get_nas_session_int_alg(UE * ue);
+void set_spgw_ip(UE * ue, uint8_t * ip);
+uint8_t * get_spgw_ip(UE * ue);
+void set_gtp_teid(UE * ue, uint32_t teid);
+uint32_t get_gtp_teid(UE * ue);
+void set_apn_name(UE * ue, uint8_t * name, uint8_t name_len);
+char * get_apn_name(UE * ue);
+void set_pdn_ip(UE * ue, uint8_t * ip);
+uint8_t * get_pdn_ip(UE * ue);
+void set_guti(UE * ue, uint8_t * guti);
+uint8_t * get_guti(UE * ue);
+uint32_t get_random_gtp_teid(UE * ue);
+
 void printUE(UE * ue);
 
 #endif

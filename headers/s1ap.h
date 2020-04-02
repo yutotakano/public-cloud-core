@@ -13,6 +13,7 @@ typedef struct _global_enb_id global_enb_id;
 typedef struct _enb_ue_s1ap_id enb_ue_s1ap_id;
 typedef struct _non_access_stratum_pdu non_access_stratum_pdu;
 typedef struct _non_access_stratum_pdu_auth_resp non_access_stratum_pdu_auth_resp;
+typedef struct _non_access_stratum_pdu_sec_comm_complete non_access_stratum_pdu_sec_comm_complete;
 typedef struct _tai tai;
 typedef struct _eutran_cgi eutran_cgi;
 typedef struct _rrc_establishment_cause rrc_establishment_cause;
@@ -26,11 +27,19 @@ typedef struct _Authentication_Request Authentication_Request;
 typedef struct _Auth_Challenge Auth_Challenge;
 typedef struct _Authentication_Response Authentication_Response;
 typedef struct _Security_Mode_Command Security_Mode_Command;
+typedef struct _Security_Command_Complete Security_Command_Complete;
+typedef struct _UE_Capability UE_Capability;
+typedef struct _Initial_Context_Setup_Request Initial_Context_Setup_Request;
+typedef struct _Initial_Context_Setup_Response Initial_Context_Setup_Response;
+typedef struct _E_RAB_Setup_List_C_txt_SU_Res E_RAB_Setup_List_C_txt_SU_Res;
+typedef struct _E_RABSetupItemCtxtSURes E_RABSetupItemCtxtSURes;
+typedef struct _Uplink_NAS_Transport Uplink_NAS_Transport;
+typedef struct _non_access_stratum_pdu_attach_complete non_access_stratum_pdu_attach_complete;
 
 void test(eNB * enb);
 
 
-int procedure_S1_Setup(int socket, eNB * enb);
-int procedure_Attach_Default_EPS_Bearer(int socket, eNB * enb, UE * ue);
+int procedure_S1_Setup(eNB * enb);
+int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue);
 void crypto_test(eNB * enb, UE * ue);
 #endif
