@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -c -Wall -ansi -g -std=c99 -D_DEBUG
 
 #LIB FLAGS
-LIBFLAGS = -lgc -rdynamic -lcrypto
+LIBFLAGS = -lgc -rdynamic -lcrypto -lpthread
 
 #LINK FLAGS
 LINKFLAGS = -lsctp

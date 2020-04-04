@@ -6,9 +6,11 @@
 #include "ue.h"
 
 #define UE_DEFAULT_CAPABILITIES 0x8020
+#define TUN_NAME_LEN 32
 
 struct _UE
 {
+	int id;
 	uint8_t plmn[UE_PLMN_LENGTH];
 	uint8_t msin[UE_MSIN_LENGTH];
 	uint8_t net_capabilities[UE_CAPABILITIES_LENGTH];
@@ -24,6 +26,9 @@ struct _UE
 	char apn_name[32];
 	uint8_t pdn_ip[IP_LEN];
 	uint8_t guti[GUTI_LEN];
+	char tun_name[TUN_NAME_LEN];
+	int data_plane_socket;
+	int tun_device;
 };
 
 void printUE(UE * ue)
@@ -56,6 +61,13 @@ void generate_net_capabilities(uint8_t * net_capabilities, uint16_t capabilities
 	net_capabilities[2] = capabilities & 0xFF;
 }
 
+void generate_tun_name(UE * ue, char * msin)
+{
+	uint32_t num = atoi(msin);
+	ue->id = num;
+	sprintf(ue->tun_name, "tun%d", num);
+}
+
 UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key)
 {
 	UE * ue;
@@ -65,6 +77,7 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	generate_plmn_UE(ue->plmn, mcc, mnc);
 	generate_msin(ue->msin, msin);
 	generate_net_capabilities(ue->net_capabilities, UE_DEFAULT_CAPABILITIES);
+	generate_tun_name(ue, msin);
 	//ue->ue_s1ap_id = (0x00FFFFFF & rand()) | 0x80000000;
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
@@ -200,4 +213,34 @@ uint8_t * get_guti(UE * ue)
 uint32_t get_random_gtp_teid(UE * ue)
 {
 	return ue->random_gtp_teid;
+}
+
+char * get_tun_name(UE * ue)
+{
+	return ue->tun_name;
+}
+
+void set_data_plane_socket(UE * ue, int sockfd)
+{
+	ue->data_plane_socket = sockfd;
+}
+
+int get_data_plane_socket(UE * ue)
+{
+	return ue->data_plane_socket;
+}
+
+void set_tun_device(UE * ue, int tun)
+{
+	ue->tun_device = tun;
+}
+
+int get_tun_device(UE * ue)
+{
+	return ue->tun_device;
+}
+
+int get_ue_id(UE * ue)
+{
+	return ue->id;
 }

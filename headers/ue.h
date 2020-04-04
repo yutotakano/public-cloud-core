@@ -35,6 +35,12 @@ uint8_t * get_pdn_ip(UE * ue);
 void set_guti(UE * ue, uint8_t * guti);
 uint8_t * get_guti(UE * ue);
 uint32_t get_random_gtp_teid(UE * ue);
+char * get_tun_name(UE * ue);
+void set_data_plane_socket(UE * ue, int sockfd);
+int get_data_plane_socket(UE * ue);
+void set_tun_device(UE * ue, int tun);
+int get_tun_device(UE * ue);
+int get_ue_id(UE * ue);
 
 void printUE(UE * ue);
 

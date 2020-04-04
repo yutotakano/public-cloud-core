@@ -12,11 +12,22 @@
 #include <time.h>
 #include <sys/socket.h>
 
+#include <net/if.h>
+#include <linux/if.h>
+#include <linux/if_tun.h>
+#include <linux/if_tunnel.h>
+
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/select.h>
+
 #include "ue.h"
 #include "enb.h"
 #include "s1ap.h"
 #include "log.h"
 #include "sctp.h"
+#include "tun.h"
+#include "data_plane.h"
 
 #define S1_U_PORT 2152
 
@@ -47,77 +58,144 @@ int open_data_plane_socket(eNB * enb)
     return 0;
 }
 
-uint16_t ICMPChecksum(uint16_t *icmph, int len)
-{
-    
-    uint16_t ret = 0;
-    uint32_t sum = 0;
-    uint16_t odd_byte;
-    
-    while (len > 1) {
-        sum += *icmph++;
-        len -= 2;
-    }
-    
-    if (len == 1) {
-        *(uint8_t*)(&odd_byte) = * (uint8_t*)icmph;
-        sum += odd_byte;
-    }
-    
-    sum =  (sum >> 16) + (sum & 0xffff);
-    sum += (sum >> 16);
-    ret =  ~sum;
-    
-    return ret; 
-}
-
-void send_icmp(UE * ue, eNB * enb, uint8_t * ip_dest)
+void send_movidas(UE * ue, eNB * enb, uint8_t * ip_dest)
 {
     /********************/
     /* TEST: Data plane */
     /********************/
-    struct sockaddr_in serv_addr;
-    uint8_t icmp[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x45, 0x00, 0x00, 0x30, 0x1c, 0x17, 0x40, 0x00, 0x40, 0x01, 0x9d, 0x36, 0xc0, 0xac, 0x00, 0x02, 0xc0, 0xac, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t data[] = {0xa3, 0x27, 0x83, 0x5e, 0x00, 0x00, 0x00, 0x00, 0x77, 0x2d, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
+    struct sockaddr_in serv_addr, cli_addr;
+    char * tun_name;
+    uint8_t msg[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    uint8_t buffer[1024];
 
-    /* Generate ICMP */
-    icmp[28] = 0x08;
-    icmp[29] = 0x00;
-    icmp[30] = 0x00;
-    icmp[31] = 0x00;
-    icmp[32] = 0x17;
-    icmp[33] = 0xbc;
-    icmp[34] = 0x00;
-    icmp[35] = 0x01;
-    memcpy(icmp + 36, (void *)data, 20);
-    *((uint16_t*)(icmp+30)) = ICMPChecksum((uint16_t *) (icmp + 28), 28);
+    /* Create the TUN interface */
+    tun_name = get_tun_name(ue);
+    int tunfd = open_tun_iface(tun_name, get_pdn_ip(ue));
+    /* Configure TUN file descriptor as non-blocking */
+    //int flags = fcntl(tunfd, F_GETFL, 0);
+    //if(fcntl(tunfd, F_SETFL, flags | O_NONBLOCK))
+    //{
+    //    perror("O_NONBLOCK");
+    //    return;
+    //}
 
+    sleep(10);
 
-    /* Generate GTP Header */
-    icmp[0] = 0x30; /* Flags */
-    icmp[1] = 0xFF; /* T-PDU */
-    icmp[2] = 0x00; /* Length */
-    icmp[3] = 0x30; /* Length */
-    /* GTP Teid */
-    uint32_t teid = get_gtp_teid(ue);
-    icmp[4] = (teid >> 24) & 0xFF;
-    icmp[5] = (teid >> 16) & 0xFF;
-    icmp[6] = (teid >> 8) & 0xFF;
-    icmp[7] = (teid) & 0xFF;
+    /* Open a socket on the TUN interface */
+    int sockfd;
 
-    /* Replace src IP*/
-    memcpy(icmp + 20, get_pdn_ip(ue), 4);
-    /* Replace dst IP*/
-    memcpy(icmp + 24, ip_dest, 4);
+    // Creating socket file descriptor 
+    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+        perror("tun socket creation failed"); 
+        return; 
+    }
+
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(struct ifreq));
+    /* Force to use TUN device */
+    snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", tun_name);
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(struct ifreq)) < 0) {
+        perror("tun bind");
+        return;
+    }
 
     // Filling server information
+    uint8_t dest_ip[] = {192, 172, 0, 1};
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET; 
     serv_addr.sin_port = htons(S1_U_PORT);
-    memcpy((void*) &serv_addr.sin_addr.s_addr, get_spgw_ip(ue), sizeof(struct in_addr));
-      
-    sendto(get_spgw_socket(enb), icmp, 56, 0, (const struct sockaddr *) &serv_addr,  sizeof(serv_addr));
-    printf("ICMP sent!\n");
+    memcpy((void*) &serv_addr.sin_addr.s_addr, dest_ip, sizeof(struct in_addr));
+
+    /* Read from the tun interface */
+    bzero(buffer, 1024);
+    int len = 0;
+    fd_set fds;
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 1;
+
+    int p = 0;
+    int retval;
+
+    //while(1)
+    //{
+    //    if(p == 10)
+    //    {
+    //        sendto(sockfd, msg, 4, 0, (const struct sockaddr *) &serv_addr,  sizeof(serv_addr));
+    //        printf("MESSAGE SENT!\n");
+    //        p = 0;
+    //    }
+    //    FD_ZERO(&fds);
+    //    FD_SET(tunfd, &fds);
+    //    retval = select(tunfd+1, &fds, 0, 0, &timeout);
+    //    if (retval == -1){
+    //        perror("select()");
+    //    }
+    //    else if (retval){
+    //        len = tun_read(tunfd, buffer, 120);
+    //        printf("LA MOVIDA\n");
+    //        dump_Memory(buffer, len);
+    //    }
+    //    else
+    //        printf("NADA\n"); 
+    //    sleep(1);
+    //    p++;
+    //}
+    int len1 = sizeof(cli_addr);
+    uint8_t buf[256];
+    uint8_t inter;
+    while(1)
+    {
+        if(p == 3)
+        {
+            sendto(sockfd, msg, 4, 0, (const struct sockaddr *) &serv_addr,  sizeof(serv_addr));
+            printf("MESSAGE SENT!\n");
+            p = 0;
+        }
+        len = tun_read(tunfd, buffer, 120);
+        printf("LA MOVIDA\n");
+        //dump_Memory(buffer, len);
+        if(buffer[0] == 0x45)
+        {
+            printf("UDP Received\n");
+            inter = buffer[15];
+            buffer[15] = buffer[19];
+            buffer[19] = inter;
+            tun_write(tunfd, buffer, len);
+            sleep(1);
+            printf("AQUI\n");
+            len = recvfrom(sockfd, (char *)buf, 256, 0, ( struct sockaddr *) &cli_addr, (socklen_t *)&len1);
+            printf("RECV: \n");
+            //dump_Memory(buf, len);
+            sleep(2);
+        }
+        p++;
+    }
+    while(1)
+    {
+        if(p == 10)
+        {
+            sendto(sockfd, msg, 4, 0, (const struct sockaddr *) &serv_addr,  sizeof(serv_addr));
+            printf("MESSAGE SENT!\n");
+            p = 0;
+            sleep(1);
+        }
+        len = tun_read(tunfd, buffer, 120);
+        if(len <= 0 && errno == EAGAIN) {
+            // If this condition passes, there is no data to be read
+            printf("NADA\n");
+        }
+        else if(len > 0) {
+            // Otherwise, you're good to go and buffer should contain "count" bytes.
+            printf("LA MOVIDA\n");
+            //dump_Memory(buffer, len);
+        }
+        else {
+            // Some other error occurred during read.
+            printf("ERROR\n");
+        }
+        p++;
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -178,18 +256,23 @@ int main(int argc, char const *argv[])
 
     /* Attach UE 1 */
     err = procedure_Attach_Default_EPS_Bearer(enb, ue1);
-    sleep(5);
 
     /* Attach UE 2 */
-    err = procedure_Attach_Default_EPS_Bearer(enb, ue2);
+    //err = procedure_Attach_Default_EPS_Bearer(enb, ue2);
 
-    open_data_plane_socket(enb);
-    uint8_t dest_ip[] = {8, 8, 8, 8};
-    while(1)
-    {
-        send_icmp(ue1, enb, dest_ip);
-        sleep(2);
-    }
+    //open_data_plane_socket(enb);
+
+    uint8_t dest_ip[] = {192, 172, 0, 1};
+    int dest_port = 1234;
+
+    /* DATA PLANE */
+    open_enb_data_plane_socket(enb);
+    setup_ue_data_plane(ue1);
+    printf("MOVIDON\n");
+    generate_udp_traffic(ue1, enb, dest_ip, dest_port);
+
+    /* TESTING */
+    //send_movidas(ue1, enb, dest_ip);
 
     free_eNB(enb);
     free_UE(ue1);
