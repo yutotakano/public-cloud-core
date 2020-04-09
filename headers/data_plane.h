@@ -12,5 +12,6 @@
 int open_enb_data_plane_socket(eNB * enb);
 int setup_ue_data_plane(UE * ue);
 void generate_udp_traffic(UE * ue, eNB * enb, uint8_t * dest_ip, int port_dest);
+void start_uplink_thread(UE * ue, eNB * enb);
 
 #endif

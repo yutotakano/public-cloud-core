@@ -27,6 +27,7 @@ int main(int argc, char const *argv[])
     eNB * enb;
     UE * ue1;
     UE * ue2;
+    UE * ue3;
     uint8_t key_oai[] = {0x3f, 0x3f, 0x47, 0x3f, 0x2f, 0x3f, 0xd0, 0x94, 0x3f, 0x3f, 0x3f, 0x3f, 0x09, 0x7c, 0x68, 0x62};
     uint8_t op_key_oai[] = {0xdd, 0xaf, 0x9e, 0x16, 0xc4, 0x03, 0x72, 0x8e, 0xd1, 0x52, 0xb6, 0x9d, 0xb0, 0x37, 0x2e, 0xa1};
 
@@ -55,6 +56,7 @@ int main(int argc, char const *argv[])
 
     ue1 = init_UE("208", "93", "0000000001", key_oai, op_key_oai);
     ue2 = init_UE("208", "93", "0000000002", key_oai, op_key_oai);
+    ue3 = init_UE("208", "93", "0000000003", key_oai, op_key_oai);
     enb = init_eNB(0x00e00000, "208", "93", enb_ip);
 
 
@@ -78,21 +80,30 @@ int main(int argc, char const *argv[])
     err = procedure_Attach_Default_EPS_Bearer(enb, ue1);
 
     /* Attach UE 2 */
-    //err = procedure_Attach_Default_EPS_Bearer(enb, ue2);
+    err = procedure_Attach_Default_EPS_Bearer(enb, ue2);
 
-    //open_data_plane_socket(enb);
-
-    uint8_t dest_ip[] = {192, 172, 0, 1};
-    int dest_port = 1234;
+    /* Attach UE 3 */
+    err = procedure_Attach_Default_EPS_Bearer(enb, ue3);
 
     /* DATA PLANE */
     open_enb_data_plane_socket(enb);
     setup_ue_data_plane(ue1);
-    printf("MOVIDON\n");
-    generate_udp_traffic(ue1, enb, dest_ip, dest_port);
+    setup_ue_data_plane(ue2);
+    setup_ue_data_plane(ue3);
 
-    /* TESTING */
-    //send_movidas(ue1, enb, dest_ip);
+    /* Echo server info */
+    uint8_t dest_ip[] = {192, 172, 0, 1};
+    int dest_port = 1234;
+    sleep(5);
+    printf("Starting data plane\n");
+    /* UE 1 data plane */
+    //start_uplink_thread(ue1, enb);
+    //start_uplink_thread(ue2, enb);
+    //start_uplink_thread(ue3, enb);
+    //generate_udp_traffic(ue1, enb, dest_ip, dest_port);
+    //generate_udp_traffic(ue2, enb, dest_ip, dest_port);
+    
+    while(1);
 
     free_eNB(enb);
     free_UE(ue1);

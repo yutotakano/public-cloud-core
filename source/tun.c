@@ -109,6 +109,13 @@ int open_tun_iface(char * name, uint8_t * ip)
     sa = (struct sockaddr_in *)&ifr_tun.ifr_netmask;
     memset(sa,0,sizeof(*sa));
     sa->sin_family = AF_INET;
+    //uint32_t addr = (ip[0] << 24) | (ip[1] << 16) | (ip[2] << 8) | (ip[3]);
+    //uint8_t i = 0;
+    //while((addr & 0x00000001) == 0)
+    //{
+    //    addr = addr >> 1;
+    //    i++;
+    //}
     sa->sin_addr.s_addr = htonl(SUBNET_MASK);
 
     /* Set the mask */
