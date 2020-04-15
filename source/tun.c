@@ -25,7 +25,7 @@
 #include <unistd.h>
 
 #define MTU_SIZE 1500
-#define SUBNET_MASK 0xFFFFFFFF
+#define SUBNET_MASK 0xFFFFFFFC
 
 /**************************************************************************
  * tun_alloc: allocates or reconnects to a tun/tap device. The caller     *

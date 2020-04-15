@@ -23,6 +23,7 @@ int main(int argc, char const *argv[])
 	const char * mme_ip;
     const char * enb_ip;
     int err;
+    int type_of_traffic;
 
     eNB * enb;
     UE * ue1;
@@ -41,9 +42,9 @@ int main(int argc, char const *argv[])
     //GC_enable_backtrace();
 
 
-    if(argc != 3)
+    if(argc != 4)
     {
-        printf("USE: ./lte_client_simulator <MME_IP> <ENB_IP>\n");
+        printf("USE: ./lte_client_simulator <MME_IP> <ENB_IP> <type_of_traffic>\n");
         exit(1);
     }
 
@@ -51,6 +52,7 @@ int main(int argc, char const *argv[])
     /* Getting parameters */
     mme_ip = argv[1];
     enb_ip = argv[2];
+    type_of_traffic = atoi(argv[3]);
 
 
 
@@ -88,14 +90,20 @@ int main(int argc, char const *argv[])
     /* DATA PLANE */
     open_enb_data_plane_socket(enb);
     setup_ue_data_plane(ue1);
-    setup_ue_data_plane(ue2);
-    setup_ue_data_plane(ue3);
 
     /* Echo server info */
     uint8_t dest_ip[] = {192, 172, 0, 1};
     int dest_port = 1234;
     sleep(5);
     printf("Starting data plane\n");
+    if(type_of_traffic == 0)
+    {
+        generate_udp_traffic(ue1, enb, dest_ip, dest_port);
+    }
+    else
+    {
+        start_uplink_thread(ue1, enb);
+    }
     /* UE 1 data plane */
     //start_uplink_thread(ue1, enb);
     //start_uplink_thread(ue2, enb);
@@ -108,5 +116,6 @@ int main(int argc, char const *argv[])
     free_eNB(enb);
     free_UE(ue1);
     free_UE(ue2);
+    free_UE(ue3);
 	return 0;
 }

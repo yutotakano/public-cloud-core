@@ -154,7 +154,7 @@ int setup_ue_data_plane(UE * ue)
     char * tun_name;
     int tunfd, sockfd;
     struct ifreq ifr;
-    struct sockaddr_in ue_addr;
+    //struct sockaddr_in ue_addr;
 
     /* Create the TUN interface */
     tun_name = get_tun_name(ue);
