@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+	<head>
+		<title>RAN Controller</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+	</head>
+	<body>
+		<h1>RAN Controller</h1>
+		<button onClick="window.location.reload();">Refresh Page</button>
+		<p>This is a test: {{ test }}</p>
+		<h3>UEs</h3>
+		{{ ue_table|safe }}
+		<h3>eNBs</h3>
+		{{ enb_table|safe }}
+	</body>
+</html>

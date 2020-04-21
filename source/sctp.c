@@ -103,7 +103,7 @@ int sctp_get_local_addresses(int sock)
 }
 
 
-int sctp_connect_enb_to_mme(eNB * enb, const char * mme_ip)
+int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
 {
 	int sock_sctp;
 	struct sockaddr_in mme_addr;
@@ -185,10 +185,11 @@ int sctp_connect_enb_to_mme(eNB * enb, const char * mme_ip)
     /* Set up SCTP MME address */
     /***************************/
     memset(&mme_addr, 0, sizeof(mme_addr));
-    if (inet_pton (AF_INET, mme_ip, &mme_addr.sin_addr.s_addr) != 1) {
-        perror("IP address to network type error");
-        return -1;
-    }
+    //if (inet_pton (AF_INET, mme_ip, &mme_addr.sin_addr.s_addr) != 1) {
+    //    perror("IP address to network type error");
+    //    return -1;
+    //}
+    memcpy(&mme_addr.sin_addr.s_addr, mme_ip, 4);
     mme_addr.sin_family = AF_INET;
     mme_addr.sin_port = htons(MME_OAI_PORT);
 

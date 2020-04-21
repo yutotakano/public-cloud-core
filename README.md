@@ -1,1 +1,1 @@
-# ran_emulator
+# ran_simulator
