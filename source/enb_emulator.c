@@ -26,6 +26,7 @@
 eNB * enb;
 const char * enb_ip = "192.168.56.101";
 pthread_t enb_thread;
+int sockfd;
 
 void enb_copy_id_to_buffer(uint8_t * buffer)
 {
@@ -34,6 +35,22 @@ void enb_copy_id_to_buffer(uint8_t * buffer)
 	buffer[1] = (id >> 16) & 0xFF;
 	buffer[2] = (id >> 8) & 0xFF;
 	buffer[3] = id & 0xFF;
+}
+
+void enb_copy_port_to_buffer(uint8_t * buffer)
+{
+	struct sockaddr_in sin;
+	uint16_t port;
+	socklen_t len = sizeof(sin);
+	if (getsockname(sockfd, (struct sockaddr *)&sin, &len) == -1)
+	{
+		perror("getsockname");
+		port = 0;
+	}
+	port = ntohs(sin.sin_port);
+	printf("eNB internal port: %d\n", port);
+	buffer[0] = (port >> 8) & 0xFF;
+	buffer[1] = port & 0xFF;
 }
 
 uint32_t id_to_uint32(uint8_t * id)
@@ -83,38 +100,11 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 void * enb_emulator_thread(void * args)
 {
 	/* Open TCP socket to listen to UEs */
-	int sockfd, client, n, response_len = 0;
-	struct sockaddr_in enb_addr, client_addr;
+	int client, n, response_len = 0;
+	struct sockaddr_in client_addr;
 	uint8_t buffer[1024];
 	uint8_t response[1024];
 	socklen_t addrlen;
-
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(sockfd == -1)
-	{
-		perror("eNB socket");
-		return NULL;
-	}
-
-	/* Setup eNB address */
-	enb_addr.sin_family = AF_INET;
-	enb_addr.sin_addr.s_addr = inet_addr(enb_ip);
-	enb_addr.sin_port = htons(ENB_PORT);
-	memset(&(enb_addr.sin_zero), '\0', 8);
-
-	/* Binding process */
-	if(bind(sockfd, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
-	{
-		perror("eNB bind");
-		return NULL;
-	}
-
-	/*  */
-	if(listen(sockfd, CLIENT_NUMBER) == -1)
-	{
-		perror("eNB listen");
-		return NULL;
-	}
 
 	addrlen = sizeof(client);
 
@@ -152,6 +142,8 @@ void * enb_emulator_thread(void * args)
 
 int enb_emulator_start(enb_data * data)
 {
+	struct sockaddr_in enb_addr;
+
 	/* Start emulator thread */
 	printf("Real value: 0x%.8x\n", id_to_uint32(data->id));
 	printf("MCC: %s\n", data->mcc);
@@ -179,6 +171,35 @@ int enb_emulator_start(enb_data * data)
     	return -1;
     }
     printOK("eNB successfully connected\n");
+
+    /* Open eNB port. In this port the eNB will receive UEs connections */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sockfd == -1)
+	{
+		perror("eNB socket");
+		return -1;
+	}
+
+	/* Setup eNB address */
+	enb_addr.sin_family = AF_INET;
+	enb_addr.sin_addr.s_addr = inet_addr(enb_ip);
+	/* Bind to 0 to bind to a random port */
+	enb_addr.sin_port = htons(0);
+	memset(&(enb_addr.sin_zero), '\0', 8);
+
+	/* Binding process */
+	if(bind(sockfd, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
+	{
+		perror("eNB bind");
+		return -1;
+	}
+
+	/* Listen for UE's */
+	if(listen(sockfd, CLIENT_NUMBER) == -1)
+	{
+		perror("eNB listen");
+		return -1;
+	}
 
 	/* Initialize eNB thread */
 	/* Create distributor thread */

@@ -448,12 +448,6 @@ void printChallengeDerivatedKeys(Auth_Challenge * auth)
 	printf("\n");
 }
 
-
-
-
-
-
-
 uint8_t * s1ap_initiatingMessage_to_buffer(s1ap_initiatingMessage * s1ap_initiatingMsg, uint16_t * len)
 {
 	uint8_t * dump = (uint8_t *) GC_malloc(3 + s1ap_initiatingMsg->value_len);
@@ -2179,6 +2173,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	GC_free(security_command_complete_buffer);
 
 	/* Receiving MME answer */
+	/* TODO: Non-blocking socket */
 	flags = 0;
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)

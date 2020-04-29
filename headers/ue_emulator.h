@@ -13,6 +13,8 @@ typedef struct _ue_data
 	uint8_t op_key[16];
 	char * command;
 	uint8_t enb_ip[4];
+	uint8_t local_ip[4];
+	uint16_t enb_port;
 } ue_data;
 
 int ue_emulator_start(ue_data * data);

@@ -1,5 +1,7 @@
 #include "ue_emulator.h"
 #include "message.h"
+#include "log.h"
+#include "data_plane.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +20,7 @@
 ue_data ue;
 pthread_t ue_thread;
 
+uint8_t local_ip[4];
 uint8_t ue_ip[4];
 uint8_t spgw_ip[4];
 uint8_t gtp_teid[4];
@@ -45,14 +48,10 @@ void ue_copy_id_to_buffer(uint8_t * buffer)
 	buffer[3] = ue.id[3];
 }
 
-void * ue_emulator_thread(void * args)
+void * run_command(void * args)
 {
-	/* Wait for TUN messages */
-	while(1)
-	{
-		printf("UE: I am running\n");
-		sleep(10);
-	}
+	system(ue.command);
+	return NULL;
 }
 
 int ue_emulator_start(ue_data * data)
@@ -73,6 +72,8 @@ int ue_emulator_start(ue_data * data)
 	dKey(data->op_key, 16);
 	printf("Command: %s\n", data->command);
 	printf("eNB IP: %d.%d.%d.%d\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3]);
+	printf("eNB port: %d\n", data->enb_port);
+	printf("Local IP: %d.%d.%d.%d\n", data->local_ip[0], data->local_ip[1], data->local_ip[2], data->local_ip[3]);
 
 	/* Save UE information */
 	memcpy(&ue, data, sizeof(ue_data));
@@ -88,7 +89,8 @@ int ue_emulator_start(ue_data * data)
     bzero(&enb_addr, sizeof(enb_addr));
     enb_addr.sin_family = AF_INET;
     memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
-    enb_addr.sin_port = htons(ENB_PORT);
+    enb_addr.sin_port = htons(data->enb_port);
+    /* TODO: set eNB port */
 
 	/* Connect to eNB */
 	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
@@ -118,8 +120,6 @@ int ue_emulator_start(ue_data * data)
 
 	/* Receive eNB response */
 	n = read(sockfd, buffer, sizeof(buffer));
-	printf("DUMP\n");
-	dKey(buffer, n);
 	if(n < 0)
 	{
 		perror("UE recv");
@@ -143,16 +143,24 @@ int ue_emulator_start(ue_data * data)
 	memcpy(spgw_ip, res->spgw_ip, 4);
 
 	/* Print received parameters */
+	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
 	printf("Received information from eNB\n");
-	printf("GTP-TEID: 0x%x\n", (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3] );
+	printf("GTP-TEID: 0x%x\n", teid);
 	printf("UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
 	printf("SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
 
+	/* Create data-plane */
+	if(start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid) == 1)
+	{
+		printError("start_data_plane error\n");
+		return 1;
+	}
 
-	/* Create data-plane thread (TUN device) */
-	if (pthread_create(&ue_thread, NULL, ue_emulator_thread, 0) != 0)
+
+	/* Create traffic generator thread */
+	if (pthread_create(&ue_thread, NULL, run_command, 0) != 0)
     {
-        perror("pthread_create ue_emulator_thread");
+        perror("pthread_create run_command");
         return 1;
     }
 	return 0;

@@ -44,7 +44,10 @@ class eNB:
 	def get_address_text(self):
 		if self.address == None:
 			return 'Unknown'
-		return self.address[0] + ':' + str(self.address[1])
+		return self.address[0] + ':' + str(self.address[1]) + ':' + str(self.ue_port)
+
+	def get_ue_port(self):
+		return self.ue_port
 
 	def serialize(self, code, epc):
 		# Add ID
@@ -71,6 +74,9 @@ class eNB:
 
 	def set_addr(self, address):
 		self.address = address
+
+	def set_ue_port(self, port):
+		self.ue_port = port
 
 	def set_running(self):
 		self.status.move_to_running()

@@ -76,8 +76,10 @@ class RANControler:
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
+		port = data[4] << 8 | data[5]
 		for enb in self.controller_data['eNBs']:
 			if enb.get_id_int() == num:
+				enb.set_ue_port(port)
 				return enb
 		return None
 
