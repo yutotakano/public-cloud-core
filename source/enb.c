@@ -26,7 +26,7 @@ void generate_plmn_eNB(uint8_t * plmn, char * mcc, char * mnc)
 	plmn[2] = (mnc[1] - 0x30) << 4 | (mnc[0] - 0x30);
 }
 
-eNB * init_eNB(uint32_t enb_id, char * mcc, char * mnc, const char * enb_ip)
+eNB * init_eNB(uint32_t enb_id, char * mcc, char * mnc, uint8_t * enb_ip)
 {
 	eNB * enb;
 	enb = (eNB *) GC_malloc(sizeof(eNB));
@@ -38,7 +38,7 @@ eNB * init_eNB(uint32_t enb_id, char * mcc, char * mnc, const char * enb_ip)
 	generate_plmn_eNB(enb->plmn, mcc, mnc);
 	/* Set eNB Name */
 	/* NOT IMPLEMENTED */
-	inet_pton(AF_INET, enb_ip, enb->enb_ip);
+	memcpy(enb->enb_ip, enb_ip, 4);
 	enb->mme_socket = enb->spgw_socket = -1;
 	return enb;
 }

@@ -8,7 +8,7 @@
 
 typedef struct _eNB eNB;
 
-eNB * init_eNB(uint32_t enb_id, char * mcc, char * mnc,const char * enb_ip);
+eNB * init_eNB(uint32_t enb_id, char * mcc, char * mnc, uint8_t * enb_ip);
 void free_eNB(eNB * enb);
 uint8_t * get_plmn(eNB * enb);
 uint32_t get_enb_id(eNB * enb);

@@ -181,6 +181,8 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
             data.epc_ip[i] = buffer[offset+i];
         }
         offset += 4;
+        /* Copy Local IP to enb_data structure */
+        memcpy(data.enb_ip, local_ip, 4);
 
         /* Error control */
         if(offset > len)

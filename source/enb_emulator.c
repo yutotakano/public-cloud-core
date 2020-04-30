@@ -151,7 +151,7 @@ int enb_emulator_start(enb_data * data)
 	printf("EPC IP: %d.%d.%d.%d\n", data->epc_ip[0], data->epc_ip[1], data->epc_ip[2], data->epc_ip[3]);
 
 	/* Create eNB object */
-	enb = init_eNB(id_to_uint32(data->id), (char *)data->mcc, (char *)data->mnc, enb_ip);
+	enb = init_eNB(id_to_uint32(data->id), (char *)data->mcc, (char *)data->mnc, data->enb_ip);
 	if(enb == NULL)
 		return 1;
 
@@ -182,7 +182,7 @@ int enb_emulator_start(enb_data * data)
 
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
-	enb_addr.sin_addr.s_addr = inet_addr(enb_ip);
+	memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
 	/* Bind to 0 to bind to a random port */
 	enb_addr.sin_port = htons(0);
 	memset(&(enb_addr.sin_zero), '\0', 8);
