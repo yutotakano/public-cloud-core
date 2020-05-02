@@ -6,10 +6,14 @@
 	<body>
 		<h1>RAN Controller</h1>
 		<button onClick="window.location.reload();">Refresh Page</button>
-		<p>This is a test: {{ test }}</p>
+		<p>MME IP: {{ mme_ip }}</p>
 		<h3>UEs</h3>
 		{{ ue_table|safe }}
 		<h3>eNBs</h3>
 		{{ enb_table|safe }}
+		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 5%;">
+			<p style="font-family: Perpetua;">THE UNIVERSITY <i>of</i> EDINBURGH</p>
+			Developed by <i>Jon Larrea</i>
+		</div>
 	</body>
 </html>

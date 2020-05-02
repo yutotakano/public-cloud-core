@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+	<head>
+		<title>RAN Controller</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+	</head>
+	<body>
+		<h1>RAN Controller</h1>
+		<div style="width:50%; margin: 0 auto; border:groove;">
+			<h2>Configuration panel</h2>
+			<div style="margin: 0 auto; position:relative; width:50%;">
+				<form method="POST" action="/config/">
+				MME IP Address:
+				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter MME IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				<p>
+				Configuration file (JSON):
+				<input type = "file" name = "file"/>
+				<p>
+				<div style="text-align: center; margin: 0 auto; position:relative;">
+					<button type="submit">Submit</button>
+				</div>
+			</form>
+			</div>
+		</div>
+		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 5%;">
+			<p style="font-family: Perpetua;">THE UNIVERSITY <i>of</i> EDINBURGH</p>
+			Developed by <i>Jon Larrea</i>
+		</div>
+	</body>
+</html>

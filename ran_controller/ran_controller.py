@@ -1,7 +1,4 @@
-import json
-import sys
 import socket
-import struct
 import threading
 from UE import UE
 from eNB import eNB
@@ -31,29 +28,23 @@ CODE_UE_BEHAVIOUR = 0x02
 '''
 
 class RANControler:
-	controller_data = {
-		'eNBs': set(),
-		'UEs': set()
-	}
 
-	def __init__(self, file_path, epc_ip):
-		data = []
-
+	def __init__(self):
 		# Init communication queues
 		self.controller_queue = Queue(maxsize=0)
 		self.send_queue = Queue(maxsize=0)
 		self.user_queue = Queue(maxsize=0)
 
-		self.epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
+	def start_user_input(self):
+		user_input = UserInput(self.start_controller)
+		user_input.run()
 
-		with open(file_path) as json_file:
-			data = json.load(json_file)
-		for ue in data['ues']:
-			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'])
-			self.controller_data['UEs'].add(new_ue)
-		for enb in data['enbs']:
-			new_enb = eNB(enb['enb_num'], enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
-			self.controller_data['eNBs'].add(new_enb)
+		
+
+	def start_controller(self, controller_data, epc):
+		self.controller_data = controller_data
+		self.epc = epc
+		self.execute()
 
 	def execute(self):
 		# Create a TCP/IP socket
@@ -66,13 +57,12 @@ class RANControler:
 		#Create 3 threads
 		receive_t = threading.Thread(target=self.receive_thread)
 		send_t = threading.Thread(target=self.send_thread)
-		user_t = threading.Thread(target=self.user_thread, args=(self.controller_data, ))
+		controller_t = threading.Thread(target=self.controller_thread)
 
 		#Start threads
 		receive_t.start()
 		send_t.start()
-		user_t.start()
-		self.controller_thread()
+		controller_t.start()
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
@@ -179,17 +169,9 @@ class RANControler:
 			msg = self.generate_msg(data, address)
 			self.controller_queue.put(msg)
 
-	def user_thread(self, controller_data):
-		print('Init receiver thread')
-		user_input = UserInput(controller_data)
-		user_input.run()
-
 
 		
 
 if __name__ == '__main__':
-	if(len(sys.argv) != 3):
-		print('USE: python ran_controler <config_file.json> <EPC_IP>')
-		exit(1)
-	ran_controler = RANControler(sys.argv[1], sys.argv[2])
-	ran_controler.execute()
+	ran_controler = RANControler()
+	ran_controler.start_user_input()
