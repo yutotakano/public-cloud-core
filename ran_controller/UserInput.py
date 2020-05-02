@@ -25,10 +25,16 @@ class UserInput():
 	def generate_data(self, file, epc_ip):
 		data = []
 		self.epc_ip = epc_ip
-		epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
+		try:
+			epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
+		except:
+			return False
+		if file:
+			file_content = file.read()
+			data = json.loads(file_content)
+		else:
+			return False
 
-		with open(file) as json_file:
-			data = json.load(json_file)
 		for ue in data['ues']:
 			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'])
 			self.controller_data['UEs'].add(new_ue)
@@ -55,9 +61,9 @@ class UserInput():
 			return render_template('index.html', **templateData)
 
 	def config(self):
-		if request.method == "POST" and self.configuration:
-			file = request.form["file"]
+		if request.method == "POST":
 			mme_ip = request.form["mme_ip"]
+			file = request.files['file'] if request.files.get('file') else None
 			if self.generate_data(file, mme_ip):
 				self.configuration = False
 		return redirect(url_for('index'))
