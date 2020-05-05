@@ -21,6 +21,8 @@
 #include "ue_emulator.h"
 
 
+#define CONTROLLER_PORT 1234
+
 
 #define INIT_MSG 0x01
 
@@ -277,7 +279,7 @@ int main(int argc, char const *argv[])
     }
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(1234);
+    serv_addr.sin_port = htons(CONTROLLER_PORT);
     serv_addr.sin_addr.s_addr = inet_addr(argv[1]);
     memset(&(serv_addr.sin_zero), '\0', 8);
 
