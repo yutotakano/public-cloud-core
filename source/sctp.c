@@ -118,7 +118,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     if (sock_sctp < 0)
     {
         perror("sctp socket error");
-    	return -1;
+    	return 1;
     }
 
     /***************************/
@@ -141,7 +141,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     if (bind(sock_sctp,(struct sockaddr *)&enb_addr, sizeof(struct sockaddr)) == -1)
     {
         perror("Bind eNB");
-        return -1;
+        return 1;
     }
 
     /***********/
@@ -156,7 +156,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     {
         perror("setsockopt in/out streams");
         close(sock_sctp);
-        return -1;
+        return 1;
     }
 
     /* OPT 2 */
@@ -168,7 +168,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) != 0) {
         perror("setsockopt events");
         close(sock_sctp);
-        return -1;
+        return 1;
     }
 
     /* OPT 3 */
@@ -178,7 +178,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     {
         perror("setsockopt no_delay");
         close(sock_sctp);
-        return -1;
+        return 1;
     }
 
     /***************************/
@@ -200,7 +200,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     {
         perror("sctp connect error");
         close(sock_sctp);
-        return -1;
+        return 1;
     }
     printOK("Connected to the SCTP Server (MME)\n");
 

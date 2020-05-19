@@ -5,6 +5,11 @@ from eNB import eNB
 from UserInput import UserInput
 from queue import Queue
 import Status
+import time
+
+from kubernetes import config, client
+#from kubernetes.client import Configuration
+#from kubernetes.client.api import core_v1_api
 
 # Codes definitions
 
@@ -34,6 +39,25 @@ class RANControler:
 		self.controller_queue = Queue(maxsize=0)
 		self.send_queue = Queue(maxsize=0)
 		self.user_queue = Queue(maxsize=0)
+		# Slave K8s manifest
+		self.pod_manifest = {
+            'apiVersion': 'v1',
+            'kind': 'Pod',
+            'metadata': {
+                'name': 'pod-name'
+            },
+            'spec': {
+                'containers': [{
+                    'image': 'j0lama/ran_slave:latest',
+                    'name': 'name',
+                    "args": [
+                        "/bin/sh",
+                        "-c",
+                        "./ran_emulator $(INTERNAL_CONTROLLER_SERVICE_HOST)"
+                    ]
+                }]
+            }
+        }
 
 	def start_user_input(self):
 		user_input = UserInput(self.start_controller)
@@ -41,13 +65,14 @@ class RANControler:
 
 		
 
-	def start_controller(self, controller_data, epc):
+	def start_controller(self, controller_data, docker_image, epc):
 		self.controller_data = controller_data
+		self.docker_image = docker_image
 		self.epc = epc
 		self.execute()
 
 	def execute(self):
-		# Create a TCP/IP socket
+		# Create a socket
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 		# Bind the socket to the port
@@ -58,11 +83,13 @@ class RANControler:
 		receive_t = threading.Thread(target=self.receive_thread)
 		send_t = threading.Thread(target=self.send_thread)
 		controller_t = threading.Thread(target=self.controller_thread)
+		kubernetes_t = threading.Thread(target=self.kubernetes_thread)
 
 		#Start threads
 		receive_t.start()
 		send_t.start()
 		controller_t.start()
+		kubernetes_t.start()
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
@@ -168,6 +195,25 @@ class RANControler:
 			data, address = self.sock.recvfrom(1024)
 			msg = self.generate_msg(data, address)
 			self.controller_queue.put(msg)
+
+	def kubernetes_thread(self):
+		# Wait 2 seconds to the rest of the threads
+		time.sleep(2)
+		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
+
+		# Init Kubernetes API connection
+		config.load_incluster_config()
+		v1 = client.CoreV1Api()
+		print('Staring Slave Pods...')
+		for i in range(tot_len):
+			# Configure POD Manifest for each slave
+			self.pod_manifest['metadata']['name'] = 'slave-' + str(i)
+			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
+			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
+			# Create a POD
+			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+		print('Slave pods started')
+		return
 
 
 		

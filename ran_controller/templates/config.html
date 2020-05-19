@@ -12,8 +12,11 @@
 				MME IP Address:
 				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter MME IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
+				Slave Docker Image:
+				<input type="text" id="docker_image" name="docker_image" value="j0lama/ran_slave:latest">
+				<p>
 				Configuration file (JSON):
-				<input type = "file" name = "file"/>
+				<input type = "file" name = "config" accept=".json"/>
 				<p>
 				<div style="text-align: center; margin: 0 auto; position:relative;">
 					<button type="submit">Submit</button>

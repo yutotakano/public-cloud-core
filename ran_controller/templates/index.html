@@ -6,7 +6,10 @@
 	<body>
 		<h1>RAN Controller</h1>
 		<button onClick="window.location.reload();">Refresh Page</button>
+		<h3>Core Network</h3>
 		<p>MME IP: {{ mme_ip }}</p>
+		<h3>Slave Docker Image</h3>
+		<p>Image: {{ docker_image }}</p>
 		<h3>UEs</h3>
 		{{ ue_table|safe }}
 		<h3>eNBs</h3>

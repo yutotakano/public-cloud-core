@@ -244,3 +244,8 @@ int get_ue_id(UE * ue)
 {
 	return ue->id;
 }
+
+int get_ue_size()
+{
+	return sizeof(UE);
+}

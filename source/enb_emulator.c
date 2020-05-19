@@ -5,6 +5,7 @@
 #include "log.h"
 #include "ue.h"
 #include "message.h"
+#include "map.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@ eNB * enb;
 const char * enb_ip = "192.168.56.101";
 pthread_t enb_thread;
 int sockfd;
+map_void_t map;
 
 void enb_copy_id_to_buffer(uint8_t * buffer)
 {
@@ -69,10 +71,14 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	if(buffer[0] == INIT_CODE)
 	{
 		msg = (init_msg *)(buffer+1);
-		/* Implement lists to store all connected UEs (TODO) */
-		/* Check the UE does not exist */
 		/* Create UE */
 		ue = init_UE((char *)msg->mcc, (char *)msg->mnc, (char *)msg->msin, msg->key, msg->op_key);
+		printUE(ue);
+
+		/* Add to map structure */
+		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
+		map_add(&map, (char *)msg->msin, (void *)ue, get_ue_size());
+
 
 		/* Attach UE 1 */
     	if(procedure_Attach_Default_EPS_Bearer(enb, ue))
@@ -94,6 +100,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		memcpy(res->spgw_ip, get_spgw_ip(ue), 4);
 		*response_len = sizeof(init_response_msg) + 1;
 	}
+	/* TODO: Implement othe kind of messages */
 	return 0;
 }
 
@@ -107,6 +114,9 @@ void * enb_emulator_thread(void * args)
 	socklen_t addrlen;
 
 	addrlen = sizeof(client);
+
+	/* Init UE map */
+	map_init(&map);
 
 	/* Wait for UE messages */
 	while(1)
@@ -153,7 +163,7 @@ int enb_emulator_start(enb_data * data)
 	/* Create eNB object */
 	enb = init_eNB(id_to_uint32(data->id), (char *)data->mcc, (char *)data->mnc, data->enb_ip);
 	if(enb == NULL)
-		return 1;
+		return -1;
 
 	/***************/
     /* Connect eNB */

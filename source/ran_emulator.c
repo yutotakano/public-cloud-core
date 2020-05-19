@@ -126,7 +126,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Getting eNB IP */
         memcpy(data.enb_ip, buffer + offset, 4);
         offset += 4;
-        /* TODO: Get eNB port */
+        /* Get eNB port */
         data.enb_port = buffer[offset] << 8 | buffer[offset+1];
         offset += 2;
 
@@ -204,7 +204,6 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         response[0] = buffer[0];
         enb_copy_id_to_buffer(response + 1);
         enb_copy_port_to_buffer(response + 5);
-        /* TODO: Add eNB port */
         *res_len = 7;
         return ret;
     }

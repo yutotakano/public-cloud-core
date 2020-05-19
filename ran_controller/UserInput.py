@@ -22,29 +22,47 @@ class UserInput():
 	def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, methods=None):
 		self.app.add_url_rule(endpoint, endpoint_name, handler, methods=methods)
 
-	def generate_data(self, file, epc_ip):
+	def getENB(self, enbs, num):
+		for enb in enbs:
+			if enb.get_num() == num:
+				return enb
+		return None
+
+
+	def generate_data(self, config, docker_image, epc_ip):
 		data = []
 		self.epc_ip = epc_ip
+		self.docker_image = docker_image
 		try:
 			epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
 		except:
 			return False
-		if file:
-			file_content = file.read()
+		if config:
+			file_content = config.read()
 			data = json.loads(file_content)
 		else:
 			return False
 
-		for ue in data['ues']:
-			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'])
-			self.controller_data['UEs'].add(new_ue)
+		temp_enbs = set()
+
 		for enb in data['enbs']:
 			new_enb = eNB(enb['enb_num'], enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
-			self.controller_data['eNBs'].add(new_enb)
+			temp_enbs.add(new_enb)
+
+		for ue in data['ues']:
+			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'])
+			#self.controller_data['UEs'].add(new_ue)
+			enb = self.getENB(temp_enbs, ue['enb'])
+			if enb:
+				# Add it to the final eNB list
+				self.controller_data['eNBs'].add(enb)
+				# Add UE to the final UE list
+				self.controller_data['UEs'].add(new_ue)
 
 		# TODO: Verify JSON
 
-		self.set_data_func(self.controller_data, epc)
+
+		self.set_data_func(self.controller_data, self.docker_image, epc)
 
 		return True
 	
@@ -56,41 +74,24 @@ class UserInput():
 			templateData = {
 				'ue_table' : self.ues_to_html(),
 				'enb_table' : self.enbs_to_html(),
-				'mme_ip' : self.epc_ip
+				'mme_ip' : self.epc_ip,
+				'docker_image' : self.docker_image
 			}
 			return render_template('index.html', **templateData)
 
 	def config(self):
 		if request.method == "POST":
 			mme_ip = request.form["mme_ip"]
-			file = request.files['file'] if request.files.get('file') else None
-			if self.generate_data(file, mme_ip):
+			config = request.files['config'] if request.files.get('config') else None
+			docker_image = request.form['docker_image']
+			if self.generate_data(config, docker_image, mme_ip):
 				self.configuration = False
-		return redirect(url_for('index'))
-
-
-	def ue_actions(self, ue_id, action):
-		print('ID: ' + str(ue_id))
-		print('ACTION: ' + action)
-
-		#Do something
-
-		return redirect(url_for('index'))
-
-	def enb_actions(self, enb_num, action):
-		print('ID: ' + str(enb_num))
-		print('ACTION: ' + action)
-
-		#Do something
-
 		return redirect(url_for('index'))
 
 	def run(self):
 		#Main routes
 		self.add_endpoint(endpoint='/', endpoint_name='index', handler=self.index)
 		self.add_endpoint(endpoint='/config/', endpoint_name='config', handler=self.config, methods=['POST'])
-		self.add_endpoint(endpoint='/ue/<int:ue_id>/<action>', endpoint_name='ue', handler=self.ue_actions)
-		self.add_endpoint(endpoint='/enb/<int:enb_num>/<action>', endpoint_name='enb', handler=self.enb_actions)
 		self.app.run(port=8080, host='0.0.0.0')
 
 	def ues_to_html(self):
@@ -105,7 +106,6 @@ class UserInput():
 			html += '<th>IP</th>'
 			html += '<th>eNB</th>'
 			html += '<th>Status</th>'
-			html += '<th>Action</th>'
 			html += '</tr>'
 
 			for ue in self.controller_data['UEs']:
@@ -118,7 +118,6 @@ class UserInput():
 				html += '<td>' + ue.get_address_text() + '</td>'
 				html += '<td>' + str(ue.get_enb_id()) + '</td>'
 				html += '<td>' + ue.get_html_status() + '</td>'
-				html += '<td><form action="/ue/' + ue.get_id() + '/generate"><input type="submit" value="Generate" /> </form></td>'
 				html += '</tr>'
 			html += '</table>'
 			html += '</div>'
@@ -134,7 +133,6 @@ class UserInput():
 			html += '<th>MNC</th>'
 			html += '<th>Status</th>'
 			html += '<th>IP</th>'
-			html += '<th>Action</th>'
 			html += '</tr>'
 			for enb in self.controller_data['eNBs']:
 				html += '<tr>'
@@ -144,7 +142,6 @@ class UserInput():
 				html += '<td>' + enb.get_mnc() + '</td>'
 				html += '<td>' + enb.get_html_status() + '</td>'
 				html += '<td>' + enb.get_address_text() + '</td>'
-				html += '<td><form action="/enb/' + str(enb.get_num()) + '/generate"><input type="submit" value="Generate" /> </form></td>'
 				html += '</tr>'
 			html += '</table>'
 			html += '</div>'

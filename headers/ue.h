@@ -41,6 +41,7 @@ int get_data_plane_socket(UE * ue);
 void set_tun_device(UE * ue, int tun);
 int get_tun_device(UE * ue);
 int get_ue_id(UE * ue);
+int get_ue_size();
 
 void printUE(UE * ue);
 
