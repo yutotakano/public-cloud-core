@@ -50,6 +50,10 @@ class RANControler:
                 'containers': [{
                     'image': 'j0lama/ran_slave:latest',
                     'name': 'name',
+                    'securityContext':
+                        'capabilities':
+                            'add': ["NET_ADMIN"],
+                    'securityContext': {'capabilities': {'add': ['NET_ADMIN']}},
                     "args": [
                         "/bin/sh",
                         "-c",
