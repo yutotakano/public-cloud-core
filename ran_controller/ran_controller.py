@@ -64,40 +64,40 @@ class RANControler:
         #    }
         #}
 
-        self.pod_manifest = {
-            'apiVersion': 'v1',
-            'kind': 'Pod',
-            'metadata': {
-                'name': 'pod-name'
-            },
-            'spec': {
-                'containers': [{
-                    'image': 'j0lama/ran_slave:latest',
-                    'name': 'name',
-                    'securityContext': {
-                        'capabilities': {
-                            'add': ['NET_ADMIN']},
-                            'privileged': False
-                        },
-                    'volumeMounts': [{
-                        'mountPath': '/dev/net/tun',
-                        'name': 'dev-tun'
-                    }],
-                    "args": [
-                        "/bin/sh",
-                        "-c",
-                        "./ran_emulator $(INTERNAL_CONTROLLER_SERVICE_HOST)"
-                    ],
-                }],
-                'volumes': [{
-                    'hostPath': {
-                        'path': '/dev/net/tun',
-                        'type': 'CharDevice'
-                    },
-                    'name': 'dev-tun'
-                }]
-            }
-        }
+		self.pod_manifest = {
+			'apiVersion': 'v1',
+			'kind': 'Pod',
+			'metadata': {
+				'name': 'pod-name'
+			},
+			'spec': {
+				'containers': [{
+					'image': 'j0lama/ran_slave:latest',
+					'name': 'name',
+					'securityContext': {
+						'capabilities': {
+							'add': ['NET_ADMIN']},
+							'privileged': False
+						},
+					'volumeMounts': [{
+						'mountPath': '/dev/net/tun',
+						'name': 'dev-tun'
+					}],
+					"args": [
+						"/bin/sh",
+						"-c",
+						"./ran_emulator $(INTERNAL_CONTROLLER_SERVICE_HOST)"
+					],
+				}],
+				'volumes': [{
+					'hostPath': {
+						'path': '/dev/net/tun',
+						'type': 'CharDevice'
+					},
+					'name': 'dev-tun'
+				}]
+			}
+		}
 
 	def start_user_input(self):
 		user_input = UserInput(self.start_controller)
