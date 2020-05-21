@@ -53,7 +53,8 @@ class RANControler:
                     'securityContext':
                         'capabilities':
                             'add': ["NET_ADMIN"],
-                    'securityContext': {'capabilities': {'add': ['NET_ADMIN']}},
+                    'securityContext': {'capabilities': {'add': ['NET_ADMIN']},
+                    					'privileged': True},
                     "args": [
                         "/bin/sh",
                         "-c",
