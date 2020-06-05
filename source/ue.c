@@ -29,7 +29,7 @@ struct _UE
 	char tun_name[TUN_NAME_LEN];
 	int data_plane_socket;
 	int tun_device;
-	uint8_t ue_ip[IP_LEN]
+	uint8_t ue_ip[IP_LEN];
 };
 
 void printUE(UE * ue)

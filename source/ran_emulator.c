@@ -283,10 +283,10 @@ int main(int argc, char const *argv[])
     if(argc == 3)
     {
         ue_address = inet_addr(argv[2]);
-        ue_ip[0] = (ue_address >> 24) & 0xFF;
-        ue_ip[1] = (ue_address >> 16) & 0xFF;
-        ue_ip[2] = (ue_address >> 8) & 0xFF;
-        ue_ip[3] = ue_address & 0xFF;
+        ue_ip[3] = (ue_address >> 24) & 0xFF;
+        ue_ip[2] = (ue_address >> 16) & 0xFF;
+        ue_ip[1] = (ue_address >> 8) & 0xFF;
+        ue_ip[0] = ue_address & 0xFF;
     }
 
     serv_addr.sin_family = AF_INET;
