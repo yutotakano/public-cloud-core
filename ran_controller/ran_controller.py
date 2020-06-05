@@ -40,7 +40,6 @@ class RANControler:
 		self.send_queue = Queue(maxsize=0)
 		self.user_queue = Queue(maxsize=0)
 		# Slave K8s manifest
-
 		self.pod_manifest = {
 			'apiVersion': 'v1',
 			'kind': 'Pod',
@@ -209,7 +208,7 @@ class RANControler:
 	def receive_thread(self):
 		print('Init receiver thread')
 		while 1:
-			data, address = self.sock.recvfrom(1024)
+			data, address = self.sock.recvfrom(16384)
 			msg = self.generate_msg(data, address)
 			self.controller_queue.put(msg)
 
