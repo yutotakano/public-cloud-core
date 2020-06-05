@@ -62,7 +62,7 @@ uint32_t id_to_uint32(uint8_t * id)
 	return ret;
 }
 
-int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response_len)
+int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response_len, uint8_t * ue_ip)
 {
 	init_msg * msg;
 	init_response_msg * res;
@@ -81,7 +81,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 
 
 		/* Attach UE 1 */
-    	if(procedure_Attach_Default_EPS_Bearer(enb, ue))
+    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, ue_ip))
     	{
     		printf("Attach and Setup default bearer error\n");
     		free_UE(ue);
@@ -137,7 +137,7 @@ void * enb_emulator_thread(void * args)
 			continue;
 		}
 		/* Analyze message and generate the response*/
-		if(analyze_ue_msg(buffer, n, response, &response_len))
+		if(analyze_ue_msg(buffer, n, response, &response_len, &client_addr.sin_addr.s_addr))
 		{
 			perror("S1AP error");
 			close(client);

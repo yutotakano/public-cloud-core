@@ -1683,7 +1683,7 @@ uint8_t * E_RAB_Setup_List_C_txt_SU_Res_to_buffer(E_RAB_Setup_List_C_txt_SU_Res 
 	return dump;
 }
 
-ProtocolIE * generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(eNB * enb, UE * ue)
+ProtocolIE * generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
 	protocolIE->id = ID_E_RAB_SETUP_LIST_C_TXT_SU_RES;
@@ -1692,7 +1692,7 @@ ProtocolIE * generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(eNB * enb, UE * u
 
 	E_RABSetupItemCtxtSURes * e_rabsetup = GC_malloc(sizeof(E_RABSetupItemCtxtSURes));
 	e_rabsetup->e_rab_id = 0x1f0a; /* e-RAB-ID: 5 */
-	memcpy(e_rabsetup->transport_layer_address, get_enb_ip(enb), IP_LEN);
+	memcpy(e_rabsetup->transport_layer_address, ue_ip, IP_LEN);
 	e_rabsetup->gtp_teid = get_random_gtp_teid(ue);
 	uint8_t * e_rabsetup_buf = E_RABSetupItemCtxtSURes_to_buffer(e_rabsetup);
 	GC_free(e_rabsetup);
@@ -1971,7 +1971,7 @@ s1ap_initiatingMessage * generate_S1AP_ue_capability_info_indication(eNB * enb, 
 	return s1ap_initiatingMsg;
 }
 
-Initial_Context_Setup_Response * generate_initial_context_setup_response(eNB * enb, UE * ue)
+Initial_Context_Setup_Response * generate_initial_context_setup_response(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	/* Replicate generate_Initial_UE_Message function  */
 
@@ -1989,7 +1989,7 @@ Initial_Context_Setup_Response * generate_initial_context_setup_response(eNB * e
 	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
 	/* Special case with criticality: ignore */
 	enb_ue_s1ap_id->criticality = CRITICALITY_IGNORE;
-	initial_context_setup_response = generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(enb, ue);
+	initial_context_setup_response = generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(enb, ue, ue_ip);
 
 	int mme_ue_s1ap_id_len;
 	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
@@ -2023,14 +2023,14 @@ Initial_Context_Setup_Response * generate_initial_context_setup_response(eNB * e
 	return ics_resp;
 }
 
-s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb, UE * ue)
+s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	s1ap_initiatingMessage * s1ap_initiatingMsg = GC_malloc(sizeof(s1ap_initiatingMessage));
 	s1ap_initiatingMsg->procedureCode = INITIAL_CONTEXT_SETUP;
 	s1ap_initiatingMsg->criticality = CRITICALITY_REJECT;
 
 	Initial_Context_Setup_Response * ics_resp;
-	ics_resp = generate_initial_context_setup_response(enb, ue);
+	ics_resp = generate_initial_context_setup_response(enb, ue, uint8_t * ue_ip);
 
 	uint16_t len;
 	uint8_t * initial_context_setup_response_buf = InitialContextSetupResponse_to_buffer(ics_resp, &len);
@@ -2045,7 +2045,7 @@ s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb,
 	return s1ap_initiatingMsg;
 }
 
-int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
+int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	s1ap_initiatingMessage * s1ap_attach_request;
 	s1ap_initiatingMessage * s1ap_auth_response;
@@ -2211,7 +2211,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	/**********************************/
 	/* Initial Context Setup Response */
 	/**********************************/
-	init_context_setup_response = generate_S1AP_initial_context_setup_response(enb, ue);
+	init_context_setup_response = generate_S1AP_initial_context_setup_response(enb, ue, ue_ip);
 	init_context_setup_response_buffer = s1ap_initiatingMessage_to_buffer(init_context_setup_response, &len);
 	/* Special case with successful outcome flag */
 	init_context_setup_response_buffer[0] = SUCCESSFUL_OUTCOME;
