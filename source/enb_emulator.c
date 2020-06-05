@@ -137,7 +137,7 @@ void * enb_emulator_thread(void * args)
 			continue;
 		}
 		/* Analyze message and generate the response*/
-		if(analyze_ue_msg(buffer, n, response, &response_len, &client_addr.sin_addr.s_addr))
+		if(analyze_ue_msg(buffer, n, response, &response_len, (uint8_t *) &client_addr.sin_addr.s_addr))
 		{
 			perror("S1AP error");
 			close(client);
