@@ -50,6 +50,10 @@ class RANControler:
 				'containers': [{
 					'image': 'j0lama/ran_slave:latest',
 					'name': 'name',
+					'env': [{'name': 'NODE_IP',
+								'valueFrom': {'fieldRef': {'fieldPath': 'status.hostIP'}}},
+							{'name': 'NODE_NAME',
+								'valueFrom': {'fieldRef': {'fieldPath': 'spec.nodeName'}}}],
 					'securityContext': {
 						'capabilities': {
 							'add': ['NET_ADMIN']},
@@ -62,7 +66,7 @@ class RANControler:
 					"args": [
 						"/bin/sh",
 						"-c",
-						"./ran_emulator $(INTERNAL_CONTROLLER_SERVICE_HOST)"
+						"python3 powder_hack.py $INTERNAL_CONTROLLER_SERVICE_HOST $NODE_NAME"
 					],
 				}],
 				'volumes': [{
