@@ -16,6 +16,7 @@ typedef struct _init_msg
 	uint8_t msin[11];
 	uint8_t key[16];
 	uint8_t op_key[16];
+	uint8_t ue_ip[4];
 }init_msg;
 
 

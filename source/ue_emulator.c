@@ -74,6 +74,7 @@ int ue_emulator_start(ue_data * data)
 	printf("eNB IP: %d.%d.%d.%d\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3]);
 	printf("eNB port: %d\n", data->enb_port);
 	printf("Local IP: %d.%d.%d.%d\n", data->local_ip[0], data->local_ip[1], data->local_ip[2], data->local_ip[3]);
+	printf("UE IP: %d.%d.%d.%d\n", data->ue_ip[0], data->ue_ip[1], data->ue_ip[2], data->ue_ip[3]);
 
 	/* Save UE information */
 	memcpy(&ue, data, sizeof(ue_data));
@@ -114,6 +115,8 @@ int ue_emulator_start(ue_data * data)
 	memcpy(msg->key, ue.key, 16);
 	/* OpKey */
 	memcpy(msg->op_key, ue.op_key, 16);
+	/* UE IP */
+	memcpy(msg->ue_ip, ue.ue_ip, 4);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(init_msg) + 1);

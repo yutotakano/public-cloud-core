@@ -29,6 +29,7 @@ struct _UE
 	char tun_name[TUN_NAME_LEN];
 	int data_plane_socket;
 	int tun_device;
+	uint8_t ue_ip[IP_LEN]
 };
 
 void printUE(UE * ue)
@@ -68,7 +69,7 @@ void generate_tun_name(UE * ue, char * msin)
 	sprintf(ue->tun_name, "tun%d", num);
 }
 
-UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key)
+UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key, uint8_t * ue_ip)
 {
 	UE * ue;
 	ue = (UE *) GC_malloc(sizeof(UE));
@@ -83,6 +84,8 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
 	ue->mme_s1ap_id_len = -1;
 	//ue->random_gtp_teid = 0xdde06fca;
+
+	memcpy(ue->ue_ip, ue_ip, IP_LEN);
 
 	/* GTP Teid and UE_S1AP_ID are random numbers dedicated to the UE connection */
 	/* Because of that can be generated randomly */
@@ -248,4 +251,9 @@ int get_ue_id(UE * ue)
 int get_ue_size()
 {
 	return sizeof(UE);
+}
+
+uint8_t * get_ue_ip(UE * ue)
+{
+	return ue->ue_ip;
 }

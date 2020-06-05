@@ -31,6 +31,7 @@
 #define CODE_ENB_BEHAVIOUR 0x01
 
 uint8_t local_ip[4];
+uint8_t ue_ip[4];
 
 /*
     Bit 0 (Status)
@@ -129,6 +130,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Get eNB port */
         data.enb_port = buffer[offset] << 8 | buffer[offset+1];
         offset += 2;
+        memcpy(data.ue_ip, ue_ip, 4);
 
 
         /* Error control */
@@ -270,11 +272,21 @@ int main(int argc, char const *argv[])
 {
     int sockfd;
     struct sockaddr_in serv_addr;
+    uint32_t ue_address;
 
-    if(argc != 2)
+    if(argc < 2)
     {
-        printf("USE: ./ran_simulator <RAN_CONTROLLER_IP>\n");
+        printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP (Optional)>\n");
         exit(1);
+    }
+
+    if(argc == 3)
+    {
+        ue_address = inet_addr(argv[2]);
+        ue_ip[0] = (ue_address >> 24) & 0xFF;
+        ue_ip[1] = (ue_address >> 16) & 0xFF;
+        ue_ip[2] = (ue_address >> 8) & 0xFF;
+        ue_ip[3] = ue_address & 0xFF;
     }
 
     serv_addr.sin_family = AF_INET;

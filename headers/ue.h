@@ -11,7 +11,7 @@
 
 typedef struct _UE UE;
 
-UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key);
+UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key, uint8_t * ue_ip);
 void free_UE(UE * ue);
 uint8_t * get_ue_plmn(UE * ue);
 uint8_t * get_ue_msin(UE * ue);
@@ -42,6 +42,7 @@ void set_tun_device(UE * ue, int tun);
 int get_tun_device(UE * ue);
 int get_ue_id(UE * ue);
 int get_ue_size();
+uint8_t * get_ue_ip(UE * ue);
 
 void printUE(UE * ue);
 

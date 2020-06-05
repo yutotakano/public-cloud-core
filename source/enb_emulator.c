@@ -72,7 +72,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	{
 		msg = (init_msg *)(buffer+1);
 		/* Create UE */
-		ue = init_UE((char *)msg->mcc, (char *)msg->mnc, (char *)msg->msin, msg->key, msg->op_key);
+		ue = init_UE((char *)msg->mcc, (char *)msg->mnc, (char *)msg->msin, msg->key, msg->op_key, msg->ue_ip);
 		printUE(ue);
 
 		/* Add to map structure */
@@ -81,7 +81,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 
 
 		/* Attach UE 1 */
-    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, ue_ip))
+    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
     	{
     		printf("Attach and Setup default bearer error\n");
     		free_UE(ue);
