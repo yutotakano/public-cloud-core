@@ -113,7 +113,7 @@ void * enb_emulator_thread(void * args)
 	uint8_t response[1024];
 	socklen_t addrlen;
 
-	addrlen = sizeof(client);
+	addrlen = sizeof(client_addr);
 
 	/* Init UE map */
 	map_init(&map);
