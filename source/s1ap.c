@@ -2030,7 +2030,7 @@ s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb,
 	s1ap_initiatingMsg->criticality = CRITICALITY_REJECT;
 
 	Initial_Context_Setup_Response * ics_resp;
-	ics_resp = generate_initial_context_setup_response(enb, ue, uint8_t * ue_ip);
+	ics_resp = generate_initial_context_setup_response(enb, ue, ue_ip);
 
 	uint16_t len;
 	uint8_t * initial_context_setup_response_buf = InitialContextSetupResponse_to_buffer(ics_resp, &len);
