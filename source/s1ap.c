@@ -1693,7 +1693,7 @@ ProtocolIE * generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(eNB * enb, UE * u
 	E_RABSetupItemCtxtSURes * e_rabsetup = GC_malloc(sizeof(E_RABSetupItemCtxtSURes));
 	e_rabsetup->e_rab_id = 0x1f0a; /* e-RAB-ID: 5 */
 	memcpy(e_rabsetup->transport_layer_address, ue_ip, IP_LEN);
-	e_rabsetup->gtp_teid = get_random_gtp_teid(ue);
+	e_rabsetup->gtp_teid = htonl(get_gtp_teid(ue));
 	uint8_t * e_rabsetup_buf = E_RABSetupItemCtxtSURes_to_buffer(e_rabsetup);
 	GC_free(e_rabsetup);
 

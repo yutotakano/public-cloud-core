@@ -67,9 +67,9 @@ uint32_t analyze_gtp_header(uint8_t * buf, int * len)
     if((h->flags & 0xF0) == GTP_FLAGS && h->message_type == GTP_MESSAGE_TYPE)
     {
         *len = ntohs(h->len);
-        return h->teid;
+        return ntohl(h->teid);
     }
-    return -1;
+    return 0;
 }
 
 void generate_gtp_header(uint8_t * header, uint32_t teid, int len)
@@ -152,7 +152,7 @@ void * downlink_thread(void * args)
             }
         }
         /* Detect if buffer contains a GTP packet */
-        if(gtp_teid != analyze_gtp_header(buffer, &packet_len))
+        if(gtp_teid == analyze_gtp_header(buffer, &packet_len))
         {
             /* Write the packet in the TUN device associated with the packet TEID */
             tun_write(tunfd, buffer + 8, packet_len);

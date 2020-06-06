@@ -22,7 +22,6 @@ struct _UE
 	uint8_t op_key[KEY_LENGTH];
 	uint8_t spgw_ip[IP_LEN];
 	uint32_t gtp_teid;
-	uint32_t random_gtp_teid;
 	char apn_name[32];
 	uint8_t pdn_ip[IP_LEN];
 	uint8_t guti[GUTI_LEN];
@@ -79,19 +78,16 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	generate_msin(ue->msin, msin);
 	generate_net_capabilities(ue->net_capabilities, UE_DEFAULT_CAPABILITIES);
 	generate_tun_name(ue, msin);
-	//ue->ue_s1ap_id = (0x00FFFFFF & rand()) | 0x80000000;
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
 	ue->mme_s1ap_id_len = -1;
-	//ue->random_gtp_teid = 0xdde06fca;
 
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
 
-	/* GTP Teid and UE_S1AP_ID are random numbers dedicated to the UE connection */
+	/* UE_S1AP_ID is a random number dedicated to the UE connection */
 	/* Because of that can be generated randomly */
 	/* To avoid random number generation collision, these numbers are extracted from the msin value (less significant 24 bits)*/
 	ue->ue_s1ap_id = 0x80000000 | (ue->msin[2] << 16) | (ue->msin[3] << 8) | ue->msin[4];
-	ue->random_gtp_teid =  (ue->msin[1] << 24) | (ue->msin[2] << 16) | (ue->msin[3] << 8) | ue->msin[4];
 	return ue;
 }
 
@@ -211,11 +207,6 @@ void set_guti(UE * ue, uint8_t * guti)
 uint8_t * get_guti(UE * ue)
 {
 	return ue->guti;
-}
-
-uint32_t get_random_gtp_teid(UE * ue)
-{
-	return ue->random_gtp_teid;
 }
 
 char * get_tun_name(UE * ue)
