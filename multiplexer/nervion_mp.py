@@ -5,9 +5,10 @@ import signal
 
 class NervionMultiplexer:
 		
-	def __init__(self, ip):
+	def __init__(self, multi, ip):
 		self.routes = {}
 		self.spgw_ip = ip
+		self.multi = multi
 
 	def processMessage(self, payload, address):
 		teid = (ord(payload[4]) << 24) | (ord(payload[5]) << 16) | (ord(payload[6]) << 8) | ord(payload[7])
@@ -19,7 +20,7 @@ class NervionMultiplexer:
 
 	def downlink(self):
 		print('Initiating Downlink thread...')
-		internal_address = '0.0.0.0'
+		internal_address = self.multi
 		internal_port = 2152
 		internal = (internal_address, internal_port)
 		self.internal_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -33,7 +34,7 @@ class NervionMultiplexer:
 
 	def uplink(self):
 		print('Initiating Uplink thread...')
-		server_address = '0.0.0.0'
+		server_address = self.multi
 		server_port = 2154
 		server = (server_address, server_port)
 		self.public_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -53,8 +54,8 @@ class NervionMultiplexer:
 		uplink_t.start()
 
 if __name__ == '__main__':
-	if len(sys.argv) != 2:
-		print('USAGE: python3 nervion_mp.py <SPGW_IP>')
+	if len(sys.argv) != 3:
+		print('USAGE: python3 nervion_mp.py <MULTIPLEXER_IP> <SPGW_IP>')
 		exit(1)
-	nm = NervionMultiplexer(sys.argv[1])
+	nm = NervionMultiplexer(sys.argv[1], sys.argv[2])
 	nm.start()
