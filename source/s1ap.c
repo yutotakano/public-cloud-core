@@ -1300,7 +1300,7 @@ int analyze_Authentication_Request(uint8_t * buffer, Auth_Challenge * auth_chall
 	auth_req.value = (uint8_t *) GC_malloc(auth_req.length);
 	memcpy((void *) auth_req.value, (void *) buffer+4, auth_req.length);
 
-	if(auth_req.status != 0 || auth_req.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT || auth_req.criticality != CRITICALITY_REJECT)
+	if(auth_req.status != 0 || auth_req.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT)
 	{
 		printError("No Downlink NAS Transport message (Authentication Request)\n");
 		return 1;
@@ -1322,7 +1322,7 @@ int analyze_Security_Mode_Command(uint8_t * buffer, UE * ue)
 	smc.value = (uint8_t *) GC_malloc(smc.length);
 	memcpy((void *) smc.value, (void *) buffer+4, smc.length);
 
-	if(smc.status != 0 || smc.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT || smc.criticality != CRITICALITY_REJECT)
+	if(smc.status != 0 || smc.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT)
 	{
 		printError("No Downlink NAS Transport message (Security Mode Command)\n");
 		return 1;
