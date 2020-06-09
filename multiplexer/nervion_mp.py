@@ -7,7 +7,7 @@ class NervionMultiplexer:
 		
 	def __init__(self, ip):
 		self.routes = {}
-		self.ip = ip
+		self.spgw_ip = ip
 
 	def processMessage(self, payload, address):
 		teid = (ord(payload[4]) << 24) | (ord(payload[5]) << 16) | (ord(payload[6]) << 8) | ord(payload[7])
@@ -19,22 +19,21 @@ class NervionMultiplexer:
 
 	def downlink(self):
 		print('Initiating Downlink thread...')
-		internal_address = self.ip
+		internal_address = '0.0.0.0'
 		internal_port = 2152
 		internal = (internal_address, internal_port)
 		self.internal_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.internal_sock.bind(internal)
 
 		while True:
-			payload, epc_address = self.internal_sock.recv(65536)
+			payload, epc_address = self.internal_sock.recvfrom(65536)
 			ue_address = self.getAddress(payload)
-			print('Downlink: ' + str(ue_address))
 			if ue_address != None:
 				self.public_sock.sendto(payload, ue_address)
 
 	def uplink(self):
 		print('Initiating Uplink thread...')
-		server_address = self.ip
+		server_address = '0.0.0.0'
 		server_port = 2154
 		server = (server_address, server_port)
 		self.public_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -43,8 +42,7 @@ class NervionMultiplexer:
 		while True:
 			payload, ue_address = self.public_sock.recvfrom(65536)
 			self.processMessage(payload, ue_address)
-			print('Uplink: ' + str(self.routes))
-			self.internal_sock.sendto(payload, (self.ip, 2152))
+			self.internal_sock.sendto(payload, (self.spgw_ip, 2152))
 
 
 	def start(self):
@@ -56,7 +54,7 @@ class NervionMultiplexer:
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
-		print('USAGE: python3 nervion_mp.py <PUBLIC_IP>')
+		print('USAGE: python3 nervion_mp.py <SPGW_IP>')
 		exit(1)
 	nm = NervionMultiplexer(sys.argv[1])
 	nm.start()
