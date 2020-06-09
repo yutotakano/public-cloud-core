@@ -58,7 +58,7 @@ class UE:
 	def get_enb_id(self):
 		return self.enb_id
 
-	def serialize(self, code, enb):
+	def serialize(self, code, enb, multiplexer, epc):
 		data = bytearray()
 		# Add Code
 		data.append(code)
@@ -94,6 +94,20 @@ class UE:
 		port = enb.get_ue_port()
 		data.append((port >> 8) & 0xFF)
 		data.append(port & 0xFF)
+
+		# Add Multiplexer IP
+		data.append((multiplexer >> 24) & 0xFF)
+		data.append((multiplexer >> 16) & 0xFF)
+		data.append((multiplexer >> 8) & 0xFF)
+		data.append(multiplexer & 0xFF)
+
+		# Add Multiplexer/EPC port
+		if epc == multiplexer:
+			data.append((2152 >> 8) & 0xFF)
+			data.append(2152 & 0xFF)
+		else:
+			data.append((2154 >> 8) & 0xFF)
+			data.append(2154 & 0xFF)
 
 		return data
 

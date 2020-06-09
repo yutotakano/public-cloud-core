@@ -161,7 +161,7 @@ void * downlink_thread(void * args)
     return NULL;
 }
 
-int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid)
+int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid, uint16_t spgw_port)
 {
     struct sockaddr_in ue_addr;
 
@@ -175,7 +175,7 @@ int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t 
     /* Configure SPGW address */
     memset(&spgw_addr, 0, sizeof(spgw_addr));
     spgw_addr.sin_family = AF_INET; 
-    spgw_addr.sin_port = htons(S1_U_PORT);
+    spgw_addr.sin_port = htons(spgw_port);
     memcpy((void*) &spgw_addr.sin_addr.s_addr, _spgw_ip, sizeof(struct in_addr));
 
     /* Create TUN device */
@@ -196,7 +196,7 @@ int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t 
 
     /* Binding */
     ue_addr.sin_family = AF_INET;
-    ue_addr.sin_port = htons(S1_U_PORT);
+    ue_addr.sin_port = htons(spgw_port);
     memcpy((void *)&ue_addr.sin_addr.s_addr, local_ip, sizeof(struct sockaddr));
     bzero(&(ue_addr.sin_zero),8);
     if (bind(sockfd,(struct sockaddr *)&ue_addr, sizeof(struct sockaddr)) == -1)

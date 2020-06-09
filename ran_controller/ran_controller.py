@@ -85,10 +85,11 @@ class RANControler:
 
 		
 
-	def start_controller(self, controller_data, docker_image, epc):
+	def start_controller(self, controller_data, docker_image, epc, multiplexer):
 		self.controller_data = controller_data
 		self.docker_image = docker_image
 		self.epc = epc
+		self.multiplexer = multiplexer
 		self.execute()
 
 	def execute(self):
@@ -144,7 +145,7 @@ class RANControler:
 						break
 					else:
 						# This slave is a UE
-						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb)
+						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						print(buf)
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
 						break

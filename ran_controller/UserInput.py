@@ -29,12 +29,14 @@ class UserInput():
 		return None
 
 
-	def generate_data(self, config, docker_image, epc_ip):
+	def generate_data(self, config, docker_image, epc_ip, multi_ip):
 		data = []
 		self.epc_ip = epc_ip
+		self.multi_ip = multi_ip
 		self.docker_image = docker_image
 		try:
 			epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
+			multiplexer = struct.unpack("!I", socket.inet_aton(multi_ip))[0]
 		except:
 			return False
 		if config:
@@ -62,7 +64,7 @@ class UserInput():
 		# TODO: Verify JSON
 
 
-		self.set_data_func(self.controller_data, self.docker_image, epc)
+		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer)
 
 		return True
 	
@@ -75,6 +77,7 @@ class UserInput():
 				'ue_table' : self.ues_to_html(),
 				'enb_table' : self.enbs_to_html(),
 				'mme_ip' : self.epc_ip,
+				'multi_ip': self.multi_ip,
 				'docker_image' : self.docker_image
 			}
 			return render_template('index.html', **templateData)
@@ -82,9 +85,10 @@ class UserInput():
 	def config(self):
 		if request.method == "POST":
 			mme_ip = request.form["mme_ip"]
+			multi_ip = request.form["multi_ip"]
 			config = request.files['config'] if request.files.get('config') else None
 			docker_image = request.form['docker_image']
-			if self.generate_data(config, docker_image, mme_ip):
+			if self.generate_data(config, docker_image, mme_ip, multi_ip):
 				self.configuration = False
 		return redirect(url_for('index'))
 

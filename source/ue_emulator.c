@@ -60,6 +60,7 @@ int ue_emulator_start(ue_data * data)
 	init_msg * msg;
 	init_response_msg * res;
 	int n;
+	int ret;
 
     /* Print UE data */
 	printf("ID: %d\n", (data->id[0] << 24) | (data->id[1] << 16) | (data->id[2] << 8) | data->id[3] );
@@ -75,6 +76,7 @@ int ue_emulator_start(ue_data * data)
 	printf("eNB port: %d\n", data->enb_port);
 	printf("Local IP: %d.%d.%d.%d\n", data->local_ip[0], data->local_ip[1], data->local_ip[2], data->local_ip[3]);
 	printf("UE IP: %d.%d.%d.%d\n", data->ue_ip[0], data->ue_ip[1], data->ue_ip[2], data->ue_ip[3]);
+	printf("Data Plane Port: %d\n", data->spgw_port);
 
 	/* Save UE information */
 	memcpy(&ue, data, sizeof(ue_data));
@@ -153,7 +155,11 @@ int ue_emulator_start(ue_data * data)
 	printf("SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
 
 	/* Create data-plane */
-	if(start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid) == 1)
+	if(data->spgw_port == 2152)
+		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
+	else
+		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, ue.ue_ip, teid, data->spgw_port);
+	if(ret == 1)
 	{
 		printError("start_data_plane error\n");
 		return 1;

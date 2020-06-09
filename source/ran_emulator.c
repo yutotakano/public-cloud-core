@@ -80,7 +80,8 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
     /* Run as UE */
     if(buffer[0] & CODE_UE_BEHAVIOUR)
     {
-        uint16_t command_len = 0; 
+        uint16_t command_len = 0;
+        uint8_t temp_ip[4];
         ue_data data;
         bzero(&data, sizeof(data));
 
@@ -130,7 +131,19 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Get eNB port */
         data.enb_port = buffer[offset] << 8 | buffer[offset+1];
         offset += 2;
-        memcpy(data.ue_ip, ue_ip, 4);
+        /* Get Multiplexer/EPC IP */
+        memcpy(temp_ip, buffer + offset, 4);
+        offset += 4;
+        /* Get SPGW Port */
+        data.spgw_port = buffer[offset] << 8 | buffer[offset+1];
+        offset += 2;
+
+        /* No Multiplexer */
+        if(data.spgw_port == 2152)
+            memcpy(data.ue_ip, ue_ip, 4);
+        /* Multiplexer deployed */
+        else
+            memcpy(data.ue_ip, temp_ip, 4);
 
 
         /* Error control */
@@ -302,6 +315,7 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
+    //memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
     bzero(local_ip, 4);
 
     if ( (sockfd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
