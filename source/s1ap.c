@@ -82,6 +82,7 @@
 #define DOWNLINK_NAS_TRANSPORT 0x0b
 #define AUTHENTICATION_REQUEST 0x52
 #define SECURITY_MODE_COMMAND 0x5d
+#define EMM_INFORMATION 0x61
 #define ID_MME_UE_S1AP_IE 0x0000
 #define ID_ENB_UE_S1AP_IE_UE 0x0008
 #define RES_LENGTH 8
@@ -1121,7 +1122,7 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				printf("\t\tPlain NAS Message\n\t\tEPS mobility management message\n");
 				offset_nas_pdu++;
 			}
-			else if(value[offset_nas_pdu] == 0x37)
+			else if(value[offset_nas_pdu] == 0x37 || value[offset_nas_pdu] == 0x27)
 			{
 				printf("\t\tMessage authentication code: 0x%.2x%.2x%.2x%.2x\n", value[offset_nas_pdu+1], value[offset_nas_pdu+2], value[offset_nas_pdu+3], value[offset_nas_pdu+4]);
 				printf("\t\tSequence Number: %.2x\n", value[offset_nas_pdu+5]);
@@ -1147,6 +1148,29 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				set_nas_session_security_algorithms(ue, value[offset_nas_pdu + 1]);
 				flag = 1;
 				offset_nas_pdu += 2;
+			}
+			else if(value[offset_nas_pdu] == EMM_INFORMATION)
+			{
+				printf("\t\tEMM Information message\n");
+				flag = -1;
+				ret = 2; /* Special case */
+				offset_nas_pdu++;
+				/* Detect network name: full name */
+				if(value[offset_nas_pdu] == 0x43)
+				{
+					printf("\t\tNetwork Name - Full name for network\n");
+					offset_nas_pdu += 1;
+					printf("\t\tLength: %d\n", value[offset_nas_pdu]);
+					offset_nas_pdu += value[offset_nas_pdu];
+				}
+				/* Detect network name: short name */
+				if(value[offset_nas_pdu] == 0x45)
+				{
+					printf("\t\tNetwork Name - Short Name\n");
+					offset_nas_pdu += 1;
+					printf("\t\tLength: %d\n", value[offset_nas_pdu]);
+					offset_nas_pdu += value[offset_nas_pdu];
+				}
 			}
 			else
 			{
@@ -2088,25 +2112,35 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	sctp_sendmsg(socket, (void *) initiatingMsg_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(initiatingMsg_buffer);
 
-	/* Receiving MME answer */
-	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-	if(recv_len < 0)
+	while(1)
 	{
-		printf("%s\n", strerror(errno));
-		printError("SCTP (%s)\n", strerror(errno));
-		return 1;
-	}
+		/* Receiving MME answer */
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			printf("%s\n", strerror(errno));
+			printError("SCTP (%s)\n", strerror(errno));
+			return 1;
+		}
 
-	/* Analyze buffer and get AUTHENTICATION REQUEST*/
-	err = analyze_Authentication_Request(buffer, &auth_challenge, ue);
-	if(err == 1)
-    {
-    	printError("Authentication Request error\n");
-    }
-    else
-    {
-    	printOK("Authentication Request\n");
-    }
+		/* Analyze buffer and get AUTHENTICATION REQUEST*/
+		err = analyze_Authentication_Request(buffer, &auth_challenge, ue);
+		if(err == 1)
+		{
+			printError("Authentication Request error\n");
+			return 1;
+		}
+		else if(err == 2)
+		{
+			/* Special case srsEPC: EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+			printInfo("Special Case: EMM information message received\n");
+		}
+		else
+		{
+			printOK("Authentication Request\n");
+			break;
+		}
+	}
 
 	/* Calculate Challenge */
 	f2345(get_ue_key(ue), auth_challenge.RAND, auth_challenge.RES, auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, get_ue_op_key(ue));
@@ -2149,6 +2183,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	if(err == 1)
     {
     	printError("Security Mode Command\n");
+    	return 1;
     }
     else
     {
@@ -2188,6 +2223,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	if(err == 1)
     {
     	printError("Initial Context Setup Request\n");
+    	return 1;
     }
     else
     {
