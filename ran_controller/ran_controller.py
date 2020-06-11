@@ -141,6 +141,7 @@ class RANControler:
 						# This slave has to be a eNB
 						buf = assoc_enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
 						print(buf)
+						assoc_enb.set_pending()
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
 						break
 					else:
@@ -169,6 +170,12 @@ class RANControler:
 			# Save UE address
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
+
+		elif msg['type'] == 'ue_error':
+			# UE slave answers with OK message
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+			ue.set_stopped()
 
 
 	def generate_msg(self, data, address):

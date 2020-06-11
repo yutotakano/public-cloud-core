@@ -128,6 +128,9 @@ class UE:
 	def set_pending(self):
 		self.status.move_to_pending()
 
+	def set_stopped(self):
+		self.status.move_to_stopped()
+
 
 	def __eq__(self, other):
 		return self.id != other.id and self.msin != other.msin
