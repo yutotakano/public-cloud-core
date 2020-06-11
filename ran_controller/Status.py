@@ -2,6 +2,7 @@ STOPPED = 0
 CONNECTED = 1
 IDLE = 2
 TRAFFIC = 3
+PENDING = 4
 
 class Status():
 
@@ -20,6 +21,9 @@ class Status():
 	def move_to_traffic(self):
 		self.status = TRAFFIC
 
+	def move_to_pending(self):
+		self.status = PENDING
+
 	def get_status(self):
 		return self.status
 
@@ -32,6 +36,8 @@ class Status():
 			return '<font color="yellow">Idle</font>'
 		elif self.status == TRAFFIC:
 			return '<font color="blue">Connected/Traffic</font>'
+		elif self.status == PENDING:
+			return '<font color="black">Pending</font>'
 		else:
 			return '<font color="gray">ERROR</font>'
 		

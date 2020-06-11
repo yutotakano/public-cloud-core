@@ -125,6 +125,9 @@ class UE:
 	def set_idle(self):
 		self.status.move_to_idle()
 
+	def set_pending(self):
+		self.status.move_to_pending()
+
 
 	def __eq__(self, other):
 		return self.id != other.id and self.msin != other.msin

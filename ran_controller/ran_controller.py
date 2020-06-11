@@ -147,6 +147,7 @@ class RANControler:
 						# This slave is a UE
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						print(buf)
+						ue.set_pending()
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
 						break
 
