@@ -144,9 +144,6 @@ class RANControler:
 						break
 					else:
 						# This slave is a UE
-						# Special race condition: eNB has been assigned but it does not already answer
-						while(assoc_enb.locked() == True):
-							time.sleep(1)
 						# Verify that this UE has not been asigned to any other slave
 						ue.acquire()
 						if ue.get_flag() == True:
@@ -155,6 +152,9 @@ class RANControler:
 						else:
 							ue.set_flag(True)
 						ue.release()
+						# Special race condition: eNB has been assigned but it does not already answer
+						while(assoc_enb.locked() == True):
+							time.sleep(1)
 						ue.set_pending()
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						print(buf)
