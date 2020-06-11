@@ -146,6 +146,10 @@ class RANControler:
 						break
 					else:
 						# This slave is a UE
+						# Special race condition: eNB has been assigned but it does not already answer
+						while(1):
+							if assoc_enb.get_status() != Status.PENDING:
+								break
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						print(buf)
 						ue.set_pending()
@@ -170,12 +174,6 @@ class RANControler:
 			# Save UE address
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
-
-		elif msg['type'] == 'ue_error':
-			# UE slave answers with OK message
-			# Get UE num from data
-			ue = self.get_ue_by_buffer(msg['data'])
-			ue.set_stopped()
 
 
 	def generate_msg(self, data, address):
