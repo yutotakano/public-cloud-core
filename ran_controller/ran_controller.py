@@ -36,7 +36,6 @@ class RANControler:
 
 	def __init__(self):
 		# Init communication queues
-		self.controller_queue = Queue(maxsize=0)
 		self.send_queue = Queue(maxsize=0)
 		self.user_queue = Queue(maxsize=0)
 		# Slave K8s manifest
@@ -103,13 +102,11 @@ class RANControler:
 		#Create 3 threads
 		receive_t = threading.Thread(target=self.receive_thread)
 		send_t = threading.Thread(target=self.send_thread)
-		controller_t = threading.Thread(target=self.controller_thread)
 		kubernetes_t = threading.Thread(target=self.kubernetes_thread)
 
 		#Start threads
 		receive_t.start()
 		send_t.start()
-		controller_t.start()
 		kubernetes_t.start()
 
 	def get_enb_by_buffer(self, data):
@@ -142,14 +139,14 @@ class RANControler:
 						buf = assoc_enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
 						print(buf)
 						assoc_enb.set_pending()
+						assoc_enb.acquire()
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
 						break
 					else:
 						# This slave is a UE
 						# Special race condition: eNB has been assigned but it does not already answer
-						while(1):
-							if assoc_enb.get_status() != Status.PENDING:
-								break
+						while(assoc_enb.locked() == True):
+							time.sleep(1)
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						print(buf)
 						ue.set_pending()
@@ -165,6 +162,7 @@ class RANControler:
 			# Save eNB address
 			enb.set_addr((msg['ip'], msg['port']))
 			enb.set_connected() # Running/Disconnected
+			enb.release()
 
 		elif msg['type'] == 'ue_run':
 			# UE slave answers with OK message
@@ -203,13 +201,6 @@ class RANControler:
 		return msg
 
 
-	def controller_thread(self):
-		print('Init controller thread')
-		while 1:
-			msg = self.controller_queue.get()
-			self.analyze_msg(msg)
-
-
 	def send_thread(self):
 		print('Init sender thread')
 		while 1:
@@ -221,7 +212,8 @@ class RANControler:
 		while 1:
 			data, address = self.sock.recvfrom(16384)
 			msg = self.generate_msg(data, address)
-			self.controller_queue.put(msg)
+			worker = threading.Thread(target=self.analyze_msg, args=(msg,))
+			worker.start()
 
 	def kubernetes_thread(self):
 		# Wait 2 seconds to the rest of the threads
