@@ -2112,6 +2112,8 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	sctp_sendmsg(socket, (void *) initiatingMsg_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(initiatingMsg_buffer);
 
+	printInfo("\n\n\nStarting Attach and Default EPS Bearer procedure...\n");
+
 	while(1)
 	{
 		/* Receiving MME answer */
