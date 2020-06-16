@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 	<head>
-		<title>RAN Controller</title>
+		<title>Nervion Controller</title>
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 	</head>
 	<body>
-		<h1>RAN Controller</h1>
+		<h1>Nervion Controller</h1>
 		<div style="width:50%; margin: 0 auto; border:groove;">
 			<h2>Configuration panel</h2>
 			<div style="margin: 0 auto; position:relative; width:50%;">
 				<form method="POST" action="/config/" enctype=multipart/form-data>
 				MME IP Address:
-				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter MME IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
 				Multiplexer IP Address:
-				<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter Multiplexer IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
 				Slave Docker Image:
 				<input type="text" id="docker_image" name="docker_image" value="j0lama/ran_slave:latest">

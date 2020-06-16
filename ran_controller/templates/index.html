@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 	<head>
-		<title>RAN Controller</title>
+		<title>Nervion Controller</title>
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 	</head>
 	<body>
-		<h1>RAN Controller</h1>
+		<h1>Nervion Controller</h1>
 		<button onClick="window.location.reload();">Refresh Page</button>
 		<h3>Core Network</h3>
 		<p>MME IP: {{ mme_ip }}</p>
-		<h3>Data Plane</h3>
 		<p>Multiplexer IP: {{ multi_ip }}</p>
 		<h3>Slave Docker Image</h3>
 		<p>Image: {{ docker_image }}</p>
@@ -16,7 +15,7 @@
 		{{ ue_table|safe }}
 		<h3>eNBs</h3>
 		{{ enb_table|safe }}
-		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 5%;">
+		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 3%;">
 			<p style="font-family: Perpetua;">THE UNIVERSITY <i>of</i> EDINBURGH</p>
 			Developed by <i>Jon Larrea</i>
 		</div>

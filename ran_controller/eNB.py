@@ -1,4 +1,5 @@
 from Status import Status
+from threading import Lock
 
 class eNB:
 	status = -1
@@ -9,6 +10,7 @@ class eNB:
 		self.mnc = mnc
 		self.status = Status()
 		self.address = None
+		self.mutex = Lock()
 
 	def printENB(self):
 		print('eNB ' + str(self.get_num()) + ':')
@@ -83,6 +85,15 @@ class eNB:
 
 	def set_connected(self):
 		self.status.move_to_connected()
+
+	def acquire(self):
+		self.mutex.acquire()
+
+	def release(self):
+		self.mutex.release()
+
+	def locked(self):
+		return self.mutex.locked()
 
 
 	def __eq__(self, other):

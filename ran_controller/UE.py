@@ -1,6 +1,7 @@
 from Status import Status
 import struct
 import socket
+from threading import Lock
 
 class UE:
 	status = -1
@@ -16,6 +17,8 @@ class UE:
 		self.enb_id = enb
 		self.enb = None
 		self.address = None
+		self.mutex = Lock()
+		self.running = False
 
 	def printUE(self):
 		print('UE ' + self.get_id() + ':')
@@ -130,6 +133,21 @@ class UE:
 
 	def set_stopped(self):
 		self.status.move_to_stopped()
+
+	def acquire(self):
+		self.mutex.acquire()
+
+	def release(self):
+		self.mutex.release()
+
+	def locked(self):
+		return self.mutex.locked()
+
+	def set_flag(self, flag):
+		self.running = flag
+
+	def get_flag(self):
+		return self.running
 
 
 	def __eq__(self, other):
