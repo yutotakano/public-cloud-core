@@ -1,3 +1,4 @@
+#define _POSIX_SOURCE
 #include "ue_emulator.h"
 #include "message.h"
 #include "log.h"

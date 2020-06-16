@@ -34,6 +34,7 @@ typedef struct _Initial_Context_Setup_Response Initial_Context_Setup_Response;
 typedef struct _E_RAB_Setup_List_C_txt_SU_Res E_RAB_Setup_List_C_txt_SU_Res;
 typedef struct _E_RABSetupItemCtxtSURes E_RABSetupItemCtxtSURes;
 typedef struct _Uplink_NAS_Transport Uplink_NAS_Transport;
+typedef struct _UE_Context_Release_Request UE_Context_Release_Request;
 typedef struct _non_access_stratum_pdu_attach_complete non_access_stratum_pdu_attach_complete;
 
 void test(eNB * enb);
@@ -41,5 +42,7 @@ void test(eNB * enb);
 
 int procedure_S1_Setup(eNB * enb);
 int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip);
-void crypto_test(eNB * enb, UE * ue);
+int procedure_UE_Context_Release(eNB *enb, UE * ue);
+
+
 #endif
