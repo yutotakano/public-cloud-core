@@ -78,6 +78,7 @@
 #define TAC 0x0001
 #define ID_EUTRAN_CGI 0x0064
 #define ID_RRC_ESTABLISHMENT_CAUSE 0x0086
+#define ID_CAUSE 0x0002
 #define MO_SIGNALLING 0x30
 #define DOWNLINK_NAS_TRANSPORT 0x0b
 #define AUTHENTICATION_REQUEST 0x52
@@ -366,6 +367,14 @@ struct _Uplink_NAS_Transport
 	uint8_t init; /* = 0x00;*/
 	uint16_t numItems; /* 0x0005 */
 	uint8_t * items; /* ProtocolIE(eNB-UE-S1AP-ID_1) + ProtocolIE(eNB-UE-S1AP-ID_2) +  ProtocolIE(NAS-PDU) + ProtocolIE(EUTRAN-CGI) + ProtocolIE(TAI)*/
+	uint16_t items_len;
+};
+
+struct _UE_Context_Release_Request
+{
+	uint8_t init; /* = 0x00;*/
+	uint16_t numItems; /* 0x0003 */
+	uint8_t * items; /* ProtocolIE(id-MME-UE-S1AP-ID) + ProtocolIE(id-eNB-UE-S1AP-ID) +  ProtocolIE(id-Cause) */
 	uint16_t items_len;
 };
 
@@ -985,6 +994,22 @@ ProtocolIE * generate_ProtocolIE_rrc_establishment_cause()
 	return protocolIE;
 }
 
+ProtocolIE * generate_ProtocolIE_cause()
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_CAUSE;
+	protocolIE->criticality = CRITICALITY_IGNORE;
+
+	protocolIE->value = (uint8_t *) GC_malloc(3);
+	protocolIE->value[0] = 2;
+	protocolIE->value[1] = 0;
+	protocolIE->value[2] = 0;
+	protocolIE->value_len = 3;
+
+	return protocolIE;
+
+}
+
 InitialUEMessage * generate_Initial_UE_Message(eNB * enb, UE * ue)
 {
 	ProtocolIE * enb_ue_s1ap_id;
@@ -1557,6 +1582,12 @@ void freeInitialContextSetupResponse(Initial_Context_Setup_Response * ics_resp)
 	GC_free(ics_resp);
 }
 
+void freeUEContextReleaseRequest(UE_Context_Release_Request * ue_crr)
+{
+	GC_free(ue_crr->items);
+	GC_free(ue_crr);
+}
+
 uint8_t * SecurityCommandComplete_to_buffer(Security_Command_Complete * scc, uint16_t * len)
 {
 	uint8_t * dump = (uint8_t *) GC_malloc(3 + scc->items_len);
@@ -1598,6 +1629,17 @@ uint8_t * InitialContextSetupResponse_to_buffer(Initial_Context_Setup_Response *
 	dump[2] = (uint8_t)(ics_resp->numItems & 0xFF);
 	memcpy(dump+3, ics_resp->items, ics_resp->items_len);
 	*len = 3 + ics_resp->items_len;
+	return dump;
+}
+
+uint8_t * UEContextReleaseRequest_to_buffer(UE_Context_Release_Request * ue_crr, uint16_t * len)
+{
+	uint8_t * dump = (uint8_t *) GC_malloc(3 + ue_crr->items_len);
+	dump[0] = ue_crr->init;
+	dump[1] = ue_crr->numItems >> 8;
+	dump[2] = (uint8_t)(ue_crr->numItems & 0xFF);
+	memcpy(dump+3, ue_crr->items, ue_crr->items_len);
+	*len = 3 + ue_crr->items_len;
 	return dump;
 }
 
@@ -2069,6 +2111,90 @@ s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb,
 	return s1ap_initiatingMsg;
 }
 
+#define UE_CONTEXT_RELEASE_REQUEST 0x12
+
+UE_Context_Release_Request * generate_ue_context_release_request(UE * ue)
+{
+	ProtocolIE * mme_ue_s1ap_id;
+	ProtocolIE * enb_ue_s1ap_id;
+	ProtocolIE * cause;
+
+
+	UE_Context_Release_Request * ue_crr = GC_malloc(sizeof(InitialUEMessage));
+	ue_crr->init = 0x00;
+	ue_crr->numItems = 0x0003;
+	mme_ue_s1ap_id = generate_ProtocolIE_mme_ue_s1ap_id(ue);
+	mme_ue_s1ap_id->criticality = CRITICALITY_REJECT;
+
+	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
+	enb_ue_s1ap_id->criticality = CRITICALITY_REJECT;
+
+	cause = generate_ProtocolIE_cause();
+	cause->criticality = CRITICALITY_IGNORE;
+
+	int mme_ue_s1ap_id_len;
+	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
+	freeProtocolIE(mme_ue_s1ap_id);
+
+	printf("MME_UE_S1AP_ID:\n");
+	dumpMemory(mme_ue_s1ap_id_buffer, mme_ue_s1ap_id_len);
+
+	int enb_ue_s1ap_id_len;
+	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
+	freeProtocolIE(enb_ue_s1ap_id);
+
+	printf("ENB_UE_S1AP_ID:\n");
+	dumpMemory(enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+
+	int cause_len;
+	uint8_t * cause_buffer = ProtocolIE_to_buffer(cause, &cause_len);
+	freeProtocolIE(cause);
+
+	printf("CAUSE:\n");
+	dumpMemory(cause_buffer, cause_len);
+
+	int i = 0;
+	ue_crr->items = (uint8_t *) GC_malloc(mme_ue_s1ap_id_len + enb_ue_s1ap_id_len + cause_len);
+
+	memcpy(ue_crr->items + i, mme_ue_s1ap_id_buffer, mme_ue_s1ap_id_len);
+	GC_free(mme_ue_s1ap_id_buffer);
+	i += mme_ue_s1ap_id_len;
+
+	memcpy(ue_crr->items + i, enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+	GC_free(enb_ue_s1ap_id_buffer);
+	i += enb_ue_s1ap_id_len;
+
+	memcpy(ue_crr->items + i, cause_buffer, cause_len);
+	GC_free(cause_buffer);
+	i += cause_len;
+
+	ue_crr->items_len = i;
+
+	return ue_crr;
+}
+
+s1ap_initiatingMessage * generate_UE_Context_Release_Request(UE * ue)
+{
+	s1ap_initiatingMessage * s1ap_ue_context_release_req = GC_malloc(sizeof(s1ap_initiatingMessage));
+	s1ap_ue_context_release_req->procedureCode = UE_CONTEXT_RELEASE_REQUEST;
+	s1ap_ue_context_release_req->criticality = CRITICALITY_IGNORE;
+
+	UE_Context_Release_Request * ue_crr;
+	ue_crr = generate_ue_context_release_request(ue);
+
+	uint16_t len;
+	uint8_t * ue_crr_buf = UEContextReleaseRequest_to_buffer(ue_crr, &len);
+
+	freeUEContextReleaseRequest(ue_crr);
+
+	s1ap_ue_context_release_req->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(s1ap_ue_context_release_req->value + 1, (void *) ue_crr_buf, len);
+	GC_free(ue_crr_buf);
+	s1ap_ue_context_release_req->value[0] = (uint8_t) len;
+	s1ap_ue_context_release_req->value_len = len + 1;
+	return s1ap_ue_context_release_req;
+}
+
 int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	s1ap_initiatingMessage * s1ap_attach_request;
@@ -2099,7 +2225,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	struct sctp_sndrcvinfo sndrcvinfo;
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 
-
+	printInfo("Starting Attach and Default EPS Bearer procedure...\n");
 
 	/*********************/
 	/* 	 Attach Request  */
@@ -2111,8 +2237,6 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	/* MUST BE ON STREAM 1 */
 	sctp_sendmsg(socket, (void *) initiatingMsg_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(initiatingMsg_buffer);
-
-	printInfo("\n\n\nStarting Attach and Default EPS Bearer procedure...\n");
 
 	while(1)
 	{
@@ -2271,6 +2395,42 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	/* MUST BE ON STREAM 1 */
 	sctp_sendmsg(socket, (void *) attach_complete_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(attach_complete_buffer);
+
+	printOK("Attach Complete & Activate default EPS bearer context accept\n");
+
+	return 0;
+}
+
+int procedure_UE_Context_Release(eNB * enb, UE * ue)
+{
+	s1ap_initiatingMessage * ue_context_release_request;
+	uint8_t * ue_context_release_request_buffer;
+	uint16_t len = 0;
+	int socket = get_mme_socket(enb);
+
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	printInfo("Starting UE Context Release procedure...\n");
+
+
+	/*****************************/
+	/* UE Context Release Request*/
+	/*****************************/
+	ue_context_release_request = generate_UE_Context_Release_Request(ue);
+	ue_context_release_request_buffer = s1ap_initiatingMessage_to_buffer(ue_context_release_request, &len);
+	freeS1ap_initiatingMessage(ue_context_release_request);
+
+	printf("DUMP: \n");
+	dumpMemory(ue_context_release_request_buffer, len);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	//sctp_sendmsg(socket, (void *) ue_context_release_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(ue_context_release_request_buffer);
 
 	return 0;
 }

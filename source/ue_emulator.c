@@ -14,19 +14,20 @@
 #include <stddef.h>
 #include <time.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
 
 #define ENB_PORT 2233
 
 ue_data ue;
-pthread_t ue_thread;
+pid_t traffic_generator;
 
 uint8_t local_ip[4];
 uint8_t ue_ip[4];
 uint8_t spgw_ip[4];
 uint8_t gtp_teid[4];
 
-/* eNB control plane variables */
-int sockfd; 
+/* eNB control plane variables */ 
 struct sockaddr_in enb_addr;
 
 void dKey(uint8_t * pointer, int len)
@@ -48,14 +49,83 @@ void ue_copy_id_to_buffer(uint8_t * buffer)
 	buffer[3] = ue.id[3];
 }
 
-void * run_command(void * args)
+void start_traffic_generator(char * command)
 {
-	system(ue.command);
-	return NULL;
+	/* Traffic generator is going to be a child process */
+	traffic_generator = fork();
+    if(traffic_generator == 0)
+    {
+    	/* Create a new session */
+    	/* To ensure system() process kill */
+    	setsid();
+
+    	printf("Entering traffic generator...\n");
+    	/* Execute command */
+    	system(command);
+		printf("Exiting traffic generator...\n");
+		exit(0);
+    }
+}
+
+void stop_traffic_generator()
+{
+	printf("Killing traffic generator process...\n");
+    kill(traffic_generator*-1, SIGTERM);
+}
+
+int send_ue_context_release()
+{
+	int sockfd;
+	idle_msg * msg;
+	int n;
+	uint8_t buffer[32];
+
+	/* Socket create */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        return 1; 
+    }
+
+    /* Build eNB message (IDLE_CODE + MSIN) */
+    bzero(buffer, 32);
+    buffer[0] = MOVE_TO_IDLE;
+    msg = (idle_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+
+	/* Send UE info to eNB and wait to a response */
+	write(sockfd, buffer, sizeof(idle_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(sockfd, buffer, sizeof(buffer));
+	if(n < 0)
+	{
+		perror("UE recv");
+		close(sockfd);
+		return 1;
+	}
+	if(buffer[0] != (OK_CODE | MOVE_TO_IDLE))
+	{
+		printError("Error in remote eNB (UEContextRelease)\n");
+		close(sockfd);
+		return 1;
+	}
+	printOK("UE moved to Idle (UEContextRelease)\n");
+	/* Here the UE is in IDLE state */
+	close(sockfd);
+	return 0;
 }
 
 int ue_emulator_start(ue_data * data)
 {
+	int sockfd;
 	uint8_t buffer[1024];
 	init_msg * msg;
 	init_response_msg * res;
@@ -133,10 +203,12 @@ int ue_emulator_start(ue_data * data)
 	}
 	if(buffer[0] != (OK_CODE | INIT_CODE))
 	{
-		perror("Error in remote eNB");
+		printError("Error in remote eNB\n");
 		close(sockfd);
 		return 1;
 	}
+
+	close(sockfd);
 
 	/* Analyze response */
 	res = (init_response_msg *) (buffer+1);
@@ -166,11 +238,35 @@ int ue_emulator_start(ue_data * data)
 	}
 
 
-	/* Create traffic generator thread */
-	if (pthread_create(&ue_thread, NULL, run_command, 0) != 0)
-    {
-        perror("pthread_create run_command");
-        return 1;
-    }
+	/* Create traffic generator process */
+	start_traffic_generator(ue.command);
+	sleep(5);
+	stop_traffic_generator();
+
+    
+
+    /* TESTING */
+    printf("Sleeping for 5 seconds\n");
+    sleep(5);
+    printf("Movidas\n");
+    //stop_traffic_generator();
+    send_ue_context_release();
+    sleep(5);
+
+
+    /* Create FSM thread */
+    /* TODO */
+    /*
+
+	while True:
+		sleep X
+		move to idle
+		sleep Y
+		move to connected
+
+    */
+
+
+
 	return 0;
 }

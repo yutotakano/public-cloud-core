@@ -30,6 +30,20 @@ pthread_t enb_thread;
 int sockfd;
 map_void_t map;
 
+void dump(uint8_t * pointer, int len)
+{
+	int i;
+	for(i = 0; i < len; i++)
+	{
+		if(i % 16 == 0)
+			printf("\n");
+		else if(i % 8 == 0)
+			printf("  ");
+		printf("%.2x ", pointer[i]);
+	}
+	printf("\n");
+}
+
 void enb_copy_id_to_buffer(uint8_t * buffer)
 {
 	uint32_t id = get_enb_id(enb);
@@ -64,27 +78,38 @@ uint32_t id_to_uint32(uint8_t * id)
 
 int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response_len, uint8_t * ue_ip)
 {
-	init_msg * msg;
+	init_msg * initmsg;
+	idle_msg * idlemsg;
 	init_response_msg * res;
-	UE * ue;
+	UE * ue = NULL;
+
+	printInfo("Analyzing UE message...\n");
+
 	/* UE connecting to the EPC */
 	if(buffer[0] == INIT_CODE)
 	{
-		msg = (init_msg *)(buffer+1);
+		printInfo("UE INIT message received\n");
+		initmsg = (init_msg *)(buffer+1);
 		/* Create UE */
-		ue = init_UE((char *)msg->mcc, (char *)msg->mnc, (char *)msg->msin, msg->key, msg->op_key, msg->ue_ip);
+		ue = init_UE((char *)initmsg->mcc, (char *)initmsg->mnc, (char *)initmsg->msin, initmsg->key, initmsg->op_key, initmsg->ue_ip);
 		printUE(ue);
 
 		/* Add to map structure */
 		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
-		map_add(&map, (char *)msg->msin, (void *)ue, get_ue_size());
+		map_add(&map, (char *)initmsg->msin, (void *)ue, get_ue_size());
 
+		/* Free the original object and use the copy stored in the MAP structure */
+		free_UE(ue);
+		ue = (UE *)map_get(&map, (char *)initmsg->msin);
 
 		/* Attach UE 1 */
     	if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
     	{
     		printf("Attach and Setup default bearer error\n");
     		free_UE(ue);
+    		/* Generate UE Error response */
+    		response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
     		return 1;
     	}
 
@@ -99,6 +124,26 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		memcpy(res->ue_ip, get_pdn_ip(ue), 4);
 		memcpy(res->spgw_ip, get_spgw_ip(ue), 4);
 		*response_len = sizeof(init_response_msg) + 1;
+	}
+	else if(buffer[0] == MOVE_TO_IDLE)
+	{
+		printInfo("UE MOVE_TO_IDLE message received\n");
+
+		idlemsg = (idle_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+
+		/* Move UE to idle */
+		if(procedure_UE_Context_Release(enb, ue))
+		{
+			printError("Move to Idle (UEContextRelease) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		*response_len = 1;
 	}
 	/* TODO: Implement othe kind of messages */
 	return 0;
@@ -128,6 +173,8 @@ void * enb_emulator_thread(void * args)
 			perror("accept");
 			continue;
 		}
+		printf("\n\n\n");
+		printInfo("New UE connected\n");
 		/* Receive message */
 		n = recv(client, (void *) buffer, 1024, 0);
 		if(n <= 0)
@@ -136,12 +183,11 @@ void * enb_emulator_thread(void * args)
 			close(client);
 			continue;
 		}
+
 		/* Analyze message and generate the response*/
 		if(analyze_ue_msg(buffer, n, response, &response_len, (uint8_t *) &client_addr.sin_addr.s_addr))
 		{
 			perror("S1AP error");
-			close(client);
-			continue;
 		}
 		/* Send response to client */
 		write(client, response, response_len);
