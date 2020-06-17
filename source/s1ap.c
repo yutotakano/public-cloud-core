@@ -104,6 +104,8 @@
 #define ESM_CONTAINER_CONTENT_LENGTH 5
 #define UPLINK_NAS_TRANSPORT 0x000D
 #define NAS_EPS_MMM_TYPE_ATTACH_COMPLETE 0x43
+#define UE_CONTEXT_RELEASE_REQUEST 0x12
+#define UE_CONTEXT_RELEASE 0x17
 
 
 /* eNB Structures */
@@ -376,6 +378,15 @@ struct _UE_Context_Release_Request
 	uint16_t numItems; /* 0x0003 */
 	uint8_t * items; /* ProtocolIE(id-MME-UE-S1AP-ID) + ProtocolIE(id-eNB-UE-S1AP-ID) +  ProtocolIE(id-Cause) */
 	uint16_t items_len;
+};
+
+struct _UE_Context_Release_Command
+{
+	uint8_t status;
+	uint8_t procedureCode;
+	uint8_t criticality;
+	uint8_t length;
+	uint8_t * value;
 };
 
 
@@ -1406,6 +1417,28 @@ int analyze_InitialContextSetupRequest(uint8_t * buffer, UE * ue)
 	return ret;
 }
 
+int analyze_UEContextReleaseCommand(uint8_t * buffer, UE * ue)
+{
+	int ret = 1;
+	UE_Context_Release_Command ue_crc;
+
+	memcpy((void *) &ue_crc, (void *) buffer, 4);
+	ue_crc.value = (uint8_t *) GC_malloc(ue_crc.length);
+	memcpy((void *) ue_crc.value, (void *) buffer+4, ue_crc.length);
+
+	if(ue_crc.status != 0 || ue_crc.procedureCode != (uint8_t)UE_CONTEXT_RELEASE || ue_crc.criticality != CRITICALITY_REJECT)
+	{
+		printError("Wrong UEContextReleaseCommand message\n");
+		return 1;
+	}
+
+	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
+	printInfo("Analyzing UEContextReleaseCommand\n");
+	ret = analyze_downlink_NAS_Transport(ue_crc.value, ue_crc.length, NULL, ue);
+	GC_free(ue_crc.value);
+	return ret;
+}
+
 void freeAuthenticationResponse(Authentication_Response * auth_res)
 {
 	GC_free(auth_res->items);
@@ -2111,8 +2144,6 @@ s1ap_initiatingMessage * generate_S1AP_initial_context_setup_response(eNB * enb,
 	return s1ap_initiatingMsg;
 }
 
-#define UE_CONTEXT_RELEASE_REQUEST 0x12
-
 UE_Context_Release_Request * generate_ue_context_release_request(UE * ue)
 {
 	ProtocolIE * mme_ue_s1ap_id;
@@ -2244,8 +2275,14 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			printf("%s\n", strerror(errno));
-			printError("SCTP (%s)\n", strerror(errno));
+			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			{
+				printError("SCTP Timeout (%s)\n", strerror(errno));
+			}
+			else
+			{
+				printError("SCTP (%s)\n", strerror(errno));
+			}
 			return 1;
 		}
 
@@ -2299,8 +2336,14 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		printf("%s\n", strerror(errno));
-		printError("SCTP (%s)\n", strerror(errno));
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		{
+			printError("SCTP Timeout (%s)\n", strerror(errno));
+		}
+		else
+		{
+			printError("SCTP (%s)\n", strerror(errno));
+		}
 		return 1;
 	}
 
@@ -2334,13 +2377,18 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	GC_free(security_command_complete_buffer);
 
 	/* Receiving MME answer */
-	/* TODO: Non-blocking socket */
 	flags = 0;
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		printf("%s\n", strerror(errno));
-		printError("SCTP (%s)\n", strerror(errno));
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		{
+			printError("SCTP Timeout (%s)\n", strerror(errno));
+		}
+		else
+		{
+			printError("SCTP (%s)\n", strerror(errno));
+		}
 		return 1;
 	}
 
@@ -2406,7 +2454,17 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 	s1ap_initiatingMessage * ue_context_release_request;
 	uint8_t * ue_context_release_request_buffer;
 	uint16_t len = 0;
+	int err;
 	int socket = get_mme_socket(enb);
+	uint8_t buffer[BUFFER_LEN];
+	int flags;
+	int recv_len;
+	struct sockaddr_in addr;
+	socklen_t from_len = (socklen_t)sizeof(struct sockaddr_in);
+	bzero((void *)&addr, sizeof(struct sockaddr_in));
+	/* SCTP parameters */
+	struct sctp_sndrcvinfo sndrcvinfo;
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 
 	if(ue == NULL)
 	{
@@ -2431,6 +2489,34 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 	/* MUST BE ON STREAM 1 */
 	//sctp_sendmsg(socket, (void *) ue_context_release_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(ue_context_release_request_buffer);
+
+	/* Receiving MME answer */
+	flags = 0;
+	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+	if(recv_len < 0)
+	{
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		{
+			printError("SCTP Timeout (%s)\n", strerror(errno));
+		}
+		else
+		{
+			printError("SCTP (%s)\n", strerror(errno));
+		}
+		return 1;
+	}
+
+	/* Analyze buffer and get Initial Context Setup Request*/
+	err = analyze_UEContextReleaseCommand(buffer, ue);
+	if(err == 1)
+    {
+    	printError("UE Context Release Command\n");
+    	return 1;
+    }
+    else
+    {
+    	printOK("UE Context Release Command\n");
+    }
 
 	return 0;
 }

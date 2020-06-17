@@ -35,6 +35,7 @@ typedef struct _E_RAB_Setup_List_C_txt_SU_Res E_RAB_Setup_List_C_txt_SU_Res;
 typedef struct _E_RABSetupItemCtxtSURes E_RABSetupItemCtxtSURes;
 typedef struct _Uplink_NAS_Transport Uplink_NAS_Transport;
 typedef struct _UE_Context_Release_Request UE_Context_Release_Request;
+typedef struct _UE_Context_Release_Command UE_Context_Release_Command;
 typedef struct _non_access_stratum_pdu_attach_complete non_access_stratum_pdu_attach_complete;
 
 void test(eNB * enb);

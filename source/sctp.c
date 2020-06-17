@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "sctp.h"
 #include "log.h"
@@ -13,6 +14,7 @@
 #define SCTP_OUT_STREAMS 32
 #define SCTP_IN_STREAMS 32
 #define SCTP_MAX_ATTEMPTS 5
+#define SOCKET_READ_TIMEOUT_SEC 1
 
 #define MME_OAI_PORT 36412
 
@@ -110,6 +112,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     struct sockaddr_in enb_addr;
     struct sctp_event_subscribe events;
     struct sctp_initmsg init;
+    struct timeval timeout;
 
     /*******************/
     /* Creating socket */
@@ -165,7 +168,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     memset(&events, 0, sizeof(events));
     events.sctp_data_io_event          = 1;
     events.sctp_shutdown_event         = 1;
-    if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) != 0) {
+    if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
         perror("setsockopt events");
         close(sock_sctp);
         return 1;
@@ -174,9 +177,20 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     /* OPT 3 */
     /* Set SCTP_NODELAY option to disable Nagle algorithm */
     int nodelay = 1;
-    if ( setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_NODELAY, &nodelay, sizeof(nodelay)) )
+    if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_NODELAY, &nodelay, sizeof(nodelay)) < 0)
     {
         perror("setsockopt no_delay");
+        close(sock_sctp);
+        return 1;
+    }
+
+    /* OPT 4 */
+    /* Set SO_RCVTIMEO to release recv lock after N seconds */
+    timeout.tv_sec = SOCKET_READ_TIMEOUT_SEC;
+    timeout.tv_usec = 0;
+    if(setsockopt(sock_sctp, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+    {
+        perror("setsockopt recv_delay");
         close(sock_sctp);
         return 1;
     }
