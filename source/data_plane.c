@@ -161,6 +161,18 @@ void * downlink_thread(void * args)
     return NULL;
 }
 
+int update_data_plane(uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid)
+{
+    /* Update SPGW IP Address */
+    memcpy((void*) &spgw_addr.sin_addr.s_addr, _spgw_ip, sizeof(struct in_addr));
+    /* Update ue_ip address */
+    memcpy(ue_ip, _ue_ip, 4);
+    /* Update GTP TEID */
+    gtp_teid = _gtp_teid;
+    /* Update TUN Device IP address */
+    return update_ip(ue_ip);
+}
+
 int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid, uint16_t spgw_port)
 {
     struct sockaddr_in ue_addr;

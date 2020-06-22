@@ -29,6 +29,8 @@ struct _UE
 	int data_plane_socket;
 	int tun_device;
 	uint8_t ue_ip[IP_LEN];
+	uint8_t nas_sequence_number;
+	Auth_Challenge auth_challenge;
 };
 
 void printUE(UE * ue)
@@ -83,6 +85,9 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	ue->mme_s1ap_id_len = -1;
 
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
+
+	/* Initiate NAS Sequence number */
+	ue->nas_sequence_number = 0;
 
 	/* UE_S1AP_ID is a random number dedicated to the UE connection */
 	/* Because of that can be generated randomly */
@@ -247,4 +252,21 @@ int get_ue_size()
 uint8_t * get_ue_ip(UE * ue)
 {
 	return ue->ue_ip;
+}
+
+uint8_t get_nas_sequence_number(UE * ue)
+{
+	uint8_t temp = ue->nas_sequence_number;
+	ue->nas_sequence_number++;
+	return temp;
+}
+
+void reset_nas_sequence_number(UE * ue)
+{
+	ue->nas_sequence_number = 0;
+}
+
+Auth_Challenge * get_auth_challenge(UE * ue)
+{
+	return &ue->auth_challenge;
 }

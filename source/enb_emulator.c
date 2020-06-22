@@ -82,6 +82,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	idle_msg * idlemsg;
 	init_response_msg * res;
 	UE * ue = NULL;
+	uint8_t switch_off;
 
 	printInfo("Analyzing UE message...\n");
 
@@ -145,6 +146,61 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		response[0] = OK_CODE | buffer[0];
 		*response_len = 1;
 	}
+	else if(buffer[0] == UE_DETACH || buffer[0] == UE_SWITCH_OFF_DETACH)
+	{
+		printInfo("UE UE_DETACH message received\n");
+
+		switch_off = buffer[0] & UE_SWITCH_OFF_DETACH;
+
+		idlemsg = (idle_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+
+		/* Detach UE */
+		if(procedure_UE_Detach(enb, ue, switch_off))
+		{
+			printError("Move to Detached (UEDetach) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		*response_len = 1;
+	}
+	else if(buffer[0] == UE_ATTACH)
+	{
+		printInfo("UE UE_ATTACH message received\n");
+
+		idlemsg = (idle_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+
+		/* Detach UE */
+		if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
+		{
+			printError("Move to Attached (UEAttach) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		*response_len = 1;
+
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		/* init_response_msg struct reused */
+		res = (init_response_msg *) (response+1);
+		uint32_t teid = get_gtp_teid(ue);
+		res->teid[0] = (teid >> 24) & 0xFF;
+		res->teid[1] = (teid >> 16) & 0xFF;
+		res->teid[2] = (teid >> 8) & 0xFF;
+		res->teid[3] = teid & 0xFF;
+		memcpy(res->ue_ip, get_pdn_ip(ue), 4);
+		memcpy(res->spgw_ip, get_spgw_ip(ue), 4);
+		*response_len = sizeof(init_response_msg) + 1;
+	}
 	/* TODO: Implement othe kind of messages */
 	return 0;
 }
@@ -187,7 +243,7 @@ void * enb_emulator_thread(void * args)
 		/* Analyze message and generate the response*/
 		if(analyze_ue_msg(buffer, n, response, &response_len, (uint8_t *) &client_addr.sin_addr.s_addr))
 		{
-			perror("S1AP error");
+			printError("S1AP error\n");
 		}
 		/* Send response to client */
 		write(client, response, response_len);

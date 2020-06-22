@@ -14,5 +14,6 @@ int setup_ue_data_plane(UE * ue);
 void generate_udp_traffic(UE * ue, eNB * enb, uint8_t * dest_ip, int port_dest);
 void start_uplink_thread(UE * ue, eNB * enb);
 int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid, uint16_t spgw_port);
+int update_data_plane(uint8_t * _ue_ip, uint8_t * _spgw_ip, uint32_t _gtp_teid);
 
 #endif

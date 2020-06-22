@@ -24,7 +24,6 @@ typedef struct _s1ap_initiatingMessage s1ap_initiatingMessage;
 typedef struct _S1SetupResponse S1SetupResponse;
 typedef struct _InitialUEMessage InitialUEMessage;
 typedef struct _Authentication_Request Authentication_Request;
-typedef struct _Auth_Challenge Auth_Challenge;
 typedef struct _Authentication_Response Authentication_Response;
 typedef struct _Security_Mode_Command Security_Mode_Command;
 typedef struct _Security_Command_Complete Security_Command_Complete;
@@ -36,7 +35,11 @@ typedef struct _E_RABSetupItemCtxtSURes E_RABSetupItemCtxtSURes;
 typedef struct _Uplink_NAS_Transport Uplink_NAS_Transport;
 typedef struct _UE_Context_Release_Request UE_Context_Release_Request;
 typedef struct _UE_Context_Release_Command UE_Context_Release_Command;
+typedef struct _UE_Context_Release_Response UE_Context_Release_Response;
 typedef struct _non_access_stratum_pdu_attach_complete non_access_stratum_pdu_attach_complete;
+typedef struct _non_access_stratum_pdu_detach non_access_stratum_pdu_detach;
+typedef struct _UE_Detach_Accept UE_Detach_Accept;
+typedef struct _UE_Detach UE_Detach;
 
 void test(eNB * enb);
 
@@ -44,6 +47,7 @@ void test(eNB * enb);
 int procedure_S1_Setup(eNB * enb);
 int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip);
 int procedure_UE_Context_Release(eNB *enb, UE * ue);
+int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off);
 
 
 #endif

@@ -8,8 +8,21 @@
 #define KEY_LENGTH 16
 #define IP_LEN 4
 #define GUTI_LEN 10
+#define AUTH_RES_LENGTH 8
 
 typedef struct _UE UE;
+typedef struct _Auth_Challenge
+{
+	uint8_t RAND[16];
+	uint8_t AUTN[16];
+	uint8_t CK[16];
+	uint8_t IK[16];
+	uint8_t AK[16];
+	uint8_t RES[AUTH_RES_LENGTH];
+	uint8_t KASME[32];
+	uint8_t NAS_KEY_ENC[16];
+	uint8_t NAS_KEY_INT[16];
+} Auth_Challenge;
 
 UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key, uint8_t * ue_ip);
 void free_UE(UE * ue);
@@ -42,6 +55,9 @@ int get_tun_device(UE * ue);
 int get_ue_id(UE * ue);
 int get_ue_size();
 uint8_t * get_ue_ip(UE * ue);
+uint8_t get_nas_sequence_number(UE * ue);
+void reset_nas_sequence_number(UE * ue);
+Auth_Challenge * get_auth_challenge(UE * ue);
 
 void printUE(UE * ue);
 

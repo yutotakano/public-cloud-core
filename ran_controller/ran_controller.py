@@ -18,6 +18,9 @@ CODE_OK = 0x80
 CODE_ERROR = 0x00
 CODE_ENB_BEHAVIOUR = 0x01
 CODE_UE_BEHAVIOUR = 0x02
+CODE_UE_IDLE = 0x03
+CODE_UE_DETACH = 0x04
+CODE_UE_ATTACH = 0x05
 
 '''
     Bit 0 (Status)
@@ -137,7 +140,6 @@ class RANControler:
 					if(assoc_enb.get_status() == Status.STOPPED):
 						# This slave has to be a eNB
 						buf = assoc_enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
-						print(buf)
 						assoc_enb.set_pending()
 						assoc_enb.acquire()
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
@@ -157,7 +159,6 @@ class RANControler:
 							time.sleep(1)
 						ue.set_pending()
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
-						print(buf)
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
 						break
 
@@ -171,6 +172,7 @@ class RANControler:
 			enb.set_addr((msg['ip'], msg['port']))
 			enb.set_connected() # Running/Disconnected
 			enb.release()
+			print('New eNB at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_run':
 			# UE slave answers with OK message
@@ -180,6 +182,34 @@ class RANControler:
 			# Save UE address
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
+			print('New UE at ' + msg['ip'] + ':' + str(msg['port']))
+
+		elif msg['type'] == 'ue_idle':
+			# UE slave informs that its new state is Idle
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+
+			# Save UE address
+			ue.set_idle()
+			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Idle')
+
+		elif msg['type'] == 'ue_detached':
+			# UE slave informs that its new state is Detached
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+
+			# Save UE address
+			ue.set_disconnected()
+			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
+
+		elif msg['type'] == 'ue_attached':
+			# UE slave informs that its new state is Detached
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+
+			# Save UE address
+			ue.set_traffic()
+			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 
 
 	def generate_msg(self, data, address):
@@ -189,12 +219,6 @@ class RANControler:
 			msg['type'] = 'init'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
-		# Error code: 0XXX XXXX 
-		elif (data[0] & CODE_OK) == CODE_ERROR:
-			msg['type'] = 'error'
-			msg['ip'] = address[0]
-			msg['port'] = address[1]
-		# eNB ok: 1000 0001
 		elif data[0] == CODE_OK | CODE_ENB_BEHAVIOUR:
 			msg['type'] = 'enb_run'
 			msg['ip'] = address[0]
@@ -205,6 +229,27 @@ class RANControler:
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
 			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_IDLE:
+			msg['type'] = 'ue_idle'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_DETACH:
+			msg['type'] = 'ue_detached'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_ATTACH:
+			msg['type'] = 'ue_attached'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+
+		# Error code: 0XXX XXXX 
+		elif (data[0] & CODE_OK) == CODE_ERROR:
+			msg['type'] = 'error'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
 
 		return msg
 
@@ -229,8 +274,8 @@ class RANControler:
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
-		config.load_incluster_config()
-		v1 = client.CoreV1Api()
+		#config.load_incluster_config()
+		#v1 = client.CoreV1Api()
 		print('Staring Slave Pods...')
 		for i in range(tot_len):
 			# Configure POD Manifest for each slave
@@ -238,7 +283,7 @@ class RANControler:
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+			#v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
 		print('Slave pods started')
 		return
 

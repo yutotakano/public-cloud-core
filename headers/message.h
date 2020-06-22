@@ -9,6 +9,9 @@
 
 #define INIT_CODE 0x01
 #define MOVE_TO_IDLE 0x02
+#define UE_DETACH 0x03
+#define UE_SWITCH_OFF_DETACH 0x04
+#define UE_ATTACH 0x05
 
 
 typedef struct _init_msg

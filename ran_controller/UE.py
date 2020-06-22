@@ -134,6 +134,9 @@ class UE:
 	def set_stopped(self):
 		self.status.move_to_stopped()
 
+	def set_disconnected(self):
+		self.status.move_to_disconnected()
+
 	def acquire(self):
 		self.mutex.acquire()
 

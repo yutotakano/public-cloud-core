@@ -28,6 +28,16 @@ uint8_t ue_ip[4];
 uint8_t spgw_ip[4];
 uint8_t gtp_teid[4];
 
+/* External function (declared as extern by default) */
+/* Update controller state with IDLE */
+void send_idle_controller(uint32_t ue_id);
+/* Update controller state with DETACHED */
+void send_ue_detach_controller(uint32_t ue_id);
+/* Update controller state with ATTACHED*/
+void send_ue_attach_controller(uint32_t ue_id);
+
+
+
 /* eNB control plane variables */ 
 struct sockaddr_in enb_addr;
 
@@ -119,6 +129,148 @@ int send_ue_context_release()
 		return 1;
 	}
 	printOK("UE moved to Idle (UEContextRelease)\n");
+	/* Notify the controller */
+	send_idle_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	/* Here the UE is in IDLE state */
+	close(sockfd);
+	return 0;
+}
+
+int send_ue_detach(uint8_t switch_off)
+{
+	int sockfd;
+	idle_msg * msg;
+	int n;
+	uint8_t buffer[32];
+
+	/* Kill the traffic generator child process before send the Detach message to the eNB */
+	stop_traffic_generator();
+
+	/* Socket create */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        return 1; 
+    }
+
+    /* Build eNB message (IDLE_CODE + MSIN) */
+    bzero(buffer, 32);
+    /* Detect switch_off case */
+    if(switch_off == 0)
+    	buffer[0] = UE_DETACH;
+    else
+    	buffer[0] = UE_SWITCH_OFF_DETACH;
+    msg = (idle_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+
+	/* Send UE info to eNB and wait to a response */
+	write(sockfd, buffer, sizeof(idle_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(sockfd, buffer, sizeof(buffer));
+	if(n < 0)
+	{
+		perror("UE recv");
+		close(sockfd);
+		return 1;
+	}
+	if(buffer[0] != (OK_CODE | UE_DETACH) && buffer[0] != (OK_CODE | UE_SWITCH_OFF_DETACH))
+	{
+		printError("Error in remote eNB (UEDetach)\n");
+		close(sockfd);
+		return 1;
+	}
+	printOK("UE Detached (UEDetach)\n");
+	/* Notify the controller */
+	send_ue_detach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	/* Here the UE is in IDLE state */
+	close(sockfd);
+	return 0;
+}
+
+int send_ue_attach()
+{
+	int sockfd;
+	idle_msg * msg;
+	int n;
+	uint8_t buffer[256];
+	init_response_msg * res;
+
+	/* Socket create */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        return 1; 
+    }
+
+    /* Build eNB message (IDLE_CODE + MSIN) */
+    bzero(buffer, 256);
+    buffer[0] = UE_ATTACH;
+    msg = (idle_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+
+	/* Send UE info to eNB and wait to a response */
+	write(sockfd, buffer, sizeof(idle_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(sockfd, buffer, sizeof(buffer));
+	if(n < 0)
+	{
+		perror("UE recv");
+		close(sockfd);
+		return 1;
+	}
+	if(buffer[0] != (OK_CODE | UE_ATTACH))
+	{
+		printError("Error in remote eNB (UEAttach)\n");
+		close(sockfd);
+		return 1;
+	}
+	printOK("UE Attached (UEAttach)\n");
+
+	/* Analyze response */
+	res = (init_response_msg *) (buffer+1);
+	/* Gert TEID */
+	memcpy(gtp_teid, res->teid, 4);
+	/* Get UE IP */
+	memcpy(ue_ip, res->ue_ip, 4);
+	/* Get SPGW_IP */
+	memcpy(spgw_ip, res->spgw_ip, 4);
+
+	/* Print received parameters */
+	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+	printf("Received new information from eNB\n");
+	printf("New GTP-TEID: 0x%x\n", teid);
+	printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
+	printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+	/* Update data plane */
+	if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+	{
+		printError("Error updating data plane parameters\n");
+		close(sockfd);
+		return 1;
+	}
+
+	/* Run the traffic generator process */
+	start_traffic_generator(ue.command);
+
+	/* Notify the controller */
+	send_ue_attach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
 	/* Here the UE is in IDLE state */
 	close(sockfd);
 	return 0;
@@ -241,18 +393,23 @@ int ue_emulator_start(ue_data * data)
 
 	/* Create traffic generator process */
 	start_traffic_generator(ue.command);
-	sleep(5);
-	stop_traffic_generator();
 
     
 
     /* TESTING */
     printf("Sleeping for 5 seconds\n");
-    sleep(5);
-    printf("Movidas\n");
-    //stop_traffic_generator();
-    send_ue_context_release();
-    sleep(5);
+    sleep(10);
+    printf("UE_DETACH\n");
+    send_ue_detach(0);
+    sleep(10);
+    printf("UE_ATTACH\n");
+    send_ue_attach();
+    sleep(10);
+    printf("UE_DETACH with Switch Off flag\n");
+    send_ue_detach(1);
+    sleep(10);
+    printf("UE_ATTACH\n");
+    send_ue_attach();
 
 
     /* Create FSM thread */

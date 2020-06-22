@@ -27,7 +27,6 @@
 #define SCTP_S1AP	18
 #define S1_SETUP_SUCCESSFUL	0x20
 #define S1_SETUP_UNSUCCESSFUL	0x40
-#define Cause 0x0002
 #define TimeToWait 0x0041
 #define MMERelativeCapacity	0x0057
 #define ServedGUMMEIs	0x0069
@@ -35,11 +34,23 @@
 #define ID_E_RAB_TO_BE_SETUP_LIST_C_TXT_SU_REQ 0x0018
 #define ID_UE_SECURITY_CAPABILITIES 0x006b
 #define ID_SECURITY_KEY 0x0049
+#define ID_UE_S1AP_IDS 0x0063
+#define ID_CAUSE 0x0002
+#define ID_TAI 0x0043
+#define ID_EUTRAN_CGI 0x0064
+#define ID_RRC_ESTABLISHMENT_CAUSE 0x0086
+#define ID_UE_RADIO_CAPABILITY 0x004a
+#define ID_E_RAB_TO_BE_SETUP_ITEM_C_TXT_SU_REQ 0x0034
+#define ID_E_RAB_SETUP_LIST_C_TXT_SU_RES 0x0033
+#define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES 0x0032
+#define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES_LEN 0x0A
+#define ID_MME_UE_S1AP_IE 0x0000
+#define ID_ENB_UE_S1AP_IE_UE 0x0008
+#define ID_ENB_UE_S1AP_ID	0x0008
 
 
 /* UE Defines */
 #define INITIAL_UE_MESSAGE	0x000C
-#define ID_ENB_UE_S1AP_ID	0x0008
 #define ENB_UE_S1AP_ID_LENGTH 4
 #define ID_NAS_PDU 0x001A
 #define NAS_SECURITY_HEADER_TYPE	0x00
@@ -74,38 +85,30 @@
 #define DNS_SECONDARY_TYPE 0x83
 #define CONTAINER_ID_DNS_IP_REQ 0x000d
 #define CONTAINER_ID_IP_NAS 0x000a
-#define ID_TAI 0x0043
 #define TAC 0x0001
-#define ID_EUTRAN_CGI 0x0064
-#define ID_RRC_ESTABLISHMENT_CAUSE 0x0086
-#define ID_CAUSE 0x0002
 #define MO_SIGNALLING 0x30
 #define DOWNLINK_NAS_TRANSPORT 0x0b
 #define AUTHENTICATION_REQUEST 0x52
 #define SECURITY_MODE_COMMAND 0x5d
 #define EMM_INFORMATION 0x61
-#define ID_MME_UE_S1AP_IE 0x0000
-#define ID_ENB_UE_S1AP_IE_UE 0x0008
 #define RES_LENGTH 8
 #define SECURITY_COMMAND_COMPLETE_ID 0x000d
 #define NAS_EPS_MMM_TYPE_AUTHENTICATION_RESPONSE 0x53
 #define AUTHENTICATION_RESPONSE_ID 0x000d
 #define MESSAGE_AUTHENTICATION_CODE 4
 #define NAS_EPS_MMM_TYPE_SECURITY_COMMAND_COMPLETE 0x5e
-#define ID_UE_RADIO_CAPABILITY 0x004a
-#define ID_E_RAB_TO_BE_SETUP_ITEM_C_TXT_SU_REQ 0x0034
 #define ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST 0xC1
 #define INITIAL_CONTEXT_SETUP 0x09
 #define UE_CAPABILITY_INFO_INDICATION 0x16
-#define ID_E_RAB_SETUP_LIST_C_TXT_SU_RES 0x0033
-#define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES 0x0032
-#define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES_LEN 0x0A
 #define SUCCESSFUL_OUTCOME 0x20
 #define ESM_CONTAINER_CONTENT_LENGTH 5
 #define UPLINK_NAS_TRANSPORT 0x000D
 #define NAS_EPS_MMM_TYPE_ATTACH_COMPLETE 0x43
 #define UE_CONTEXT_RELEASE_REQUEST 0x12
 #define UE_CONTEXT_RELEASE 0x17
+#define DETACH_ACCEPT 0x46
+#define UE_CONTEXT_RELEASE_RESPONSE 0x17
+#define NAS_EPS_MMM_TYPE_DETACH 0x45
 
 
 /* eNB Structures */
@@ -274,19 +277,6 @@ struct _non_access_stratum_pdu_auth_resp
 	uint8_t res[RES_LENGTH];
 };
 
-struct _Auth_Challenge
-{
-	uint8_t RAND[16];
-	uint8_t AUTN[16];
-	uint8_t CK[16];
-	uint8_t IK[16];
-	uint8_t AK[16];
-	uint8_t RES[RES_LENGTH];
-	uint8_t KASME[32];
-	uint8_t NAS_KEY_ENC[16];
-	uint8_t NAS_KEY_INT[16];
-};
-
 struct _Security_Mode_Command
 {
 	uint8_t status;
@@ -339,6 +329,16 @@ struct _non_access_stratum_pdu_attach_complete
 	uint8_t esm_container[ESM_CONTAINER_CONTENT_LENGTH];
 };
 
+struct _non_access_stratum_pdu_detach
+{
+	uint8_t security_header_type_protocol_discriminator;
+	uint8_t message_authentication_code[MESSAGE_AUTHENTICATION_CODE];
+	uint8_t sequence_number;
+	uint8_t security_header_type_protocol_discriminator_second;
+	uint8_t nas_eps_mmm_type;
+	uint8_t eps_mobile_identity[13]; /* Included Uplink Detach byte */
+};
+
 struct _Initial_Context_Setup_Request
 {
 	uint8_t status;
@@ -389,7 +389,30 @@ struct _UE_Context_Release_Command
 	uint8_t * value;
 };
 
+struct _UE_Context_Release_Response
+{
+	uint8_t init; /* = 0x00;*/
+	uint16_t numItems; /* 0x0003 */
+	uint8_t * items; /* ProtocolIE(id-MME-UE-S1AP-ID) + ProtocolIE(id-eNB-UE-S1AP-ID) */
+	uint16_t items_len;
+};
 
+struct _UE_Detach_Accept
+{
+	uint8_t status;
+	uint8_t procedureCode;
+	uint8_t criticality;
+	uint8_t length;
+	uint8_t * value;
+};
+
+struct _UE_Detach
+{
+	uint8_t init; /* = 0x00;*/
+	uint16_t numItems; /* 0x0005 */
+	uint8_t * items; /* ProtocolIE(id-MME-UE-S1AP-ID) + ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-NAS-PDU) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-TAI) */
+	uint16_t items_len;
+};
 
 
 
@@ -707,8 +730,6 @@ char * identify_id(uint16_t id)
 			return "id-MMERelativeCapacity";
 		case TimeToWait:
 			return "id-TimeToWait";
-		case Cause:
-			return "id-Cause";
 		case ID_NAS_PDU:
 			return "NAS-PDU";
 		case ID_UEAGGREGATE_MAXIMUM_BITRATE:
@@ -719,6 +740,10 @@ char * identify_id(uint16_t id)
 			return "id-UESecurityCapabilities";
 		case ID_SECURITY_KEY:
 			return "id-SecurityKey";
+		case ID_UE_S1AP_IDS:
+			return "id-UE_S1AP_IDs";
+		case ID_CAUSE:
+			return "id-Cause";
 		default:
 			return "Unknown";
 	}
@@ -1208,6 +1233,12 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 					offset_nas_pdu += value[offset_nas_pdu];
 				}
 			}
+			else if(value[offset_nas_pdu] == DETACH_ACCEPT)
+			{
+				printf("\t\tDetach Accept\n");
+				offset_nas_pdu++;
+				flag = -1;
+			}
 			else
 			{
 				flag = -1;
@@ -1239,6 +1270,7 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 			{
 				/* Saving MME S1AP ID */
 				set_mme_s1ap_id(ue, value + offset, (uint8_t) value_len);
+				ret = 0;
 			}
 			if(id == ID_UEAGGREGATE_MAXIMUM_BITRATE && value_len == 10)
 			{
@@ -1331,6 +1363,28 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				printf("\n");
 				ret = 0;
 			}
+			else if(id == ID_UE_S1AP_IDS)
+			{
+				printf("\tmME-UE-S1AP-ID: %d\n", (value[offset] << 8) | value[offset+1]);
+				printf("\teNB-UE-S1AP-ID: %d\n", (value[offset+2] << 8) | value[offset+3]);
+				ret = 0;
+			}
+			else if(id == ID_CAUSE)
+			{
+				printf("\tCause (%d) : ", value_len);
+				for(j = 0; j < value_len; j++)
+				{
+					if(j == 16)
+					{
+						printf("...");
+						break;
+					}
+					printf("%.2x ", value[offset + j]);
+				}
+				printf("\n");
+				ret = 0;
+			}
+			/* Default case */
 			else
 			{
 				printf("\tValue (%d) : ", value_len);
@@ -1344,6 +1398,7 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 					printf("%.2x ", value[offset + j]);
 				}
 				printf("\n");
+				ret = 0;
 			}
 			offset += value_len;
 		}
@@ -1436,6 +1491,28 @@ int analyze_UEContextReleaseCommand(uint8_t * buffer, UE * ue)
 	printInfo("Analyzing UEContextReleaseCommand\n");
 	ret = analyze_downlink_NAS_Transport(ue_crc.value, ue_crc.length, NULL, ue);
 	GC_free(ue_crc.value);
+	return ret;
+}
+
+int analyze_UEAccept(uint8_t * buffer, UE * ue)
+{
+	int ret = 1;
+	UE_Detach_Accept ue_da;
+
+	memcpy((void *) &ue_da, (void *) buffer, 4);
+	ue_da.value = (uint8_t *) GC_malloc(ue_da.length);
+	memcpy((void *) ue_da.value, (void *) buffer+4, ue_da.length);
+
+	if(ue_da.status != 0 || ue_da.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT)
+	{
+		printError("Wrong UEContextReleaseCommand message\n");
+		return 1;
+	}
+
+	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
+	printInfo("Analyzing UEContextReleaseCommand\n");
+	ret = analyze_downlink_NAS_Transport(ue_da.value, ue_da.length, NULL, ue);
+	GC_free(ue_da.value);
 	return ret;
 }
 
@@ -1621,6 +1698,18 @@ void freeUEContextReleaseRequest(UE_Context_Release_Request * ue_crr)
 	GC_free(ue_crr);
 }
 
+void freeUEContextReleaseResponse(UE_Context_Release_Response * ue_crr)
+{
+	GC_free(ue_crr->items);
+	GC_free(ue_crr);
+}
+
+void freeUEDetach(UE_Detach * ue_d)
+{
+	GC_free(ue_d->items);
+	GC_free(ue_d)
+}
+
 uint8_t * SecurityCommandComplete_to_buffer(Security_Command_Complete * scc, uint16_t * len)
 {
 	uint8_t * dump = (uint8_t *) GC_malloc(3 + scc->items_len);
@@ -1676,7 +1765,29 @@ uint8_t * UEContextReleaseRequest_to_buffer(UE_Context_Release_Request * ue_crr,
 	return dump;
 }
 
-ProtocolIE * generate_ProtocolIE_nas_pdu_security_command_complete(Auth_Challenge * auth_challenge)
+uint8_t * UEContextReleaseResponse_to_buffer(UE_Context_Release_Response * ue_crr, uint16_t * len)
+{
+	uint8_t * dump = (uint8_t *) GC_malloc(3 + ue_crr->items_len);
+	dump[0] = ue_crr->init;
+	dump[1] = ue_crr->numItems >> 8;
+	dump[2] = (uint8_t)(ue_crr->numItems & 0xFF);
+	memcpy(dump+3, ue_crr->items, ue_crr->items_len);
+	*len = 3 + ue_crr->items_len;
+	return dump;
+}
+
+uint8_t * UEDetach_to_buffer(UE_Detach * ue_d, uint16_t * len)
+{
+	uint8_t * dump = (uint8_t *) GC_malloc(3 + ue_d->items_len);
+	dump[0] = ue_d->init;
+	dump[1] = ue_d->numItems >> 8;
+	dump[2] = (uint8_t)(ue_d->numItems & 0xFF);
+	memcpy(dump+3, ue_d->items, ue_d->items_len);
+	*len = 3 + ue_d->items_len;
+	return dump;
+}
+
+ProtocolIE * generate_ProtocolIE_nas_pdu_security_command_complete(UE * ue, Auth_Challenge * auth_challenge)
 {
 	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
 	protocolIE->id = ID_NAS_PDU;
@@ -1686,7 +1797,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_security_command_complete(Auth_Challeng
 	bzero(&nas_pdu, sizeof(non_access_stratum_pdu_sec_comm_complete));
 
 	nas_pdu.security_header_type_protocol_discriminator = NAS_SECURITY_HEADER_TYPE_INT_PROTECTED | NAS_PROTOCOL_DISCRIMINATOR;
-	nas_pdu.sequence_number = 0;
+	nas_pdu.sequence_number = get_nas_sequence_number(ue);
 	nas_pdu.security_header_type_protocol_discriminator_second = NAS_SECURITY_HEADER_TYPE | NAS_PROTOCOL_DISCRIMINATOR;
 	nas_pdu.nas_eps_mmm_type = NAS_EPS_MMM_TYPE_SECURITY_COMMAND_COMPLETE;
 	/* Generate NAS integrity check*/
@@ -1705,7 +1816,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_security_command_complete(Auth_Challeng
 	return protocolIE;
 }
 
-ProtocolIE * generate_ProtocolIE_nas_pdu_attach_complete(Auth_Challenge * auth_challenge)
+ProtocolIE * generate_ProtocolIE_nas_pdu_attach_complete(UE * ue, Auth_Challenge * auth_challenge)
 {
 	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
 	protocolIE->id = ID_NAS_PDU;
@@ -1715,7 +1826,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_attach_complete(Auth_Challenge * auth_c
 	bzero(&nas_pdu, sizeof(non_access_stratum_pdu_attach_complete));
 
 	nas_pdu.security_header_type_protocol_discriminator = NAS_SECURITY_HEADER_TYPE_INT_CIPH_PROTECTED | NAS_PROTOCOL_DISCRIMINATOR;
-	nas_pdu.sequence_number = 1;
+	nas_pdu.sequence_number = get_nas_sequence_number(ue);
 	nas_pdu.security_header_type_protocol_discriminator_second = NAS_SECURITY_HEADER_TYPE | NAS_PROTOCOL_DISCRIMINATOR;
 	nas_pdu.nas_eps_mmm_type = NAS_EPS_MMM_TYPE_ATTACH_COMPLETE;
 	nas_pdu.esm_container[0] = 0x00; /* Length */
@@ -1736,6 +1847,42 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_attach_complete(Auth_Challenge * auth_c
 	protocolIE->value = (uint8_t *) GC_malloc(sizeof(non_access_stratum_pdu_attach_complete) + 2);
 	memcpy(protocolIE->value, (void *) encapsulated, sizeof(non_access_stratum_pdu_attach_complete) + 2);
 	protocolIE->value_len = sizeof(non_access_stratum_pdu_attach_complete) + 2;
+	GC_free(encapsulated);
+	return protocolIE;
+}
+
+ProtocolIE * generate_ProtocolIE_nas_pdu_detach(UE * ue, Auth_Challenge * auth_challenge, uint8_t switch_off)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_NAS_PDU;
+	protocolIE->criticality = CRITICALITY_REJECT;
+
+	non_access_stratum_pdu_detach nas_pdu;
+	bzero(&nas_pdu, sizeof(non_access_stratum_pdu_detach));
+
+	nas_pdu.security_header_type_protocol_discriminator = NAS_SECURITY_HEADER_TYPE_INT_CIPH_PROTECTED | NAS_PROTOCOL_DISCRIMINATOR;
+	nas_pdu.sequence_number = get_nas_sequence_number(ue);
+	nas_pdu.security_header_type_protocol_discriminator_second = NAS_SECURITY_HEADER_TYPE | NAS_PROTOCOL_DISCRIMINATOR;
+	nas_pdu.nas_eps_mmm_type = NAS_EPS_MMM_TYPE_DETACH;
+	nas_pdu.eps_mobile_identity[0] = 0x01; /* Uplink byte that indicates detach: EPS Detach */
+	if(switch_off != 0)
+		nas_pdu.eps_mobile_identity[0] |= 0x08;
+	nas_pdu.eps_mobile_identity[1] = 0x0B; /* GUTI_CODE + GUTI lenght*/
+	nas_pdu.eps_mobile_identity[2] = 0xF6; /* Even number of identity digits + GUTI (6) */
+	memcpy(nas_pdu.eps_mobile_identity+3, get_guti(ue), GUTI_LEN); /* Copy GUTI */
+
+	/* Generate NAS integrity check*/
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 16, 1, nas_pdu.message_authentication_code);
+	
+
+
+	/* NAS PDU value is encapsulated in other value */
+	uint8_t * value = generate_s1ap_value((uint8_t *)&nas_pdu, sizeof(non_access_stratum_pdu_detach));
+	uint8_t * encapsulated = generate_s1ap_value(value, sizeof(non_access_stratum_pdu_detach) + 1);
+	GC_free(value);
+	protocolIE->value = (uint8_t *) GC_malloc(sizeof(non_access_stratum_pdu_detach) + 2);
+	memcpy(protocolIE->value, (void *) encapsulated, sizeof(non_access_stratum_pdu_detach) + 2);
+	protocolIE->value_len = sizeof(non_access_stratum_pdu_detach) + 2;
 	GC_free(encapsulated);
 	return protocolIE;
 }
@@ -1832,7 +1979,7 @@ Security_Command_Complete * generate_Security_Command_Complete(eNB * enb, UE * u
 	scc->numItems = 0x0005;
 	mme_ue_s1ap_id = generate_ProtocolIE_mme_ue_s1ap_id(ue);
 	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
-	nas_pdu = generate_ProtocolIE_nas_pdu_security_command_complete(auth_challenge);
+	nas_pdu = generate_ProtocolIE_nas_pdu_security_command_complete(ue, auth_challenge);
 	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
 	tai = generate_ProtocolIE_tai(enb);
 	/* Special case: criticality ignore*/
@@ -1924,7 +2071,7 @@ Uplink_NAS_Transport * generate_Uplink_NAS_Transport(eNB * enb, UE * ue, Auth_Ch
 	uplinkNAST->numItems = 0x0005;
 	mme_ue_s1ap_id = generate_ProtocolIE_mme_ue_s1ap_id(ue);
 	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
-	nas_pdu = generate_ProtocolIE_nas_pdu_attach_complete(auth_challenge);
+	nas_pdu = generate_ProtocolIE_nas_pdu_attach_complete(ue, auth_challenge);
 	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
 	tai = generate_ProtocolIE_tai(enb);
 	/* Special case: criticality ignore*/
@@ -2167,22 +2314,13 @@ UE_Context_Release_Request * generate_ue_context_release_request(UE * ue)
 	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
 	freeProtocolIE(mme_ue_s1ap_id);
 
-	printf("MME_UE_S1AP_ID:\n");
-	dumpMemory(mme_ue_s1ap_id_buffer, mme_ue_s1ap_id_len);
-
 	int enb_ue_s1ap_id_len;
 	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
 	freeProtocolIE(enb_ue_s1ap_id);
 
-	printf("ENB_UE_S1AP_ID:\n");
-	dumpMemory(enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
-
 	int cause_len;
 	uint8_t * cause_buffer = ProtocolIE_to_buffer(cause, &cause_len);
 	freeProtocolIE(cause);
-
-	printf("CAUSE:\n");
-	dumpMemory(cause_buffer, cause_len);
 
 	int i = 0;
 	ue_crr->items = (uint8_t *) GC_malloc(mme_ue_s1ap_id_len + enb_ue_s1ap_id_len + cause_len);
@@ -2198,6 +2336,113 @@ UE_Context_Release_Request * generate_ue_context_release_request(UE * ue)
 	memcpy(ue_crr->items + i, cause_buffer, cause_len);
 	GC_free(cause_buffer);
 	i += cause_len;
+
+	ue_crr->items_len = i;
+
+	return ue_crr;
+}
+
+UE_Detach * generate_ue_detach(eNB * enb, UE * ue, Auth_Challenge * auth_challenge, uint8_t switch_off)
+{
+	ProtocolIE * mme_ue_s1ap_id;
+	ProtocolIE * enb_ue_s1ap_id;
+	ProtocolIE * nas_pdu;
+	ProtocolIE * eutran_cgi;
+	ProtocolIE * tai;
+
+
+	UE_Detach * ue_d = GC_malloc(sizeof(InitialUEMessage));
+	ue_d->init = 0x00;
+	ue_d->numItems = 0x0005;
+	mme_ue_s1ap_id = generate_ProtocolIE_mme_ue_s1ap_id(ue);
+	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
+	nas_pdu = generate_ProtocolIE_nas_pdu_detach(ue, auth_challenge, switch_off);
+	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
+	tai = generate_ProtocolIE_tai(enb);
+	/* Special case: criticality ignore*/
+	tai->criticality = CRITICALITY_IGNORE;
+
+	int mme_ue_s1ap_id_len;
+	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
+	freeProtocolIE(mme_ue_s1ap_id);
+
+	int enb_ue_s1ap_id_len;
+	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
+	freeProtocolIE(enb_ue_s1ap_id);
+
+	int nas_pdu_len;
+	uint8_t * nas_pdu_buffer = ProtocolIE_to_buffer(nas_pdu, &nas_pdu_len);
+	freeProtocolIE(nas_pdu);
+
+	int eutran_cgi_len;
+	uint8_t * eutran_cgi_buffer = ProtocolIE_to_buffer(eutran_cgi, &eutran_cgi_len);
+	freeProtocolIE(eutran_cgi);
+
+	int tai_len;
+	uint8_t * tai_buffer = ProtocolIE_to_buffer(tai, &tai_len);
+	freeProtocolIE(tai);
+
+	int i = 0;
+	ue_d->items = (uint8_t *) GC_malloc(mme_ue_s1ap_id_len + enb_ue_s1ap_id_len + nas_pdu_len + eutran_cgi_len + tai_len);
+
+	memcpy(ue_d->items + i, mme_ue_s1ap_id_buffer, mme_ue_s1ap_id_len);
+	GC_free(mme_ue_s1ap_id_buffer);
+	i += mme_ue_s1ap_id_len;
+
+	memcpy(ue_d->items + i, enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+	GC_free(enb_ue_s1ap_id_buffer);
+	i += enb_ue_s1ap_id_len;
+
+	memcpy(ue_d->items + i, nas_pdu_buffer, nas_pdu_len);
+	GC_free(nas_pdu_buffer);
+	i += nas_pdu_len;
+
+	memcpy(ue_d->items + i, eutran_cgi_buffer, eutran_cgi_len);
+	GC_free(eutran_cgi_buffer);
+	i += eutran_cgi_len;
+
+	memcpy(ue_d->items + i, tai_buffer, tai_len);
+	GC_free(tai_buffer);
+	i += tai_len;
+
+	ue_d->items_len = i;
+
+	return ue_d;
+}
+
+UE_Context_Release_Response * generate_ue_context_release_response(UE * ue)
+{
+	ProtocolIE * mme_ue_s1ap_id;
+	ProtocolIE * enb_ue_s1ap_id;
+
+
+	UE_Context_Release_Response * ue_crr = GC_malloc(sizeof(InitialUEMessage));
+	ue_crr->init = 0x20;
+	ue_crr->numItems = 0x0002;
+	mme_ue_s1ap_id = generate_ProtocolIE_mme_ue_s1ap_id(ue);
+	mme_ue_s1ap_id->criticality = CRITICALITY_REJECT;
+
+	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
+	enb_ue_s1ap_id->criticality = CRITICALITY_REJECT;
+
+	int mme_ue_s1ap_id_len;
+	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
+	freeProtocolIE(mme_ue_s1ap_id);
+
+	int enb_ue_s1ap_id_len;
+	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
+	freeProtocolIE(enb_ue_s1ap_id);
+
+	int i = 0;
+	ue_crr->items = (uint8_t *) GC_malloc(mme_ue_s1ap_id_len + enb_ue_s1ap_id_len);
+
+	memcpy(ue_crr->items + i, mme_ue_s1ap_id_buffer, mme_ue_s1ap_id_len);
+	GC_free(mme_ue_s1ap_id_buffer);
+	i += mme_ue_s1ap_id_len;
+
+	memcpy(ue_crr->items + i, enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+	GC_free(enb_ue_s1ap_id_buffer);
+	i += enb_ue_s1ap_id_len;
 
 	ue_crr->items_len = i;
 
@@ -2226,6 +2471,56 @@ s1ap_initiatingMessage * generate_UE_Context_Release_Request(UE * ue)
 	return s1ap_ue_context_release_req;
 }
 
+s1ap_initiatingMessage * generate_UE_Context_Release_Response(UE * ue)
+{
+	s1ap_initiatingMessage * s1ap_ue_context_release_res = GC_malloc(sizeof(s1ap_initiatingMessage));
+	s1ap_ue_context_release_res->procedureCode = (SUCCESSFUL_OUTCOME << 8) | UE_CONTEXT_RELEASE_RESPONSE;
+	s1ap_ue_context_release_res->criticality = CRITICALITY_REJECT;
+
+	UE_Context_Release_Response * ue_crr;
+	ue_crr = generate_ue_context_release_response(ue);
+
+	uint16_t len;
+	uint8_t * ue_crr_buf = UEContextReleaseResponse_to_buffer(ue_crr, &len);
+
+	freeUEContextReleaseResponse(ue_crr);
+
+	s1ap_ue_context_release_res->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(s1ap_ue_context_release_res->value + 1, (void *) ue_crr_buf, len);
+	GC_free(ue_crr_buf);
+	s1ap_ue_context_release_res->value[0] = (uint8_t) len;
+	s1ap_ue_context_release_res->value_len = len + 1;
+	return s1ap_ue_context_release_res;
+}
+
+s1ap_initiatingMessage * generate_s1ap_UE_Detach(eNB * enb, UE * ue, Auth_Challenge * auth_challenge, uint8_t switch_off)
+{
+	s1ap_initiatingMessage * s1ap_ue_detach = GC_malloc(sizeof(s1ap_initiatingMessage));
+	s1ap_ue_detach->procedureCode = UPLINK_NAS_TRANSPORT;
+	s1ap_ue_detach->criticality = CRITICALITY_IGNORE;
+
+	UE_Detach * ue_d;
+	ue_d = generate_ue_detach(enb, ue, auth_challenge, switch_off);
+
+	uint16_t len;
+	uint8_t * ue_d_buf = UEDetach_to_buffer(ue_d, &len);
+
+	freeUEDetach(ue_d);
+
+	s1ap_ue_detach->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(s1ap_ue_detach->value + 1, (void *) ue_d_buf, len);
+	GC_free(ue_d_buf);
+	s1ap_ue_detach->value[0] = (uint8_t) len;
+	s1ap_ue_detach->value_len = len + 1;
+	return s1ap_ue_detach;
+}
+
+
+
+/*******************/
+/* Main Procedures */
+/*******************/
+
 int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 {
 	s1ap_initiatingMessage * s1ap_attach_request;
@@ -2234,7 +2529,6 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	s1ap_initiatingMessage * ue_capability;
 	s1ap_initiatingMessage * init_context_setup_response;
 	s1ap_initiatingMessage * attach_complete;
-	Auth_Challenge auth_challenge;
 	int err;
 	uint16_t len = 0;
 	uint8_t * initiatingMsg_buffer;
@@ -2244,6 +2538,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	uint8_t * init_context_setup_response_buffer;
 	uint8_t * attach_complete_buffer;
 	uint8_t buffer[BUFFER_LEN];
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 	int flags = 0;
 	int recv_len;
 	struct sockaddr_in addr;
@@ -2255,6 +2550,9 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	/* SCTP parameters */
 	struct sctp_sndrcvinfo sndrcvinfo;
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+
+	/* Reset UE NAS sequence number */
+	reset_nas_sequence_number(ue);
 
 	printInfo("Starting Attach and Default EPS Bearer procedure...\n");
 
@@ -2287,7 +2585,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 		}
 
 		/* Analyze buffer and get AUTHENTICATION REQUEST*/
-		err = analyze_Authentication_Request(buffer, &auth_challenge, ue);
+		err = analyze_Authentication_Request(buffer, auth_challenge, ue);
 		if(err == 1)
 		{
 			printError("Authentication Request error\n");
@@ -2306,15 +2604,15 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	}
 
 	/* Calculate Challenge */
-	f2345(get_ue_key(ue), auth_challenge.RAND, auth_challenge.RES, auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, get_ue_op_key(ue));
-	printChallenge(&auth_challenge);
+	f2345(get_ue_key(ue), auth_challenge->RAND, auth_challenge->RES, auth_challenge->CK, auth_challenge->IK, auth_challenge->AK, get_ue_op_key(ue));
+	printChallenge(auth_challenge);
 	printOK("RES successfully calculated: ");
-	dumpMemory(auth_challenge.RES, 8);
+	dumpMemory(auth_challenge->RES, 8);
 
 	/***************************/
 	/* Authentication Response */
 	/***************************/
-	s1ap_auth_response = generate_S1AP_Authentication_Response(enb, ue, &auth_challenge);
+	s1ap_auth_response = generate_S1AP_Authentication_Response(enb, ue, auth_challenge);
 	authentication_res_buffer = s1ap_initiatingMessage_to_buffer(s1ap_auth_response, &len);
 	freeS1ap_initiatingMessage(s1ap_auth_response);
 
@@ -2325,7 +2623,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 
 	/* KASME, NAS_ENC and NAS_INT are generated while UE is waiting for Security mode command */
 	/* Only integrity is implemented in this simulator to minimize the CPU load */
-	generate_kasme(auth_challenge.CK, auth_challenge.IK, auth_challenge.AK, auth_challenge.AUTN, get_plmn(enb), PLMN_LENGTH, auth_challenge.KASME);
+	generate_kasme(auth_challenge->CK, auth_challenge->IK, auth_challenge->AK, auth_challenge->AUTN, get_plmn(enb), PLMN_LENGTH, auth_challenge->KASME);
 
 
 	/*************************/
@@ -2360,14 +2658,14 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
     }
 
     /* Temporary encryption and integrity keys generation */
-	generate_nas_enc_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_ENC, get_nas_session_enc_alg(ue));
-	generate_nas_int_keys(auth_challenge.KASME, auth_challenge.NAS_KEY_INT, get_nas_session_int_alg(ue));
-	printChallengeDerivatedKeys(&auth_challenge);
+	generate_nas_enc_keys(auth_challenge->KASME, auth_challenge->NAS_KEY_ENC, get_nas_session_enc_alg(ue));
+	generate_nas_int_keys(auth_challenge->KASME, auth_challenge->NAS_KEY_INT, get_nas_session_int_alg(ue));
+	printChallengeDerivatedKeys(auth_challenge);
 
 	/**************************/
 	/* Security Mode Complete */
 	/**************************/
-	s1ap_sec_comm_complete = generate_S1AP_Security_Command_Complete(enb, ue, &auth_challenge);
+	s1ap_sec_comm_complete = generate_S1AP_Security_Command_Complete(enb, ue, auth_challenge);
 	security_command_complete_buffer = s1ap_initiatingMessage_to_buffer(s1ap_sec_comm_complete, &len);
 	freeS1ap_initiatingMessage(s1ap_sec_comm_complete);
 
@@ -2435,7 +2733,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	/****************************************************************/
 	/* Attach Complete & Activate default EPS bearer context accept */
 	/****************************************************************/
-	attach_complete = generate_S1AP_Attach_Complete(enb, ue, &auth_challenge);
+	attach_complete = generate_S1AP_Attach_Complete(enb, ue, auth_challenge);
 	attach_complete_buffer = s1ap_initiatingMessage_to_buffer(attach_complete, &len);
 	freeS1ap_initiatingMessage(attach_complete);
 
@@ -2452,7 +2750,9 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 int procedure_UE_Context_Release(eNB * enb, UE * ue)
 {
 	s1ap_initiatingMessage * ue_context_release_request;
+	s1ap_initiatingMessage * ue_context_release_response;
 	uint8_t * ue_context_release_request_buffer;
+	uint8_t * ue_context_release_response_buffer;
 	uint16_t len = 0;
 	int err;
 	int socket = get_mme_socket(enb);
@@ -2482,12 +2782,9 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 	ue_context_release_request_buffer = s1ap_initiatingMessage_to_buffer(ue_context_release_request, &len);
 	freeS1ap_initiatingMessage(ue_context_release_request);
 
-	printf("DUMP: \n");
-	dumpMemory(ue_context_release_request_buffer, len);
-
 	/* Sending Authentication Response */
 	/* MUST BE ON STREAM 1 */
-	//sctp_sendmsg(socket, (void *) ue_context_release_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	sctp_sendmsg(socket, (void *) ue_context_release_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(ue_context_release_request_buffer);
 
 	/* Receiving MME answer */
@@ -2517,6 +2814,147 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
     {
     	printOK("UE Context Release Command\n");
     }
+
+
+    /*****************************/
+	/* UE Context Release Response*/
+	/*****************************/
+	ue_context_release_response = generate_UE_Context_Release_Response(ue);
+	ue_context_release_response_buffer = s1ap_initiatingMessage_to_buffer(ue_context_release_response, &len);
+	freeS1ap_initiatingMessage(ue_context_release_response);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) ue_context_release_response_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(ue_context_release_response_buffer);
+
+	return 0;
+}
+
+int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
+{
+	s1ap_initiatingMessage * ue_detach;
+	s1ap_initiatingMessage * ue_context_release_response;
+	uint8_t * ue_detach_buffer;
+	uint8_t * ue_context_release_response_buffer;
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
+	uint16_t len = 0;
+	int err;
+	int socket = get_mme_socket(enb);
+	uint8_t buffer[BUFFER_LEN];
+	int flags;
+	int recv_len;
+	struct sockaddr_in addr;
+	socklen_t from_len = (socklen_t)sizeof(struct sockaddr_in);
+	bzero((void *)&addr, sizeof(struct sockaddr_in));
+	/* SCTP parameters */
+	struct sctp_sndrcvinfo sndrcvinfo;
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	printInfo("Starting UE Detach procedure...\n");
+
+
+	/*************/
+	/* UE Detach */
+	/*************/
+	ue_detach = generate_s1ap_UE_Detach(enb, ue, auth_challenge, switch_off);
+	ue_detach_buffer = s1ap_initiatingMessage_to_buffer(ue_detach, &len);
+	freeS1ap_initiatingMessage(ue_detach);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) ue_detach_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(ue_detach_buffer);
+
+
+	/********************/
+	/* UE Detach Accept */
+	/********************/
+	/* Only with switch_off disable*/
+
+	if(switch_off == 0)
+	{
+		/* Receiving MME answer */
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			{
+				printError("SCTP Timeout (%s)\n", strerror(errno));
+			}
+			else
+			{
+				printError("SCTP (%s)\n", strerror(errno));
+			}
+			return 1;
+		}
+
+		/* Analyze buffer */
+		err = analyze_UEAccept(buffer, ue);
+		if(err == 1)
+	    {
+	    	printError("UE Detach Accept\n");
+	    	return 1;
+	    }
+	    else
+	    {
+	    	printOK("UE Detach Accept\n");
+	    }
+	}
+	else
+	{
+		printInfo("Switch Off Detach case\n");
+	}
+
+
+
+	/* Receiving MME answer */
+	flags = 0;
+	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+	if(recv_len < 0)
+	{
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		{
+			printError("SCTP Timeout (%s)\n", strerror(errno));
+		}
+		else
+		{
+			printError("SCTP (%s)\n", strerror(errno));
+		}
+		return 1;
+	}
+
+	/* Analyze buffer and get Initial Context Setup Request*/
+	err = analyze_UEContextReleaseCommand(buffer, ue);
+	if(err == 1)
+    {
+    	printError("UE Context Release Command\n");
+    	return 1;
+    }
+    else
+    {
+    	printOK("UE Context Release Command\n");
+    }
+
+
+    /*****************************/
+	/* UE Context Release Response*/
+	/*****************************/
+	ue_context_release_response = generate_UE_Context_Release_Response(ue);
+	ue_context_release_response_buffer = s1ap_initiatingMessage_to_buffer(ue_context_release_response, &len);
+	freeS1ap_initiatingMessage(ue_context_release_response);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) ue_context_release_response_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(ue_context_release_response_buffer);
 
 	return 0;
 }

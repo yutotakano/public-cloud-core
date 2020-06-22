@@ -25,13 +25,19 @@
 
 
 #define INIT_MSG 0x01
-
 #define CODE_OK 0x80
-#define CODE_UE_BEHAVIOUR 0x02
 #define CODE_ENB_BEHAVIOUR 0x01
+#define CODE_UE_BEHAVIOUR 0x02
+#define CODE_IDLE 0x03
+#define CODE_DETACHED 0x04
+#define CODE_ATTACHED 0x05
+
 
 uint8_t local_ip[4];
 uint8_t ue_ip[4];
+
+int sockfd_controller;
+struct sockaddr_in serv_addr;
 
 /*
     Bit 0 (Status)
@@ -225,38 +231,70 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
     return 0;
 }
 
-void send_init_controller(int sock, struct sockaddr_in * serv_addr)
+void send_buffer(int sock, struct sockaddr_in * serv_addr, int addr_size, uint8_t * buf, int len)
 {
-    uint8_t init = INIT_MSG;
-    sendto(sock, (uint8_t *)&init, 1, 0, (const struct sockaddr *) serv_addr, sizeof(*serv_addr));
-}
-
-void send_code_controller(int sock, struct sockaddr_in * serv_addr, uint8_t code)
-{
-    uint8_t code_send = code;
-    if(sendto(sock, (uint8_t *)&code_send, 1, 0, (const struct sockaddr *) serv_addr, sizeof(*serv_addr)) == -1)
-    {
-        perror("send_code_controller");
-    }
-}
-
-void send_buffer(int sock, struct sockaddr_in * serv_addr, uint8_t * buf, int len)
-{
-    if(sendto(sock, buf, len, 0, (const struct sockaddr *) serv_addr, sizeof(*serv_addr)) == -1)
+    if(sendto(sock, buf, len, 0, (const struct sockaddr *) serv_addr, addr_size) == -1)
     {
         perror("send_buffer");
     }
 }
 
-void receive_controller(int sock, struct sockaddr_in * serv_addr)
+void send_idle_controller(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_IDLE;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_ue_detach_controller(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_DETACHED;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_ue_attach_controller(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_ATTACHED;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_code_controller(int sock, struct sockaddr_in * serv_addr, int addr_size, uint8_t code)
+{
+    uint8_t code_send = code;
+    if(sendto(sock, (uint8_t *)&code_send, 1, 0, (const struct sockaddr *) serv_addr, addr_size) == -1)
+    {
+        perror("send_code_controller");
+    }
+}
+
+void send_init_controller()
+{
+    send_code_controller(sockfd_controller, &serv_addr, sizeof(serv_addr), INIT_MSG);
+}
+
+void receive_controller()
 {
     uint8_t buffer[1024];
     uint8_t response[1024];
     int len, n, res, res_len, sockfd;
     struct sockaddr_in serv_addr_aux;
 
-    sockfd = sock;
-    memcpy(&serv_addr_aux, serv_addr, sizeof(*serv_addr));
+    sockfd = sockfd_controller;
+    memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
 
     n = recvfrom(sockfd, (char *)buffer, 1024, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
     res = analyze_controller_msg(buffer, n, response, &res_len);
@@ -270,21 +308,19 @@ void receive_controller(int sock, struct sockaddr_in * serv_addr)
         printError("Slave error: Sending error to controller\n");
         /* Send slave error code to controller */
         response[0] &= (~CODE_OK);
-        send_buffer(sockfd, &serv_addr_aux, response, res_len);
+        send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
     }
     else
     {
         /* Send OK */
         printOK("Slave running\n");
         response[0] |= CODE_OK;
-        send_buffer(sockfd, &serv_addr_aux, response, res_len);
+        send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
     }
 }
 
 int main(int argc, char const *argv[])
 {
-    int sockfd;
-    struct sockaddr_in serv_addr;
     uint32_t ue_address;
 
     if(argc < 2)
@@ -315,21 +351,21 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
-    bzero(local_ip, 4);
+    memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
+    //bzero(local_ip, 4);
 
-    if ( (sockfd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+    if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
         exit(1);
     }
 
     /* Send INIT message */
-    send_init_controller(sockfd, &serv_addr);
+    send_init_controller();
 
     while(1)
     {
         /* Receive Controller instructions */
-        receive_controller(sockfd, &serv_addr);
+        receive_controller();
     }
 
     return 0;

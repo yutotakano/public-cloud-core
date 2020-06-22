@@ -27,6 +27,10 @@
 #define MTU_SIZE 1500
 #define SUBNET_MASK 0xFFFFFFF0
 
+/* Global variables*/
+struct ifreq ifr_tun; /* ifreq struct that contains TUN Device information */
+int sock; /* Control socket used to configure the TUN Device */
+
 /**************************************************************************
  * tun_alloc: allocates or reconnects to a tun/tap device. The caller     *
  *            must reserve enough space in *dev.                          *
@@ -50,7 +54,7 @@ int tun_init(char * name, struct ifreq * ifr, int flags)
 
     if( (err = ioctl(fd, TUNSETIFF, (void *)ifr)) < 0 )
     {
-        perror("TUNSETIFF");
+        perror("tun TUNSETIFF");
         close(fd);
         return err;
     }
@@ -77,8 +81,39 @@ int set_ip(struct ifreq *ifr_tun, int sock, uint8_t * ip)
     memcpy( &ifr_tun->ifr_addr, &addr, sizeof(struct sockaddr) );
 
     if ( ioctl(sock, SIOCSIFADDR, ifr_tun) < 0) {
-    	perror("socket SIOCSIFADDR");
+    	perror("tun SIOCSIFADDR");
         close(sock);
+        return -1;
+    }
+
+    return 0; 
+}
+
+int update_ip(uint8_t * new_ip)
+{
+    struct sockaddr_in addr;
+    struct sockaddr_in * sa;
+
+    /* set the IP of this end point of tunnel */
+    memset( &addr, 0, sizeof(addr) );
+    memcpy((void*) &addr.sin_addr.s_addr, new_ip, sizeof(struct in_addr));
+    addr.sin_family = AF_INET;
+    memcpy( &ifr_tun.ifr_addr, &addr, sizeof(struct sockaddr) );
+
+    if ( ioctl(sock, SIOCSIFADDR, &ifr_tun) < 0) {
+        perror("Update tun SIOCSIFADDR");
+        return -1;
+    }
+
+    sa = (struct sockaddr_in *)&ifr_tun.ifr_netmask;
+    memset(sa,0,sizeof(*sa));
+    sa->sin_family = AF_INET;
+    sa->sin_addr.s_addr = htonl(SUBNET_MASK);
+
+    /* Set the mask */
+    if (ioctl(sock, SIOCSIFNETMASK, &ifr_tun) < 0)
+    {
+        perror("Update tun SIOCSIFNETMASK");
         return -1;
     }
 
@@ -87,15 +122,13 @@ int set_ip(struct ifreq *ifr_tun, int sock, uint8_t * ip)
 
 int open_tun_iface(char * name, uint8_t * ip)
 {
-	int sock;
-	struct ifreq ifr_tun;
     struct sockaddr_in * sa;
 
 	int tunfd = tun_init(name, &ifr_tun, IFF_TUN | IFF_NO_PI);
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
-        perror("Open socket");
+        perror("Open TUN socket");
         tun_close(tunfd);
         return -1;
     }
@@ -109,19 +142,12 @@ int open_tun_iface(char * name, uint8_t * ip)
     sa = (struct sockaddr_in *)&ifr_tun.ifr_netmask;
     memset(sa,0,sizeof(*sa));
     sa->sin_family = AF_INET;
-    //uint32_t addr = (ip[0] << 24) | (ip[1] << 16) | (ip[2] << 8) | (ip[3]);
-    //uint8_t i = 0;
-    //while((addr & 0x00000001) == 0)
-    //{
-    //    addr = addr >> 1;
-    //    i++;
-    //}
     sa->sin_addr.s_addr = htonl(SUBNET_MASK);
 
     /* Set the mask */
     if (ioctl(sock, SIOCSIFNETMASK, &ifr_tun) < 0)
     {
-        perror("SIOCSIFNETMASK");
+        perror("tun SIOCSIFNETMASK");
         tun_close(tunfd);
         close(sock);
         return -1;
@@ -129,7 +155,7 @@ int open_tun_iface(char * name, uint8_t * ip)
 
     /* Read flags */
     if (ioctl(sock, SIOCGIFFLAGS, &ifr_tun) < 0) {
-        perror("SIOCGIFFLAGS");
+        perror("tun SIOCGIFFLAGS");
         tun_close(tunfd);
         close(sock);
         return -1;
@@ -140,7 +166,7 @@ int open_tun_iface(char * name, uint8_t * ip)
     ifr_tun.ifr_flags |= IFF_RUNNING;
 
     if (ioctl(sock, SIOCSIFFLAGS, &ifr_tun) < 0)  {
-        perror("SIOCGIFFLAGS");
+        perror("tun SIOCGIFFLAGS");
         tun_close(tunfd);
         close(sock);
         return -1;
@@ -149,7 +175,7 @@ int open_tun_iface(char * name, uint8_t * ip)
     /* Set MTU size */
     ifr_tun.ifr_mtu = MTU_SIZE; 
     if (ioctl(sock, SIOCSIFMTU, &ifr_tun) < 0)  {
-        perror("SIOCSIFMTU");
+        perror("tun SIOCSIFMTU");
         tun_close(tunfd);
         close(sock);
         return -1;
