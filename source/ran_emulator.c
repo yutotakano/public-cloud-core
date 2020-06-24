@@ -24,7 +24,7 @@
 #define CONTROLLER_PORT 1234
 
 
-#define INIT_MSG 0x01
+#define INIT_MSG 0xFF
 #define CODE_OK 0x80
 #define CODE_ENB_BEHAVIOUR 0x01
 #define CODE_UE_BEHAVIOUR 0x02
@@ -150,6 +150,14 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Multiplexer deployed */
         else
             memcpy(data.ue_ip, temp_ip, 4);
+
+        /* Copy control plane actions */
+        /* Set len */
+        data.control_plane_len = len - offset;
+        /* Allocate control plane */
+        data.control_plane = calloc(1, data.control_plane_len);
+        memcpy(data.control_plane, buffer + offset, data.control_plane_len);
+        offset += data.control_plane_len;
 
 
         /* Error control */
@@ -309,6 +317,8 @@ void receive_controller()
         /* Send slave error code to controller */
         response[0] &= (~CODE_OK);
         send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
+        close(sockfd);
+        exit(1);
     }
     else
     {
@@ -351,8 +361,8 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
-    //bzero(local_ip, 4);
+    //memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
+    bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 

@@ -80,6 +80,9 @@ class eNB:
 	def set_ue_port(self, port):
 		self.ue_port = port
 
+	def set_stopped(self):
+		self.status.move_to_stopped()
+
 	def set_pending(self):
 		self.status.move_to_pending()
 

@@ -265,7 +265,7 @@ int enb_emulator_start(enb_data * data)
 	/* Create eNB object */
 	enb = init_eNB(id_to_uint32(data->id), (char *)data->mcc, (char *)data->mnc, data->enb_ip);
 	if(enb == NULL)
-		return -1;
+		return 1;
 
 	/***************/
     /* Connect eNB */
@@ -274,13 +274,13 @@ int enb_emulator_start(enb_data * data)
     if(sctp_connect_enb_to_mme(enb, data->epc_ip) == 1)
     {
     	printError("SCTP Setup error\n");
-    	return -1;
+    	return 1;
     }
     /* Connect eNB to MME */
     if(procedure_S1_Setup(enb) == 1)
     {
     	printError("eNB S1 Setup problems\n");
-    	return -1;
+    	return 1;
     }
     printOK("eNB successfully connected\n");
 
@@ -289,7 +289,7 @@ int enb_emulator_start(enb_data * data)
 	if(sockfd == -1)
 	{
 		perror("eNB socket");
-		return -1;
+		return 1;
 	}
 
 	/* Setup eNB address */
@@ -303,14 +303,14 @@ int enb_emulator_start(enb_data * data)
 	if(bind(sockfd, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
 	{
 		perror("eNB bind");
-		return -1;
+		return 1;
 	}
 
 	/* Listen for UE's */
 	if(listen(sockfd, CLIENT_NUMBER) == -1)
 	{
 		perror("eNB listen");
-		return -1;
+		return 1;
 	}
 
 	/* Initialize eNB thread */
@@ -318,7 +318,7 @@ int enb_emulator_start(enb_data * data)
     if (pthread_create(&enb_thread, NULL, enb_emulator_thread, 0) != 0)
     {
         perror("pthread_create enb_emulator_thread");
-        return -1;
+        return 1;
     }
 
     /* Return back an wait for Controller messages */

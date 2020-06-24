@@ -20,6 +20,15 @@
 
 #define ENB_PORT 2233
 
+/* Control plane actions */
+#define CP_INIT 0
+#define CP_DETACH 1
+#define CP_DETACH_SWITCH_OFF 2
+#define CP_ATTACH 3
+#define CP_MOVE_TO_IDLE 4
+#define CP_MOVE_TO_CONNECTED 5
+#define CP_HANDOVER 6
+
 ue_data ue;
 pid_t traffic_generator;
 
@@ -276,6 +285,63 @@ int send_ue_attach()
 	return 0;
 }
 
+void do_control_plane_action(uint8_t action)
+{
+	switch(action)
+	{
+		case CP_INIT:
+			/* Do nothing */
+			return;
+		case CP_DETACH:
+			send_ue_detach(0);
+			return;
+		case CP_DETACH_SWITCH_OFF:
+			send_ue_detach(1);
+			return;
+		case CP_ATTACH:
+			send_ue_attach();
+			return;
+		case CP_MOVE_TO_IDLE:
+			send_ue_context_release();
+			return;
+		case CP_MOVE_TO_CONNECTED:
+			/* TODO: Not implemented */
+			return;
+		case CP_HANDOVER:
+			/* TODO: Not implemented */
+			return;
+	}
+}
+
+void * control_plane(void * args)
+{
+	int i;
+	uint32_t cp_sleep;
+
+	/* Create traffic generator process */
+	start_traffic_generator(ue.command);
+	
+	/* Infinite loop */
+	while(1)
+	{
+		/* control plane behaviour */
+		for(i = 0; i < ue.control_plane_len; i += 4)
+		{
+			/* Do the action */
+			do_control_plane_action(ue.control_plane[i]);
+			/* Sleep */
+			cp_sleep = (ue.control_plane[i+1] << 16) | (ue.control_plane[i+2] << 8) | (ue.control_plane[i+3]);
+			if(cp_sleep == 16777215)
+			{
+				printInfo("Control plane: INF sleep detected\n");
+				return NULL;
+			}
+			printInfo("Sleeping %d seconds\n", cp_sleep);
+			sleep(cp_sleep);
+		}
+	}
+}
+
 int ue_emulator_start(ue_data * data)
 {
 	int sockfd;
@@ -283,7 +349,9 @@ int ue_emulator_start(ue_data * data)
 	init_msg * msg;
 	init_response_msg * res;
 	int n;
+	int i;
 	int ret;
+	pthread_t control_plane_thread;
 
     /* Print UE data */
 	printf("ID: %d\n", (data->id[0] << 24) | (data->id[1] << 16) | (data->id[2] << 8) | data->id[3] );
@@ -300,6 +368,10 @@ int ue_emulator_start(ue_data * data)
 	printf("Local IP: %d.%d.%d.%d\n", data->local_ip[0], data->local_ip[1], data->local_ip[2], data->local_ip[3]);
 	printf("UE IP: %d.%d.%d.%d\n", data->ue_ip[0], data->ue_ip[1], data->ue_ip[2], data->ue_ip[3]);
 	printf("Data Plane Port: %d\n", data->spgw_port);
+	printf("Control plane behaviour (%d): ", data->control_plane_len);
+	for(i = 0; i < data->control_plane_len; i++)
+		printf("%.2x ", data->control_plane[i]);
+	printf("\n");
 
 	/* Save UE information */
 	memcpy(&ue, data, sizeof(ue_data));
@@ -390,30 +462,30 @@ int ue_emulator_start(ue_data * data)
 		return 1;
 	}
 
-
-	/* Create traffic generator process */
-	start_traffic_generator(ue.command);
-
     
 
     /* TESTING */
-    printf("Sleeping for 5 seconds\n");
-    sleep(10);
-    printf("UE_DETACH\n");
-    send_ue_detach(0);
-    sleep(10);
-    printf("UE_ATTACH\n");
-    send_ue_attach();
-    sleep(10);
-    printf("UE_DETACH with Switch Off flag\n");
-    send_ue_detach(1);
-    sleep(10);
-    printf("UE_ATTACH\n");
-    send_ue_attach();
+    //printf("Sleeping for 5 seconds\n");
+    //sleep(10);
+    //printf("UE_DETACH\n");
+    //send_ue_detach(0);
+    //sleep(10);
+    //printf("UE_ATTACH\n");
+    //send_ue_attach();
+    //sleep(10);
+    //printf("UE_DETACH with Switch Off flag\n");
+    //send_ue_detach(1);
+    //sleep(10);
+    //printf("UE_ATTACH\n");
+    //send_ue_attach();
 
 
-    /* Create FSM thread */
-    /* TODO */
+    /* Create data plane thread */
+    if (pthread_create(&control_plane_thread, NULL, control_plane, 0) != 0)
+    {
+        perror("pthread_create control_plane_thread");
+        return 1;
+    }
     /*
 
 	while True:

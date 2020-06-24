@@ -13,7 +13,7 @@ from kubernetes import config, client
 
 # Codes definitions
 
-CODE_INIT = 0x01
+CODE_INIT = 0xFF
 CODE_OK = 0x80
 CODE_ERROR = 0x00
 CODE_ENB_BEHAVIOUR = 0x01
@@ -157,6 +157,7 @@ class RANControler:
 						# Special race condition: eNB has been assigned but it does not already answer
 						while(assoc_enb.locked() == True):
 							time.sleep(1)
+						# TODO: Special case in which the UE is waiting to the eNB and the eNB fails
 						ue.set_pending()
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
@@ -174,6 +175,16 @@ class RANControler:
 			enb.release()
 			print('New eNB at ' + msg['ip'] + ':' + str(msg['port']))
 
+		elif msg['type'] == 'enb_error_run':
+			# eNB slave answers with Error message
+			# Get eNB num from data
+			enb = self.get_enb_by_buffer(msg['data'])
+
+			# Save eNB address
+			enb.set_stopped() # Stopped/Not Running
+			enb.release()
+			print('eNB error at ' + msg['ip'] + ':' + str(msg['port']))
+
 		elif msg['type'] == 'ue_run':
 			# UE slave answers with OK message
 			# Get UE num from data
@@ -183,6 +194,15 @@ class RANControler:
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
 			print('New UE at ' + msg['ip'] + ':' + str(msg['port']))
+
+		elif msg['type'] == 'ue_error_run':
+			# UE slave answers with Error message
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+
+			# Save UE address
+			ue.set_stopped()
+			print('UE error at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_idle':
 			# UE slave informs that its new state is Idle
@@ -245,6 +265,19 @@ class RANControler:
 			msg['port'] = address[1]
 			msg['data'] = data[1:]
 
+		# Error Init cases
+		elif data[0] == CODE_ENB_BEHAVIOUR:
+			msg['type'] = 'enb_error_run'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+
+		elif data[0] == CODE_UE_BEHAVIOUR:
+			msg['type'] = 'ue_error_run'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+
 		# Error code: 0XXX XXXX 
 		elif (data[0] & CODE_OK) == CODE_ERROR:
 			msg['type'] = 'error'
@@ -274,8 +307,8 @@ class RANControler:
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
-		#config.load_incluster_config()
-		#v1 = client.CoreV1Api()
+		config.load_incluster_config()
+		v1 = client.CoreV1Api()
 		print('Staring Slave Pods...')
 		for i in range(tot_len):
 			# Configure POD Manifest for each slave
@@ -283,7 +316,7 @@ class RANControler:
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			#v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
 		print('Slave pods started')
 		return
 

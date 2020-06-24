@@ -5,7 +5,7 @@ from threading import Lock
 
 class UE:
 	status = -1
-	def __init__(self, ue_id, mcc, mnc, msin, key, op_key, command, enb):
+	def __init__(self, ue_id, mcc, mnc, msin, key, op_key, command, enb, control_plane):
 		self.id = ue_id
 		self.mcc = mcc
 		self.mnc = mnc
@@ -19,6 +19,8 @@ class UE:
 		self.address = None
 		self.mutex = Lock()
 		self.running = False
+		self.control_plane = control_plane
+		self.serialized_control_plane = None
 
 	def printUE(self):
 		print('UE ' + self.get_id() + ':')
@@ -112,6 +114,10 @@ class UE:
 			data.append((2154 >> 8) & 0xFF)
 			data.append(2154 & 0xFF)
 
+		# Add serialized_control_plane
+		for i in self.serialized_control_plane:
+			data.append(i)
+
 		return data
 
 	def get_address_text(self):
@@ -151,6 +157,12 @@ class UE:
 
 	def get_flag(self):
 		return self.running
+
+	def get_control_plane(self):
+		return self.control_plane
+
+	def set_serialized_control_plane(self, serialized_control_plane):
+		self.serialized_control_plane = serialized_control_plane
 
 
 	def __eq__(self, other):

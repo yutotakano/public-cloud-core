@@ -14,6 +14,68 @@ class UserInput():
 		'UEs': set()
 	}
 
+	actions ={
+		'init': [0, 0],
+		'detach': [1, 1],
+		'detach_switch_off': [1, 2],
+		'attach': [-1, 3],
+		'move_to_idle': [3, 4],
+		'move_to_connected': [-3, 5],
+		'handover': [0, 6],
+	}
+
+	def validate_control_plane_actions(self, actions_string):
+		a_s = actions_string.split('-')
+		counter = 0
+		numFlag = False
+
+		if a_s[0] != 'init':
+			return False
+
+		for a in a_s[1:]:
+			if a.isdigit() or a == 'inf':
+				if numFlag == False:
+					numFlag = True
+				else:
+					return False
+			else:
+				if a == 'init':
+					return False
+				try:
+					counter += self.actions[a][0]
+				except:
+					return False
+
+				if counter != 0 and counter % 2 == 0:
+					return False
+				if numFlag == False:
+					return False
+
+				numFlag = False
+
+		if (counter != 0 and a_s[-1] != 'inf') or numFlag == False:
+			return False
+		return True
+
+	def serialize_control_plane(self, actions_strings):
+		a_s = actions_strings.split('-')
+		data = bytearray()
+		# Special case with INF
+		for i in range(0,len(a_s),2):
+			data.append(self.actions[a_s[i]][1] & 0xFF) # Append the action (1 Byte)
+			# Append the delay time (3 Bytes)
+			# Special case inf: 0xFF 0xFF 0xFF
+			if a_s[i+1] == 'inf':
+				data.append(0xFF)
+				data.append(0xFF)
+				data.append(0xFF)
+				break
+			else:
+				data.append((int(a_s[i+1]) >> 16) & 0xFF)
+				data.append((int(a_s[i+1]) >> 8) & 0xFF)
+				data.append(int(a_s[i+1]) & 0xFF)
+		return data
+
 	def __init__(self, set_data_func):
 		self.app = Flask(__name__)
 		self.configuration = True
@@ -52,16 +114,16 @@ class UserInput():
 			temp_enbs.add(new_enb)
 
 		for ue in data['ues']:
-			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'])
+			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'], ue['control_plane'])
 			#self.controller_data['UEs'].add(new_ue)
 			enb = self.getENB(temp_enbs, ue['enb'])
-			if enb:
+			if enb and self.validate_control_plane_actions(new_ue.get_control_plane()):
+				# Add serialized control plane to the UE
+				new_ue.set_serialized_control_plane(self.serialize_control_plane(new_ue.get_control_plane()))
 				# Add it to the final eNB list
 				self.controller_data['eNBs'].add(enb)
 				# Add UE to the final UE list
 				self.controller_data['UEs'].add(new_ue)
-
-		# TODO: Verify JSON
 
 
 		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer)

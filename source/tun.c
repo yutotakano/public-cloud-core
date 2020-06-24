@@ -25,7 +25,7 @@
 #include <unistd.h>
 
 #define MTU_SIZE 1500
-#define SUBNET_MASK 0xFFFFFFF0
+#define SUBNET_MASK 0xFFFF0000
 
 /* Global variables*/
 struct ifreq ifr_tun; /* ifreq struct that contains TUN Device information */

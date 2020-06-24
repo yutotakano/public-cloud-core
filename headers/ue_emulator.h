@@ -17,6 +17,8 @@ typedef struct _ue_data
 	uint16_t enb_port;
 	uint8_t ue_ip[4];
 	uint16_t spgw_port;
+	uint16_t control_plane_len;
+	uint8_t * control_plane;
 } ue_data;
 
 int ue_emulator_start(ue_data * data);
