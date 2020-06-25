@@ -361,8 +361,8 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
-    bzero(local_ip, 4);
+    memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
+    //bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 

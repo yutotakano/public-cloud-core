@@ -193,7 +193,7 @@ class RANControler:
 			# Save UE address
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
-			print('New UE at ' + msg['ip'] + ':' + str(msg['port']))
+			print('New UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_error_run':
 			# UE slave answers with Error message
@@ -202,7 +202,7 @@ class RANControler:
 
 			# Save UE address
 			ue.set_stopped()
-			print('UE error at ' + msg['ip'] + ':' + str(msg['port']))
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_idle':
 			# UE slave informs that its new state is Idle
@@ -211,7 +211,7 @@ class RANControler:
 
 			# Save UE address
 			ue.set_idle()
-			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Idle')
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Idle')
 
 		elif msg['type'] == 'ue_detached':
 			# UE slave informs that its new state is Detached
@@ -220,7 +220,7 @@ class RANControler:
 
 			# Save UE address
 			ue.set_disconnected()
-			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
 
 		elif msg['type'] == 'ue_attached':
 			# UE slave informs that its new state is Detached
@@ -229,7 +229,7 @@ class RANControler:
 
 			# Save UE address
 			ue.set_traffic()
-			print('UE at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 
 
 	def generate_msg(self, data, address):
@@ -307,8 +307,8 @@ class RANControler:
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
-		config.load_incluster_config()
-		v1 = client.CoreV1Api()
+		#config.load_incluster_config()
+		#v1 = client.CoreV1Api()
 		print('Staring Slave Pods...')
 		for i in range(tot_len):
 			# Configure POD Manifest for each slave
@@ -316,7 +316,7 @@ class RANControler:
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+			#v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
 		print('Slave pods started')
 		return
 
