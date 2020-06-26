@@ -5,13 +5,16 @@ from threading import Lock
 
 class UE:
 	status = -1
+
 	def __init__(self, ue_id, mcc, mnc, msin, key, op_key, command, enb, control_plane):
 		self.id = ue_id
 		self.mcc = mcc
 		self.mnc = mnc
 		self.msin = msin
-		self.key = key
-		self.op_key = op_key
+		self.key_plain = key
+		self.key = self.processKey(key)
+		self.op_key_plain = op_key
+		self.op_key = self.processKey(op_key)
 		self.command = command.replace('{TUN}', 'tun'+str(int(self.msin)))
 		self.status = Status()
 		self.enb_id = enb
@@ -21,6 +24,10 @@ class UE:
 		self.running = False
 		self.control_plane = control_plane
 		self.serialized_control_plane = None
+
+	def processKey(self, key):
+		key_aux = key.replace('0x', '')
+		return [int(key_aux[i:i+2], 16) for i in range(0, len(key), 2) if i < 32]
 
 	def printUE(self):
 		print('UE ' + self.get_id() + ':')
@@ -40,16 +47,10 @@ class UE:
 		return self.mcc + self.mnc + self.msin
 
 	def get_key(self):
-		key = ''
-		for i in self.key:
-			key += '0x{:02x} '.format(i)
-		return key
+		return self.key_plain
 
 	def get_op_key(self):
-		op_key = ''
-		for i in self.op_key:
-			op_key += '0x{:02x} '.format(i)
-		return op_key
+		return self.op_key_plain
 
 	def get_command(self):
 		return self.command
