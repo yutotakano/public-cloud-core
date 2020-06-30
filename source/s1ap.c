@@ -1338,13 +1338,34 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				set_pdn_ip(ue, value + offset_aux);
 				printf("\tPDN IP: %d.%d.%d.%d\n", value[offset_aux], value[offset_aux+1], value[offset_aux+2], value[offset_aux+3]);
 				offset_aux += 4;
-				offset_aux += 38;
+
+				/* Loop to detect GUTI */
+				uint8_t guti_f = 1;
+				while(guti_f)
+				{
+					if(value[offset_aux] == 0x27)
+					{
+						printf("\tProtocol Configuration Options detected\n");
+						offset_aux += value[offset_aux+1] + 2;
+					}
+					else if(value[offset_aux] == 0x5e)
+					{
+						printf("\tAPN aggregare maximum bit rate detected\n");
+						offset_aux += value[offset_aux+1] + 2;
+					}
+					else if(value[offset_aux] == 0x50)
+					{
+						printf("\tGUTI(%d): ", value[offset_aux+1]);
+						offset_aux += 3;
+						guti_f = 0;
+					}
+				}
 				/* Store GUTI */
 				set_guti(ue, value + offset_aux);
-				printf("\tGUTI: ");
 				for(j = 0; j < GUTI_LEN; j++)
 					printf("%.2x", value[offset_aux+j]);
 				printf("\n");
+				offset_aux += 10;
 
 			}
 			else if(id == ID_UE_SECURITY_CAPABILITIES)
@@ -1481,7 +1502,8 @@ int analyze_UEContextReleaseCommand(uint8_t * buffer, UE * ue)
 	ue_crc.value = (uint8_t *) GC_malloc(ue_crc.length);
 	memcpy((void *) ue_crc.value, (void *) buffer+4, ue_crc.length);
 
-	if(ue_crc.status != 0 || ue_crc.procedureCode != (uint8_t)UE_CONTEXT_RELEASE || ue_crc.criticality != CRITICALITY_REJECT)
+	/* Special case to detect EMM information messages */
+	if(ue_crc.status != 0 || (ue_crc.procedureCode != (uint8_t)UE_CONTEXT_RELEASE && ue_crc.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT))
 	{
 		printError("Wrong UEContextReleaseCommand message\n");
 		return 1;
@@ -1505,12 +1527,12 @@ int analyze_UEAccept(uint8_t * buffer, UE * ue)
 
 	if(ue_da.status != 0 || ue_da.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT)
 	{
-		printError("Wrong UEContextReleaseCommand message\n");
+		printError("Wrong UEDetachAccept message\n");
 		return 1;
 	}
 
 	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
-	printInfo("Analyzing UEContextReleaseCommand\n");
+	printInfo("Analyzing UEDetachAccept\n");
 	ret = analyze_downlink_NAS_Transport(ue_da.value, ue_da.length, NULL, ue);
 	GC_free(ue_da.value);
 	return ret;
@@ -2880,6 +2902,52 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 
 	if(switch_off == 0)
 	{
+
+		while(1)
+		{
+			/* Receiving MME answer */
+			flags = 0;
+			recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+			if(recv_len < 0)
+			{
+				if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+				{
+					printError("SCTP Timeout (%s)\n", strerror(errno));
+				}
+				else
+				{
+					printError("SCTP (%s)\n", strerror(errno));
+				}
+				return 1;
+			}
+
+			/* Analyze buffer */
+			err = analyze_UEAccept(buffer, ue);
+			if(err == 1)
+			{
+				printError("UE Detach Accept\n");
+				return 1;
+			}
+			else if(err == 2)
+			{
+				/* Special case srsEPC: EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+				printInfo("Special Case: EMM information message received\n");
+			}
+			else
+			{
+				printOK("UE Detach Accept\n");
+				break;
+			}
+		}
+	}
+	else
+	{
+		printInfo("Switch Off Detach case\n");
+	}
+
+
+    while(1)
+	{
 		/* Receiving MME answer */
 		flags = 0;
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
@@ -2896,52 +2964,26 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 			return 1;
 		}
 
-		/* Analyze buffer */
-		err = analyze_UEAccept(buffer, ue);
+		/* Analyze buffer and get Initial Context Setup Request*/
+		err = analyze_UEContextReleaseCommand(buffer, ue);
 		if(err == 1)
-	    {
-	    	printError("UE Detach Accept\n");
-	    	return 1;
-	    }
-	    else
-	    {
-	    	printOK("UE Detach Accept\n");
-	    }
-	}
-	else
-	{
-		printInfo("Switch Off Detach case\n");
-	}
-
-
-
-	/* Receiving MME answer */
-	flags = 0;
-	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-	if(recv_len < 0)
-	{
-		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
 		{
-			printError("SCTP Timeout (%s)\n", strerror(errno));
+			printError("UE Context Release Command\n");
+			return 1;
+		}
+		else if(err == 2)
+		{
+			/* Special case srsEPC: EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+			printInfo("Special Case: EMM information message received\n");
 		}
 		else
 		{
-			printError("SCTP (%s)\n", strerror(errno));
+			printOK("UE Context Release Command\n");
+			break;
 		}
-		return 1;
 	}
 
-	/* Analyze buffer and get Initial Context Setup Request*/
-	err = analyze_UEContextReleaseCommand(buffer, ue);
-	if(err == 1)
-    {
-    	printError("UE Context Release Command\n");
-    	return 1;
-    }
-    else
-    {
-    	printOK("UE Context Release Command\n");
-    }
+
 
 
     /*****************************/
@@ -2960,3 +3002,9 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 }
 
 
+
+/* TODO: Implement an authomatic way to detect EMM information messages without a loop */
+
+/* TODO: Modify analyze_NAS function to extract data within a loop */
+
+/* Create a geneneric way to receive messages */
