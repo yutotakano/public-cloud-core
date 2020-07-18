@@ -1,11 +1,11 @@
 from flask import Flask, render_template, url_for, redirect, request
+from flask_socketio import SocketIO, emit
 import json
 import struct
 import socket
 from UE import UE
 from eNB import eNB
-
-app = Flask(__name__)
+from threading import Thread, Event
 
 class UserInput():
 
@@ -23,6 +23,16 @@ class UserInput():
 		'move_to_connected': [-3, 5],
 		'handover': [0, 6],
 	}
+
+	def __init__(self, set_data_func):
+		self.app = Flask(__name__)
+		self.configuration = True
+		self.set_data_func = set_data_func
+		# Async socket
+		self.socketio = SocketIO(self.app, async_mode=None)
+		# Async thread
+		self.update_t = Thread()
+		self.thread_stop_event = Event()
 
 	def validate_control_plane_actions(self, actions_string):
 		a_s = actions_string.split('-')
@@ -75,11 +85,6 @@ class UserInput():
 				data.append((int(a_s[i+1]) >> 8) & 0xFF)
 				data.append(int(a_s[i+1]) & 0xFF)
 		return data
-
-	def __init__(self, set_data_func):
-		self.app = Flask(__name__)
-		self.configuration = True
-		self.set_data_func = set_data_func
 
 	def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, methods=None):
 		self.app.add_url_rule(endpoint, endpoint_name, handler, methods=methods)
@@ -154,11 +159,34 @@ class UserInput():
 				self.configuration = False
 		return redirect(url_for('index'))
 
+	def updateThread(self):
+		print("Starting web user updater thread")
+		while not self.thread_stop_event.isSet():
+			# Generate data
+			data = '<h3>UEs</h3>'
+			data += self.ues_to_html()
+			data += '<h3>eNBs</h3>'
+			data += self.enbs_to_html()
+
+			self.socketio.emit('newdata', {'data': data}, namespace='/update')
+			self.socketio.sleep(5)
+
+	def update(self):
+		# Create a thread that updates the web client every N seconds
+		print('New web client!')
+		if not self.update_t.isAlive():
+			self.update_t = self.socketio.start_background_task(self.updateThread)
+
 	def run(self):
-		#Main routes
+		# Main routes
 		self.add_endpoint(endpoint='/', endpoint_name='index', handler=self.index)
 		self.add_endpoint(endpoint='/config/', endpoint_name='config', handler=self.config, methods=['POST'])
-		self.app.run(port=8080, host='0.0.0.0')
+
+		# Async routes
+		self.socketio.on_event('connect', self.update, namespace='/update')
+
+		# 
+		self.socketio.run(app=self.app, port=8080, host='0.0.0.0')
 
 	def ues_to_html(self):
 			html = '<div style="overflow:scroll; height:200px; border:solid;">'

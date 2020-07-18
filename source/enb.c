@@ -17,6 +17,7 @@ struct _eNB
 	uint8_t enb_ip[IP_LEN];
 	int mme_socket;
 	int spgw_socket;
+	uint8_t mme_code;
 };
 
 void generate_plmn_eNB(uint8_t * plmn, char * mcc, char * mnc)
@@ -86,3 +87,4 @@ int get_spgw_socket(eNB * enb)
 {
 	return enb->spgw_socket;
 }
+

@@ -270,3 +270,13 @@ Auth_Challenge * get_auth_challenge(UE * ue)
 {
 	return &ue->auth_challenge;
 }
+
+uint8_t get_mme_code(UE * ue)
+{
+	return ue->guti[5];
+}
+
+uint8_t * get_m_tmsi(UE * ue)
+{
+	return (uint8_t *) (ue->guti+6);
+}

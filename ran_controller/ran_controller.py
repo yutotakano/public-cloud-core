@@ -21,6 +21,7 @@ CODE_UE_BEHAVIOUR = 0x02
 CODE_UE_IDLE = 0x03
 CODE_UE_DETACH = 0x04
 CODE_UE_ATTACH = 0x05
+CODE_UE_MOVED_TO_CONNECTED = 0x06
 
 '''
     Bit 0 (Status)
@@ -82,8 +83,8 @@ class RANControler:
 		}
 
 	def start_user_input(self):
-		user_input = UserInput(self.start_controller)
-		user_input.run()
+		self.user_input = UserInput(self.start_controller)
+		self.user_input.run()
 
 		
 
@@ -223,13 +224,21 @@ class RANControler:
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
 
 		elif msg['type'] == 'ue_attached':
-			# UE slave informs that its new state is Detached
+			# UE slave informs that its new state is Attached/Connected
 			# Get UE num from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
 			ue.set_traffic()
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
+		elif msg['type'] == 'moved_to_connected':
+			# UE slave informs that its new state is Attached/Connected
+			# Get UE num from data
+			ue = self.get_ue_by_buffer(msg['data'])
+
+			# Save UE address
+			ue.set_traffic()
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Connected')
 
 
 	def generate_msg(self, data, address):
@@ -261,6 +270,11 @@ class RANControler:
 			msg['data'] = data[1:]
 		elif data[0] == CODE_UE_ATTACH:
 			msg['type'] = 'ue_attached'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_MOVED_TO_CONNECTED:
+			msg['type'] = 'moved_to_connected'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
 			msg['data'] = data[1:]

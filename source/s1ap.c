@@ -47,6 +47,7 @@
 #define ID_MME_UE_S1AP_IE 0x0000
 #define ID_ENB_UE_S1AP_IE_UE 0x0008
 #define ID_ENB_UE_S1AP_ID	0x0008
+#define ID_S_TMSI 0x0060
 
 
 /* UE Defines */
@@ -87,6 +88,7 @@
 #define CONTAINER_ID_IP_NAS 0x000a
 #define TAC 0x0001
 #define MO_SIGNALLING 0x30
+#define MO_DATA 0x40
 #define DOWNLINK_NAS_TRANSPORT 0x0b
 #define AUTHENTICATION_REQUEST 0x52
 #define SECURITY_MODE_COMMAND 0x5d
@@ -109,6 +111,9 @@
 #define DETACH_ACCEPT 0x46
 #define UE_CONTEXT_RELEASE_RESPONSE 0x17
 #define NAS_EPS_MMM_TYPE_DETACH 0x45
+#define NAS_SECURITY_HEADER_TYPE_SEVICE_REQUEST 0xC0
+#define NAS_KEY_SET_IDENTIFIER(value) (value & 0xE0)
+#define SEQUENCE_NUMBER_SHORT(sqn) (sqn & 0x1F)
 
 
 /* eNB Structures */
@@ -339,6 +344,13 @@ struct _non_access_stratum_pdu_detach
 	uint8_t eps_mobile_identity[13]; /* Included Uplink Detach byte */
 };
 
+struct _non_access_stratum_pdu_service_request
+{
+	uint8_t security_header_type_protocol_discriminator;
+	uint8_t ksi_sequence_number;
+	uint8_t short_mac[2];
+};
+
 struct _Initial_Context_Setup_Request
 {
 	uint8_t status;
@@ -414,6 +426,13 @@ struct _UE_Detach
 	uint16_t items_len;
 };
 
+struct _InitialUEMessage_ServiceRequest
+{
+	uint8_t init; /* = 0x00;*/
+	uint16_t numItems; /* 0x0006 */
+	uint8_t * items; /* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-NAS-PDU) + ProtocolIE(id-TAI) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-RRC-Establishment-Cause) + id-S-TMSI*/
+	uint16_t items_len;
+};
 
 
 /* Auxiliary function for debugging purposes */
@@ -749,7 +768,7 @@ char * identify_id(uint16_t id)
 	}
 }
 
-void analyze_S1_Setup_Content(uint8_t * value, int len)
+void analyze_S1_Setup_Content(eNB * enb, uint8_t * value, int len)
 {
 	uint16_t numElems;
 	uint16_t i, j;
@@ -771,22 +790,31 @@ void analyze_S1_Setup_Content(uint8_t * value, int len)
 		offset++;
 		uint8_t value_len = value[offset];
 		offset++;
-		printf("\tValue (%d) : ", value_len);
-		for(j = 0; j < value_len; j++)
+		if(id == ServedGUMMEIs)
 		{
-			if(value_len == 16)
-			{
-				printf("...");
-				break;
-			}
-			printf("%.2x ", value[offset + j]);
+			printf("\tPLMN: %.2x%.2x%.2x\n", value[offset+2], value[offset+3], value[offset+4]);
+			printf("\tMME-Group-ID: 0x%.2x%.2x\n", value[offset+7], value[offset+8]);
+			printf("\tMMEC: 0x%.2x\n", value[offset+10]);
 		}
-		printf("\n");
+		else
+		{
+			printf("\tValue (%d) : ", value_len);
+			for(j = 0; j < value_len; j++)
+			{
+				if(value_len == 16)
+				{
+					printf("...");
+					break;
+				}
+				printf("%.2x ", value[offset + j]);
+			}
+			printf("\n");
+		}
 		offset += value_len;
 	}
 }
 
-int analyze_S1_Setup_Response(uint8_t * buffer)
+int analyze_S1_Setup_Response(eNB * enb, uint8_t * buffer)
 {
 	int ret = 1;
 	S1SetupResponse s1setupResp;
@@ -805,15 +833,13 @@ int analyze_S1_Setup_Response(uint8_t * buffer)
 		/* Successful response */
 		printOK("Connected to MME\n");
 		printInfo("Analyzing S1 Setup Response Success message\n");
-		analyze_S1_Setup_Content(s1setupResp.value, s1setupResp.length);
+		analyze_S1_Setup_Content(enb, s1setupResp.value, s1setupResp.length);
 		ret = 0;
 	}
 	else if(s1setupResp.status == S1_SETUP_UNSUCCESSFUL)
 	{
 		/* Unsuccessful response */
 		printError("S1 Setup Response Failure\n");
-		printInfo("Analyzing S1 Setup Response Failure message\n");
-		analyze_S1_Setup_Content(s1setupResp.value, s1setupResp.length);
 		ret = 1;
 	}
 	else
@@ -862,7 +888,7 @@ int procedure_S1_Setup(eNB * enb)
 		printError("No data received from MME\n");
 		return 1;
 	}
-	return analyze_S1_Setup_Response(buffer);
+	return analyze_S1_Setup_Response(enb, buffer);
 }
 
 
@@ -1013,16 +1039,16 @@ ProtocolIE * generate_ProtocolIE_eutran_cgi(eNB * enb)
 	return protocolIE;
 }
 
-ProtocolIE * generate_ProtocolIE_rrc_establishment_cause()
+ProtocolIE * generate_ProtocolIE_rrc_establishment_cause(uint8_t cause)
 {
 	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
 	protocolIE->id = ID_RRC_ESTABLISHMENT_CAUSE;
 	protocolIE->criticality = CRITICALITY_IGNORE;
 
-	rrc_establishment_cause cause;
-	cause.establishment_cause = MO_SIGNALLING;
+	rrc_establishment_cause c;
+	c.establishment_cause = cause;
 
-	uint8_t * value = generate_s1ap_value((uint8_t *)&cause, sizeof(rrc_establishment_cause));
+	uint8_t * value = generate_s1ap_value((uint8_t *)&c, sizeof(rrc_establishment_cause));
 	protocolIE->value = (uint8_t *) GC_malloc(sizeof(rrc_establishment_cause) + 1);
 	memcpy(protocolIE->value, (void *) value, sizeof(rrc_establishment_cause) + 1);
 	protocolIE->value_len = sizeof(rrc_establishment_cause) + 1;
@@ -1043,7 +1069,24 @@ ProtocolIE * generate_ProtocolIE_cause()
 	protocolIE->value_len = 3;
 
 	return protocolIE;
+}
 
+ProtocolIE * generate_ProtocolIE_s_tmsi(UE * ue)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_S_TMSI;
+	protocolIE->criticality = CRITICALITY_REJECT;
+
+	protocolIE->value = (uint8_t *) GC_malloc(7);
+	protocolIE->value[0] = 6; /* Length */
+	uint16_t mmec = (uint16_t)(get_mme_code(ue) << 6);
+	protocolIE->value[1] = (mmec >> 8) & 0xFF;
+	protocolIE->value[2] = mmec & 0xFF;
+	memcpy(protocolIE->value+3, get_m_tmsi(ue), 4);
+
+	protocolIE->value_len = 7;
+
+	return protocolIE;
 }
 
 InitialUEMessage * generate_Initial_UE_Message(eNB * enb, UE * ue)
@@ -1061,7 +1104,7 @@ InitialUEMessage * generate_Initial_UE_Message(eNB * enb, UE * ue)
 	nas_pdu = generate_ProtocolIE_nas_pdu(ue);
 	tai = generate_ProtocolIE_tai(enb);
 	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
-	rrc_establishment_cause = generate_ProtocolIE_rrc_establishment_cause();
+	rrc_establishment_cause = generate_ProtocolIE_rrc_establishment_cause(MO_SIGNALLING);
 
 	int enb_ue_s1ap_id_len;
 	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
@@ -1139,6 +1182,8 @@ s1ap_initiatingMessage * generate_InitiatingMessage(eNB * enb, UE * ue)
 	s1ap_initiatingMsg->value_len = len + 1;
 	return s1ap_initiatingMsg;
 }
+
+#define TRANSPORT_LAYER_ADDRESS 0x0F80
 
 int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * auth_challenge, UE * ue)
 {
@@ -1290,7 +1335,11 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 					offset += value_len;
 					continue;
 				}
-				offset_aux += 11;
+				offset_aux += 5;
+				printf("\te-RAB-ID: %d\n", value[offset_aux]);
+				/* Skip e-RABlevelQoSParameters */
+				offset_aux += 6;
+
 				/* Store SPGW IP */
 				set_spgw_ip(ue, value + offset_aux);
 				printf("\tSPGW IP: %d.%d.%d.%d\n", value[offset_aux], value[offset_aux+1], value[offset_aux+2], value[offset_aux+3]);
@@ -1301,8 +1350,16 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				set_gtp_teid(ue,  teid);
 				printf("\tGTP TEID: %d\n", teid);
 				offset_aux += 4;
-				offset_aux += 10;
 
+				/* Detect if E-RABToBeSetupItemCtxtSUReq contains an EPS-MMM message */
+				if( (value[offset_aux+1] & 0x0F) != 0x07)
+				{
+					printInfo("No NAS message");
+					offset += value_len;
+					continue;
+				}
+
+				offset_aux += 10;
 				if( ((value[offset_aux] & 0xE0) >> 5) == 2 )
 				{
 					/* Decihours */
@@ -1313,7 +1370,7 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				offset_aux += 4;
 				if(value[offset_aux] != ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST)
 				{
-					printError("No Activate Default EPS Bearer Context Request");
+					printError("No Activate Default EPS Bearer Context Request\n");
 					ret = 1;
 					offset += value_len;
 					continue;
@@ -1475,20 +1532,34 @@ int analyze_InitialContextSetupRequest(uint8_t * buffer, UE * ue)
 {
 	int ret = 1;
 	Initial_Context_Setup_Request init_csr;
+	uint8_t len;
 
 	memcpy((void *) &init_csr, (void *) buffer, 5);
-	init_csr.value = (uint8_t *) GC_malloc(init_csr.length);
-	memcpy((void *) init_csr.value, (void *) buffer+5, init_csr.length);
 
-	if(init_csr.status != 0 || init_csr.procedureCode != (uint8_t)INITIAL_CONTEXT_SETUP || init_csr.criticality != CRITICALITY_REJECT)
+	/* This condition also allows NAS Messages */
+	if(init_csr.status != 0 || (init_csr.procedureCode != (uint8_t)INITIAL_CONTEXT_SETUP && init_csr.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT))
 	{
 		printError("No Downlink NAS Transport message (Initial Context Setup Request)\n");
 		return 1;
 	}
 
+	/* Detect unknown byte */
+	if(init_csr.unknown == 0x80)
+	{
+		init_csr.value = (uint8_t *) GC_malloc(init_csr.length);
+		memcpy((void *) init_csr.value, (void *) buffer+5, init_csr.length);
+		len = init_csr.length;
+	}
+	else
+	{
+		init_csr.value = (uint8_t *) GC_malloc(init_csr.unknown);
+		memcpy((void *) init_csr.value, (void *) buffer+4, init_csr.unknown);
+		len = init_csr.unknown;
+	}
+
 	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
 	printInfo("Analyzing Downlink NAS Transport message (Initial Context Setup Request)\n");
-	ret = analyze_downlink_NAS_Transport(init_csr.value, init_csr.length, NULL, ue);
+	ret = analyze_downlink_NAS_Transport(init_csr.value, len, NULL, ue);
 	GC_free(init_csr.value);
 	return ret;
 }
@@ -1527,7 +1598,7 @@ int analyze_UEAccept(uint8_t * buffer, UE * ue)
 
 	if(ue_da.status != 0 || ue_da.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT)
 	{
-		printError("Wrong UEDetachAccept message\n");
+		printInfo("Wrong UEDetachAccept message\n");
 		return 1;
 	}
 
@@ -1729,7 +1800,13 @@ void freeUEContextReleaseResponse(UE_Context_Release_Response * ue_crr)
 void freeUEDetach(UE_Detach * ue_d)
 {
 	GC_free(ue_d->items);
-	GC_free(ue_d)
+	GC_free(ue_d);
+}
+
+void freeUEMessage_ServiceRequest(InitialUEMessage_ServiceRequest * ue_sr)
+{
+	GC_free(ue_sr->items);
+	GC_free(ue_sr);
 }
 
 uint8_t * SecurityCommandComplete_to_buffer(Security_Command_Complete * scc, uint16_t * len)
@@ -1806,6 +1883,17 @@ uint8_t * UEDetach_to_buffer(UE_Detach * ue_d, uint16_t * len)
 	dump[2] = (uint8_t)(ue_d->numItems & 0xFF);
 	memcpy(dump+3, ue_d->items, ue_d->items_len);
 	*len = 3 + ue_d->items_len;
+	return dump;
+}
+
+uint8_t * InitialUEMessage_ServiceRequest_to_buffer(InitialUEMessage_ServiceRequest * ue_sr, uint16_t * len)
+{
+	uint8_t * dump = (uint8_t *) GC_malloc(3 + ue_sr->items_len);
+	dump[0] = ue_sr->init;
+	dump[1] = ue_sr->numItems >> 8;
+	dump[2] = (uint8_t)(ue_sr->numItems & 0xFF);
+	memcpy(dump+3, ue_sr->items, ue_sr->items_len);
+	*len = 3 + ue_sr->items_len;
 	return dump;
 }
 
@@ -1888,7 +1976,14 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_detach(UE * ue, Auth_Challenge * auth_c
 	nas_pdu.nas_eps_mmm_type = NAS_EPS_MMM_TYPE_DETACH;
 	nas_pdu.eps_mobile_identity[0] = 0x01; /* Uplink byte that indicates detach: EPS Detach */
 	if(switch_off != 0)
+	{
 		nas_pdu.eps_mobile_identity[0] |= 0x08;
+		printInfo("Generating Detach Switch Off message...\n");
+	}
+	else
+	{
+		printInfo("Generating Detach message...\n");
+	}
 	nas_pdu.eps_mobile_identity[1] = 0x0B; /* GUTI_CODE + GUTI lenght*/
 	nas_pdu.eps_mobile_identity[2] = 0xF6; /* Even number of identity digits + GUTI (6) */
 	memcpy(nas_pdu.eps_mobile_identity+3, get_guti(ue), GUTI_LEN); /* Copy GUTI */
@@ -1906,6 +2001,39 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_detach(UE * ue, Auth_Challenge * auth_c
 	memcpy(protocolIE->value, (void *) encapsulated, sizeof(non_access_stratum_pdu_detach) + 2);
 	protocolIE->value_len = sizeof(non_access_stratum_pdu_detach) + 2;
 	GC_free(encapsulated);
+	return protocolIE;
+}
+
+ProtocolIE * generate_ProtocolIE_nas_pdu_service_request(UE * ue, Auth_Challenge * auth_challenge)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_NAS_PDU;
+	protocolIE->criticality = CRITICALITY_REJECT;
+	uint8_t mac[4];
+
+	non_access_stratum_pdu_service_request nas_pdu;
+	bzero(&nas_pdu, sizeof(non_access_stratum_pdu_service_request));
+
+	nas_pdu.security_header_type_protocol_discriminator = NAS_SECURITY_HEADER_TYPE_SEVICE_REQUEST | NAS_PROTOCOL_DISCRIMINATOR;
+	nas_pdu.ksi_sequence_number = NAS_KEY_SET_IDENTIFIER(0) | SEQUENCE_NUMBER_SHORT(get_nas_sequence_number(ue));
+
+	/* Generate NAS integrity check Short MAC*/
+	/* count argument has to be 2 (No idea why) */
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, (uint8_t *)&nas_pdu, 2, 2, mac);
+
+	/* Short MAC */
+	nas_pdu.short_mac[0] = mac[2];
+	nas_pdu.short_mac[1] = mac[3];
+
+	/* NAS PDU value is encapsulated in other value */
+	uint8_t * value = generate_s1ap_value((uint8_t *)&nas_pdu, sizeof(non_access_stratum_pdu_service_request));
+	uint8_t * encapsulated = generate_s1ap_value(value, sizeof(non_access_stratum_pdu_service_request) + 1);
+	GC_free(value);
+	protocolIE->value = (uint8_t *) GC_malloc(sizeof(non_access_stratum_pdu_service_request) + 2);
+	memcpy(protocolIE->value, (void *) encapsulated, sizeof(non_access_stratum_pdu_service_request) + 2);
+	protocolIE->value_len = sizeof(non_access_stratum_pdu_service_request) + 2;
+	GC_free(encapsulated);
+
 	return protocolIE;
 }
 
@@ -2381,8 +2509,6 @@ UE_Detach * generate_ue_detach(eNB * enb, UE * ue, Auth_Challenge * auth_challen
 	nas_pdu = generate_ProtocolIE_nas_pdu_detach(ue, auth_challenge, switch_off);
 	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
 	tai = generate_ProtocolIE_tai(enb);
-	/* Special case: criticality ignore*/
-	tai->criticality = CRITICALITY_IGNORE;
 
 	int mme_ue_s1ap_id_len;
 	uint8_t * mme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(mme_ue_s1ap_id, &mme_ue_s1ap_id_len);
@@ -2430,6 +2556,84 @@ UE_Detach * generate_ue_detach(eNB * enb, UE * ue, Auth_Challenge * auth_challen
 	ue_d->items_len = i;
 
 	return ue_d;
+}
+
+/* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-NAS-PDU) + ProtocolIE(id-TAI) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-RRC-Establishment-Cause) + id-S-TMSI*/
+InitialUEMessage_ServiceRequest * generate_InitialUEMessage_ServiceRequest(eNB * enb, UE * ue, Auth_Challenge * auth_challenge)
+{
+	ProtocolIE * enb_ue_s1ap_id;
+	ProtocolIE * nas_pdu;
+	ProtocolIE * tai;
+	ProtocolIE * eutran_cgi;
+	ProtocolIE * rrc_establishment_cause;
+	ProtocolIE * s_tmsi;
+
+
+	InitialUEMessage_ServiceRequest * ue_sr = GC_malloc(sizeof(InitialUEMessage));
+	ue_sr->init = 0x00;
+	ue_sr->numItems = 0x0006;
+	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
+	nas_pdu = generate_ProtocolIE_nas_pdu_service_request(ue, auth_challenge);
+	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
+	tai = generate_ProtocolIE_tai(enb);
+	rrc_establishment_cause = generate_ProtocolIE_rrc_establishment_cause(MO_DATA);
+	s_tmsi = generate_ProtocolIE_s_tmsi(ue);
+
+
+	int enb_ue_s1ap_id_len;
+	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
+	freeProtocolIE(enb_ue_s1ap_id);
+
+	int nas_pdu_len;
+	uint8_t * nas_pdu_buffer = ProtocolIE_to_buffer(nas_pdu, &nas_pdu_len);
+	freeProtocolIE(nas_pdu);
+
+	int tai_len;
+	uint8_t * tai_buffer = ProtocolIE_to_buffer(tai, &tai_len);
+	freeProtocolIE(tai);
+
+	int eutran_cgi_len;
+	uint8_t * eutran_cgi_buffer = ProtocolIE_to_buffer(eutran_cgi, &eutran_cgi_len);
+	freeProtocolIE(eutran_cgi);
+
+	int rrc_establishment_cause_len;
+	uint8_t * rrc_establishment_cause_buffer = ProtocolIE_to_buffer(rrc_establishment_cause, &rrc_establishment_cause_len);
+	freeProtocolIE(rrc_establishment_cause);
+
+	int s_tmsi_len;
+	uint8_t * s_tmsi_buffer = ProtocolIE_to_buffer(s_tmsi, &s_tmsi_len);
+	freeProtocolIE(s_tmsi);
+
+	int i = 0;
+	ue_sr->items = (uint8_t *) GC_malloc(enb_ue_s1ap_id_len + nas_pdu_len + tai_len + eutran_cgi_len + rrc_establishment_cause_len + s_tmsi_len);
+
+	memcpy(ue_sr->items + i, enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+	GC_free(enb_ue_s1ap_id_buffer);
+	i += enb_ue_s1ap_id_len;
+
+	memcpy(ue_sr->items + i, nas_pdu_buffer, nas_pdu_len);
+	GC_free(nas_pdu_buffer);
+	i += nas_pdu_len;
+
+	memcpy(ue_sr->items + i, tai_buffer, tai_len);
+	GC_free(tai_buffer);
+	i += tai_len;
+
+	memcpy(ue_sr->items + i, eutran_cgi_buffer, eutran_cgi_len);
+	GC_free(eutran_cgi_buffer);
+	i += eutran_cgi_len;
+
+	memcpy(ue_sr->items + i, rrc_establishment_cause_buffer, rrc_establishment_cause_len);
+	GC_free(rrc_establishment_cause_buffer);
+	i += rrc_establishment_cause_len;
+
+	memcpy(ue_sr->items + i, s_tmsi_buffer, s_tmsi_len);
+	GC_free(s_tmsi_buffer);
+	i += s_tmsi_len;
+
+	ue_sr->items_len = i;
+
+	return ue_sr;
 }
 
 UE_Context_Release_Response * generate_ue_context_release_response(UE * ue)
@@ -2536,6 +2740,32 @@ s1ap_initiatingMessage * generate_s1ap_UE_Detach(eNB * enb, UE * ue, Auth_Challe
 	s1ap_ue_detach->value_len = len + 1;
 	return s1ap_ue_detach;
 }
+
+s1ap_initiatingMessage * generate_Initial_UE_Message_Service_Request(eNB * enb, UE * ue, Auth_Challenge * auth_challenge)
+{
+	s1ap_initiatingMessage * s1ap_ue_serv_req = GC_malloc(sizeof(s1ap_initiatingMessage));
+	s1ap_ue_serv_req->procedureCode = INITIAL_UE_MESSAGE;
+	s1ap_ue_serv_req->criticality = CRITICALITY_IGNORE;
+
+	InitialUEMessage_ServiceRequest * ue_sr;
+	ue_sr = generate_InitialUEMessage_ServiceRequest(enb, ue, auth_challenge); /* todo */
+
+	uint16_t len;
+	uint8_t * ue_sr_buf = InitialUEMessage_ServiceRequest_to_buffer(ue_sr, &len);
+
+	freeUEMessage_ServiceRequest(ue_sr);
+
+	s1ap_ue_serv_req->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(s1ap_ue_serv_req->value + 1, (void *) ue_sr_buf, len);
+	GC_free(ue_sr_buf);
+	s1ap_ue_serv_req->value[0] = (uint8_t) len;
+	s1ap_ue_serv_req->value_len = len + 1;
+	return s1ap_ue_serv_req;
+}
+
+
+
+
 
 
 
@@ -2809,33 +3039,42 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 	sctp_sendmsg(socket, (void *) ue_context_release_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(ue_context_release_request_buffer);
 
-	/* Receiving MME answer */
-	flags = 0;
-	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-	if(recv_len < 0)
+	while(1)
 	{
-		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		/* Receiving MME answer */
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
 		{
-			printError("SCTP Timeout (%s)\n", strerror(errno));
+			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			{
+				printError("SCTP Timeout (%s)\n", strerror(errno));
+			}
+			else
+			{
+				printError("SCTP (%s)\n", strerror(errno));
+			}
+			return 1;
 		}
-		else
-		{
-			printError("SCTP (%s)\n", strerror(errno));
-		}
-		return 1;
-	}
 
-	/* Analyze buffer and get Initial Context Setup Request*/
-	err = analyze_UEContextReleaseCommand(buffer, ue);
-	if(err == 1)
-    {
-    	printError("UE Context Release Command\n");
-    	return 1;
-    }
-    else
-    {
-    	printOK("UE Context Release Command\n");
-    }
+		/* Analyze buffer and get Initial Context Setup Request*/
+		err = analyze_UEContextReleaseCommand(buffer, ue);
+		if(err == 1)
+	    {
+	    	printError("UE Context Release Command\n");
+	    	return 1;
+	    }
+	    else if(err == 2)
+		{
+			/* Special case srsEPC: EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+			printInfo("Special Case: EMM information message received\n");
+		}
+	    else
+	    {
+	    	printOK("UE Context Release Command\n");
+	    	break;
+	    }
+	}
 
 
     /*****************************/
@@ -2895,58 +3134,11 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 	GC_free(ue_detach_buffer);
 
 
-	/********************/
-	/* UE Detach Accept */
-	/********************/
-	/* Only with switch_off disable*/
+	/***********************************************/
+	/* UE Detach Accept and UEContextReleaseCommand*/
+	/***********************************************/
 
-	if(switch_off == 0)
-	{
-
-		while(1)
-		{
-			/* Receiving MME answer */
-			flags = 0;
-			recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-			if(recv_len < 0)
-			{
-				if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-				{
-					printError("SCTP Timeout (%s)\n", strerror(errno));
-				}
-				else
-				{
-					printError("SCTP (%s)\n", strerror(errno));
-				}
-				return 1;
-			}
-
-			/* Analyze buffer */
-			err = analyze_UEAccept(buffer, ue);
-			if(err == 1)
-			{
-				printError("UE Detach Accept\n");
-				return 1;
-			}
-			else if(err == 2)
-			{
-				/* Special case srsEPC: EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
-				printInfo("Special Case: EMM information message received\n");
-			}
-			else
-			{
-				printOK("UE Detach Accept\n");
-				break;
-			}
-		}
-	}
-	else
-	{
-		printInfo("Switch Off Detach case\n");
-	}
-
-
-    while(1)
+	while(1)
 	{
 		/* Receiving MME answer */
 		flags = 0;
@@ -2964,12 +3156,22 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 			return 1;
 		}
 
-		/* Analyze buffer and get Initial Context Setup Request*/
-		err = analyze_UEContextReleaseCommand(buffer, ue);
+		/* Analyze buffer */
+		err = analyze_UEAccept(buffer, ue);
 		if(err == 1)
 		{
-			printError("UE Context Release Command\n");
-			return 1;
+			/* Analyze buffer and get Initial Context Setup Request*/
+			err = analyze_UEContextReleaseCommand(buffer, ue);
+			if(err == 1)
+			{
+				printError("Detach procedure error\n");
+				return 1;
+			}
+			else
+			{
+				printOK("UE Context Release Command\n");
+				break;
+			}
 		}
 		else if(err == 2)
 		{
@@ -2978,8 +3180,7 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 		}
 		else
 		{
-			printOK("UE Context Release Command\n");
-			break;
+			printOK("UE Detach Accept\n");
 		}
 	}
 
@@ -3001,10 +3202,106 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 	return 0;
 }
 
+int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip)
+{
+	s1ap_initiatingMessage * ue_service_request;
+	s1ap_initiatingMessage * init_context_setup_response;
+	uint8_t * ue_service_request_buffer;
+	uint8_t buffer[BUFFER_LEN];
+	uint8_t * init_context_setup_response_buffer;
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
+	int socket = get_mme_socket(enb);
+	uint16_t len = 0;
+	int err;
+	socklen_t from_len = (socklen_t)sizeof(struct sockaddr_in);
+	int flags;
+	int recv_len;
+	struct sockaddr_in addr;
+
+	/* SCTP parameters */
+	struct sctp_sndrcvinfo sndrcvinfo;
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+
+
+	/**********************/
+	/* UE Service Request */
+	/**********************/
+	ue_service_request = generate_Initial_UE_Message_Service_Request(enb, ue, auth_challenge);
+	ue_service_request_buffer = s1ap_initiatingMessage_to_buffer(ue_service_request, &len);
+	freeS1ap_initiatingMessage(ue_service_request);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) ue_service_request_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(ue_service_request_buffer);
+
+
+
+	/******************************/
+	/* InitialContextSetupRequest */
+	/******************************/
+
+	while(1)
+	{
+		/* Receiving MME answer */
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			{
+				printError("SCTP Timeout (%s)\n", strerror(errno));
+			}
+			else
+			{
+				printError("SCTP (%s)\n", strerror(errno));
+			}
+			return 1;
+		}
+
+		/* Analyze buffer and get Initial Context Setup Request*/
+		err = analyze_InitialContextSetupRequest(buffer, ue);
+		if(err == 1)
+		{
+			/* Analyze buffer and get Initial Context Setup Request*/
+			printError("Initial Context Setup Request\n");
+	    	return 1;
+		}
+		else if(err == 2)
+		{
+			/* EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+			printInfo("Special Case: EMM information message received\n");
+		}
+		else
+		{
+			printOK("Initial Context Setup Request\n");
+			break;
+		}
+	}
+
+
+	/**********************************/
+	/* Initial Context Setup Response */
+	/**********************************/
+	init_context_setup_response = generate_S1AP_initial_context_setup_response(enb, ue, ue_ip);
+	init_context_setup_response_buffer = s1ap_initiatingMessage_to_buffer(init_context_setup_response, &len);
+	/* Special case with successful outcome flag */
+	init_context_setup_response_buffer[0] = SUCCESSFUL_OUTCOME;
+	freeS1ap_initiatingMessage(init_context_setup_response);
+
+	/* Sending Initial Context Setup Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) init_context_setup_response_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(init_context_setup_response_buffer);
+
+
+	return 0;
+}
+
 
 
 /* TODO: Implement an authomatic way to detect EMM information messages without a loop */
 
 /* TODO: Modify analyze_NAS function to extract data within a loop */
 
-/* Create a geneneric way to receive messages */
+/* TODO: Create a geneneric way to receive messages */

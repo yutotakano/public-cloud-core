@@ -38,8 +38,10 @@ typedef struct _UE_Context_Release_Command UE_Context_Release_Command;
 typedef struct _UE_Context_Release_Response UE_Context_Release_Response;
 typedef struct _non_access_stratum_pdu_attach_complete non_access_stratum_pdu_attach_complete;
 typedef struct _non_access_stratum_pdu_detach non_access_stratum_pdu_detach;
+typedef struct _non_access_stratum_pdu_service_request non_access_stratum_pdu_service_request;
 typedef struct _UE_Detach_Accept UE_Detach_Accept;
 typedef struct _UE_Detach UE_Detach;
+typedef struct _InitialUEMessage_ServiceRequest InitialUEMessage_ServiceRequest;
 
 void test(eNB * enb);
 
@@ -48,6 +50,7 @@ int procedure_S1_Setup(eNB * enb);
 int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip);
 int procedure_UE_Context_Release(eNB *enb, UE * ue);
 int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off);
+int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip);
 
 
 #endif

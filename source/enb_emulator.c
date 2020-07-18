@@ -81,6 +81,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	init_msg * initmsg;
 	idle_msg * idlemsg;
 	init_response_msg * res;
+	idle_response_msg * idle_res;
 	UE * ue = NULL;
 	uint8_t switch_off;
 
@@ -200,6 +201,38 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		memcpy(res->ue_ip, get_pdn_ip(ue), 4);
 		memcpy(res->spgw_ip, get_spgw_ip(ue), 4);
 		*response_len = sizeof(init_response_msg) + 1;
+	}
+	else if(buffer[0] == MOVE_TO_CONNECTED)
+	{
+		printInfo("UE MOVE_TO_CONNECTED message received\n");
+
+		idlemsg = (idle_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+
+		/* Detach UE */
+		if(procedure_UE_Service_Request(enb, ue, get_ue_ip(ue)))
+		{
+			printError("Move to Attached (UEServiceRequest) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		*response_len = 1;
+
+		/* Setting up Response */
+		response[0] = OK_CODE | buffer[0];
+		/* idle_response_msg struct reused */
+		idle_res = (idle_response_msg *) (response+1);
+		uint32_t teid = get_gtp_teid(ue);
+		idle_res->teid[0] = (teid >> 24) & 0xFF;
+		idle_res->teid[1] = (teid >> 16) & 0xFF;
+		idle_res->teid[2] = (teid >> 8) & 0xFF;
+		idle_res->teid[3] = teid & 0xFF;
+		memcpy(idle_res->spgw_ip, get_spgw_ip(ue), 4);
+		*response_len = sizeof(idle_response_msg) + 1;
 	}
 	/* TODO: Implement othe kind of messages */
 	return 0;

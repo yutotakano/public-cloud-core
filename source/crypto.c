@@ -788,7 +788,6 @@ void nas_integrity_eia2(uint8_t * key, uint8_t * message, uint8_t message_length
 	memcpy(msg, &local_count, 4);
 	memcpy(msg + 8, message, message_length);
 
-
 	cmac_ctx = CMAC_CTX_new();
 	CMAC_Init(cmac_ctx, key, 16, cipher, NULL);
 	CMAC_Update(cmac_ctx, msg, message_length + 8);

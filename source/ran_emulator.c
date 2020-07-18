@@ -31,6 +31,7 @@
 #define CODE_IDLE 0x03
 #define CODE_DETACHED 0x04
 #define CODE_ATTACHED 0x05
+#define CODE_MOVE_TO_CONNECTED 0x06
 
 
 uint8_t local_ip[4];
@@ -273,6 +274,17 @@ void send_ue_attach_controller(uint32_t ue_id)
 {
     uint8_t buffer[5];
     buffer[0] = CODE_ATTACHED;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_ue_moved_to_connected_controller(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_MOVE_TO_CONNECTED;
     buffer[1] = (ue_id >> 24) & 0xFF;
     buffer[2] = (ue_id >> 16) & 0xFF;
     buffer[3] = (ue_id >> 8) & 0xFF;

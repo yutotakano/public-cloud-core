@@ -12,6 +12,7 @@
 #define UE_DETACH 0x03
 #define UE_SWITCH_OFF_DETACH 0x04
 #define UE_ATTACH 0x05
+#define MOVE_TO_CONNECTED 0x06
 
 
 typedef struct _init_msg
@@ -41,7 +42,8 @@ typedef struct _idle_msg
 
 typedef struct _idle_response_msg
 {
-	
+	uint8_t teid[4];
+	uint8_t spgw_ip[4];
 }idle_response_msg;
 
 #endif
