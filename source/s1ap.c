@@ -628,12 +628,12 @@ ProtocolIE * generate_ProtocolIE_enb_name(eNB * enb)
 	protocolIE->criticality = CRITICALITY_IGNORE;
 
 	/* Hardcoded eNB name until get ASN.1 encoder */
-	uint8_t name[] = {0x08, 0x80, 0x65, 0x4e, 0x42, 0x5f, 0x45, 0x75, 0x72, 0x65, 0x63, 0x6f, 0x6d, 0x5f, 0x4c, 0x54, 0x45, 0x42, 0x6f, 0x78};
+	uint8_t name[] = {0x07, 0x00, 0x4e, 0x65, 0x72, 0x76, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x2d, 0x4e, 0x6f, 0x64, 0x65, 0x42};
 
-	uint8_t * value = generate_s1ap_value((uint8_t *)name, 20);
-	protocolIE->value = (uint8_t *) GC_malloc(21);
-	memcpy(protocolIE->value, (void *) value, 21);
-	protocolIE->value_len = 21;
+	uint8_t * value = generate_s1ap_value((uint8_t *)name, 17);
+	protocolIE->value = (uint8_t *) GC_malloc(18);
+	memcpy(protocolIE->value, (void *) value, 18);
+	protocolIE->value_len = 18;
 	GC_free(value);
 	return protocolIE;
 }

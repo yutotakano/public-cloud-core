@@ -32,6 +32,7 @@
 #define CODE_DETACHED 0x04
 #define CODE_ATTACHED 0x05
 #define CODE_MOVE_TO_CONNECTED 0x06
+#define CODE_GET_ENB 7
 
 
 uint8_t local_ip[4];
@@ -292,6 +293,43 @@ void send_ue_moved_to_connected_controller(uint32_t ue_id)
     send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
 }
 
+uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id)
+{
+    uint8_t buffer[9];
+    int len, n;
+    struct sockaddr_in serv_addr_aux;
+    uint32_t enb_ip;
+
+    buffer[0] = CODE_GET_ENB;
+    /* Add UE id */
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    /* Add eNB ID */
+    buffer[5] = (enb_id >> 24) & 0xFF;
+    buffer[6] = (enb_id >> 16) & 0xFF;
+    buffer[7] = (enb_id >> 8) & 0xFF;
+    buffer[8] = enb_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
+
+
+    /* Receiving Controller answer */
+    bzero(buffer, 9);
+    memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
+
+    /* Receive eNB IP */
+    n = recvfrom(sockfd_controller, (char *)buffer, 5, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
+    if(n <= 1)
+    {
+        printError("Wrong Target-eNB Number: eNB %d does not exists\n", enb_id);
+        return -1;
+    }
+    enb_ip = (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
+
+    return enb_ip;
+}
+
 void send_code_controller(int sock, struct sockaddr_in * serv_addr, int addr_size, uint8_t code)
 {
     uint8_t code_send = code;
@@ -384,11 +422,10 @@ int main(int argc, char const *argv[])
     /* Send INIT message */
     send_init_controller();
 
-    while(1)
-    {
-        /* Receive Controller instructions */
-        receive_controller();
-    }
+    /* Receive Controller instructions */
+    receive_controller();
+
+    while(1);
 
     return 0;
 }

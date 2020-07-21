@@ -6,6 +6,7 @@ import socket
 from UE import UE
 from eNB import eNB
 from threading import Thread, Event
+import logging
 
 class UserInput():
 
@@ -26,6 +27,11 @@ class UserInput():
 
 	def __init__(self, set_data_func):
 		self.app = Flask(__name__)
+		# Disable Flask logs
+		log = logging.getLogger('werkzeug')
+		log.disabled = True
+		self.app.logger.disabled = True
+
 		self.configuration = True
 		self.set_data_func = set_data_func
 		# Async socket
@@ -33,6 +39,7 @@ class UserInput():
 		# Async thread
 		self.update_t = Thread()
 		self.thread_stop_event = Event()
+		self.refresh_time = 5 # Default refresh time
 
 	def validate_control_plane_actions(self, actions_string):
 		a_s = actions_string.split('-')
@@ -54,8 +61,13 @@ class UserInput():
 				try:
 					counter += self.actions[a][0]
 				except:
-					return False
-
+					# Handover case
+					if a.startswith('handover') == False:
+						return False
+					# Handover case
+					ho = a.split('_')
+					if len(ho) != 2 or ho[0] != 'handover' or ho[1].isdigit() == False:
+						return False
 				if counter != 0 and counter % 2 == 0:
 					return False
 				if numFlag == False:
@@ -72,7 +84,20 @@ class UserInput():
 		data = bytearray()
 		# Special case with INF
 		for i in range(0,len(a_s),2):
-			data.append(self.actions[a_s[i]][1] & 0xFF) # Append the action (1 Byte)
+			try:
+				act = self.actions[a_s[i]]
+				data.append(act[1] & 0xFF) # Append the action (1 Byte)
+			except:
+				ho = a_s[i].split('_')
+				data.append(self.actions[ho[0]][1]) # Append Handover
+				enb_id = int(ho[1]) # Get Handover target eNB
+				# Append eNB Number
+				data.append((enb_id >> 16) & 0xFF)
+				data.append((enb_id >> 8) & 0xFF)
+				data.append(enb_id & 0xFF)
+				# Append 0 to do nothing in the Control Plane FSM
+				data.append(0)
+
 			# Append the delay time (3 Bytes)
 			# Special case inf: 0xFF 0xFF 0xFF
 			if a_s[i+1] == 'inf':
@@ -155,6 +180,7 @@ class UserInput():
 			multi_ip = request.form["multi_ip"]
 			config = request.files['config'] if request.files.get('config') else None
 			docker_image = request.form['docker_image']
+			self.refresh_time = int(request.form['refresh_time'])
 			if self.generate_data(config, docker_image, mme_ip, multi_ip):
 				self.configuration = False
 		return redirect(url_for('index'))
@@ -169,7 +195,7 @@ class UserInput():
 			data += self.enbs_to_html()
 
 			self.socketio.emit('newdata', {'data': data}, namespace='/update')
-			self.socketio.sleep(5)
+			self.socketio.sleep(self.refresh_time)
 
 	def update(self):
 		# Create a thread that updates the web client every N seconds

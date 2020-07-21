@@ -20,7 +20,7 @@
 
 #define ENB_PORT 2233
 
-/* Control plane actions */
+/* Control plane notifications */
 #define CP_INIT 0
 #define CP_DETACH 1
 #define CP_DETACH_SWITCH_OFF 2
@@ -46,6 +46,8 @@ void send_ue_detach_controller(uint32_t ue_id);
 void send_ue_attach_controller(uint32_t ue_id);
 /* Update controller state with MOVED_TO_CONNECTED */
 void send_ue_moved_to_connected_controller(uint32_t ue_id);
+/* Request eNB IP to controller */
+uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id);
 
 
 
@@ -368,32 +370,61 @@ int send_move_to_connect()
 	return 0;
 }
 
-void do_control_plane_action(uint8_t action)
+int send_handover(uint8_t * enb_num)
 {
-	switch(action)
+	uint32_t enb_n;
+	int enb_ret;
+	uint32_t enb_ip_int;
+	uint8_t enb_ip[4];
+
+	/* Generate eNB num */
+	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
+	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	if(enb_ret == -1)
+		return 1;
+	if(enb_ret == 0)
+	{
+		printError("Target-eNB %d is not running yet.\n", enb_n);
+		return 1;
+	}
+	enb_ip_int = (uint32_t) enb_ret;
+	/* Store IP as a uint8_t pointer */
+	enb_ip[0] = (enb_ip_int >> 24) & 0xFF;
+	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
+	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
+	enb_ip[3] = enb_ip_int & 0xFF;
+	printf("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
+	/* Request Source-eNB a UE transfer to Target-eNB */
+	return 0;
+}
+
+int do_control_plane_action(uint8_t * action)
+{
+	switch(*action)
 	{
 		case CP_INIT:
 			/* Do nothing */
-			return;
+			return 0;
 		case CP_DETACH:
 			send_ue_detach(0);
-			return;
+			return 0;
 		case CP_DETACH_SWITCH_OFF:
 			send_ue_detach(1);
-			return;
+			return 0;
 		case CP_ATTACH:
 			send_ue_attach();
-			return;
+			return 0;
 		case CP_MOVE_TO_IDLE:
 			send_ue_context_release();
-			return;
+			return 0;
 		case CP_MOVE_TO_CONNECTED:
 			send_move_to_connect();
-			return;
+			return 0;
 		case CP_HANDOVER:
-			/* TODO: Not implemented */
-			return;
+			send_handover(action + 1);
+			return 1;
 	}
+	return 0;
 }
 
 void * control_plane(void * args)
@@ -411,7 +442,14 @@ void * control_plane(void * args)
 		for(i = 0; i < ue.control_plane_len; i += 4)
 		{
 			/* Do the action */
-			do_control_plane_action(ue.control_plane[i]);
+			if(do_control_plane_action(ue.control_plane + i) == 1)
+			{
+				/* Handover special case */
+				i += 4;
+				/* Handover is the last command in the Control Plane FSM string */
+				if( i >= ue.control_plane_len )
+					break;
+			}
 			/* Sleep */
 			cp_sleep = (ue.control_plane[i+1] << 16) | (ue.control_plane[i+2] << 8) | (ue.control_plane[i+3]);
 			if(cp_sleep == 16777215)
@@ -545,41 +583,12 @@ int ue_emulator_start(ue_data * data)
 		return 1;
 	}
 
-    
-
-    /* TESTING */
-    //printf("Sleeping for 5 seconds\n");
-    //sleep(10);
-    //printf("UE_DETACH\n");
-    //send_ue_detach(0);
-    //sleep(10);
-    //printf("UE_ATTACH\n");
-    //send_ue_attach();
-    //sleep(10);
-    //printf("UE_DETACH with Switch Off flag\n");
-    //send_ue_detach(1);
-    //sleep(10);
-    //printf("UE_ATTACH\n");
-    //send_ue_attach();
-
-
     /* Create data plane thread */
     if (pthread_create(&control_plane_thread, NULL, control_plane, 0) != 0)
     {
         perror("pthread_create control_plane_thread");
         return 1;
     }
-    /*
-
-	while True:
-		sleep X
-		move to idle
-		sleep Y
-		move to connected
-
-    */
-
-
 
 	return 0;
 }

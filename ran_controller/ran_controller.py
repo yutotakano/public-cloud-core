@@ -6,6 +6,7 @@ from UserInput import UserInput
 from queue import Queue
 import Status
 import time
+import struct
 
 from kubernetes import config, client
 #from kubernetes.client import Configuration
@@ -22,6 +23,7 @@ CODE_UE_IDLE = 0x03
 CODE_UE_DETACH = 0x04
 CODE_UE_ATTACH = 0x05
 CODE_UE_MOVED_TO_CONNECTED = 0x06
+CODE_UE_GET_ENB = 0x07
 
 '''
     Bit 0 (Status)
@@ -122,6 +124,13 @@ class RANControler:
 				return enb
 		return None
 
+	def get_enb(self, data):
+		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
+		for enb in self.controller_data['eNBs']:
+			if enb.get_num() == num:
+				return enb
+		return None
+
 	def get_ue_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
 		for ue in self.controller_data['UEs']:
@@ -167,7 +176,7 @@ class RANControler:
 
 		elif msg['type'] == 'enb_run':
 			# eNB slave answers with OK message
-			# Get eNB num from data
+			# Get eNB from data
 			enb = self.get_enb_by_buffer(msg['data'])
 
 			# Save eNB address
@@ -178,7 +187,7 @@ class RANControler:
 
 		elif msg['type'] == 'enb_error_run':
 			# eNB slave answers with Error message
-			# Get eNB num from data
+			# Get eNB from data
 			enb = self.get_enb_by_buffer(msg['data'])
 
 			# Save eNB address
@@ -188,7 +197,7 @@ class RANControler:
 
 		elif msg['type'] == 'ue_run':
 			# UE slave answers with OK message
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
@@ -198,7 +207,7 @@ class RANControler:
 
 		elif msg['type'] == 'ue_error_run':
 			# UE slave answers with Error message
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
@@ -207,7 +216,7 @@ class RANControler:
 
 		elif msg['type'] == 'ue_idle':
 			# UE slave informs that its new state is Idle
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
@@ -216,7 +225,7 @@ class RANControler:
 
 		elif msg['type'] == 'ue_detached':
 			# UE slave informs that its new state is Detached
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
@@ -225,7 +234,7 @@ class RANControler:
 
 		elif msg['type'] == 'ue_attached':
 			# UE slave informs that its new state is Attached/Connected
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
@@ -233,12 +242,44 @@ class RANControler:
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 		elif msg['type'] == 'moved_to_connected':
 			# UE slave informs that its new state is Attached/Connected
-			# Get UE num from data
+			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
 			# Save UE address
 			ue.set_traffic()
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Connected')
+		elif msg['type'] == 'get_enb':
+
+			# Get UE from data
+			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
+
+			# Get eNB from data
+			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
+
+			buf = bytearray()
+
+			if enb == None:
+				# Wrong eNB case
+				# Generate Error message
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' requests a wrong eNB Number')
+				buf.append(CODE_UE_GET_ENB)
+			else:
+				# Correct eNB case
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' requests eNB ' + str(enb.get_num()) + ' IP address')
+				buf.append(CODE_OK | CODE_UE_GET_ENB)
+				# Add eNB IP
+				try:
+					ip = struct.unpack("!I", socket.inet_aton(enb.get_address()[0]))[0]
+					buf.append((ip >> 24) & 0xFF)
+					buf.append((ip >> 16) & 0xFF)
+					buf.append((ip >> 8) & 0xFF)
+					buf.append(ip & 0xFF)
+				except:
+					buf.append(0)
+					buf.append(0)
+					buf.append(0)
+					buf.append(0)
+			self.sock.sendto(buf, (msg['ip'], msg['port']))
 
 
 	def generate_msg(self, data, address):
@@ -275,6 +316,11 @@ class RANControler:
 			msg['data'] = data[1:]
 		elif data[0] == CODE_UE_MOVED_TO_CONNECTED:
 			msg['type'] = 'moved_to_connected'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_GET_ENB:
+			msg['type'] = 'get_enb'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
 			msg['data'] = data[1:]

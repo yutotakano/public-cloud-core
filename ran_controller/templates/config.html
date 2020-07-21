@@ -15,11 +15,14 @@
 				Multiplexer IP Address:
 				<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
+				Configuration file (JSON):
+				<input type = "file" name = "config" accept=".json"/>
+				<p>
 				Slave Docker Image:
 				<input type="text" id="docker_image" name="docker_image" value="j0lama/ran_slave:latest">
 				<p>
-				Configuration file (JSON):
-				<input type = "file" name = "config" accept=".json"/>
+				Web-interface Refresh Time:
+				<input type="number" name="refresh_time" min="1" max="10" value="5">
 				<p>
 				<div style="text-align: center; margin: 0 auto; position:relative;">
 					<button type="submit">Submit</button>

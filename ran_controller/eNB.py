@@ -100,6 +100,8 @@ class eNB:
 
 
 	def __eq__(self, other):
+		if other == None:
+			return False
 		return self.num != other.num and self.id != other.id
 
 	def __hash__(self):
