@@ -285,9 +285,19 @@ void * enb_emulator_thread(void * args)
 	}
 }
 
+void * x2_thread(void * args)
+{
+	/* TODO */
+	/* Open a socket (global to be accessed from other functions)*/
+	/* Bind it to a specific port */
+	/* Listen for UE transfer requests from other eNBs */
+	return NULL;
+}
+
 int enb_emulator_start(enb_data * data)
 {
 	struct sockaddr_in enb_addr;
+	pthread_t x2_t;
 
 	/* Start emulator thread */
 	printf("Real value: 0x%.8x\n", id_to_uint32(data->id));
@@ -349,6 +359,13 @@ int enb_emulator_start(enb_data * data)
 	/* Initialize eNB thread */
 	/* Create distributor thread */
     if (pthread_create(&enb_thread, NULL, enb_emulator_thread, 0) != 0)
+    {
+        perror("pthread_create enb_emulator_thread");
+        return 1;
+    }
+
+    /* Start X2 interface thread */
+	if (pthread_create(&x2_t, NULL, x2_thread, 0) != 0)
     {
         perror("pthread_create enb_emulator_thread");
         return 1;

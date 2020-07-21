@@ -299,6 +299,13 @@ uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id)
     int len, n;
     struct sockaddr_in serv_addr_aux;
     uint32_t enb_ip;
+    int sockfd;
+
+    /* Open a new socket for this request */
+    if ( (sockfd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+        perror("socket creation failed"); 
+        return -1;
+    }
 
     buffer[0] = CODE_GET_ENB;
     /* Add UE id */
@@ -311,7 +318,7 @@ uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id)
     buffer[6] = (enb_id >> 16) & 0xFF;
     buffer[7] = (enb_id >> 8) & 0xFF;
     buffer[8] = enb_id & 0xFF;
-    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
+    send_buffer(sockfd, &serv_addr, sizeof(serv_addr), buffer, 9);
 
 
     /* Receiving Controller answer */
@@ -319,13 +326,15 @@ uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id)
     memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
 
     /* Receive eNB IP */
-    n = recvfrom(sockfd_controller, (char *)buffer, 5, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
+    n = recvfrom(sockfd, (char *)buffer, 5, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
     if(n <= 1)
     {
-        printError("Wrong Target-eNB Number: eNB %d does not exists\n", enb_id);
+        printWarning("Wrong Target-eNB Number: eNB %d does not exists\n", enb_id);
         return -1;
     }
     enb_ip = (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
+
+    close(sockfd);
 
     return enb_ip;
 }
@@ -422,10 +431,11 @@ int main(int argc, char const *argv[])
     /* Send INIT message */
     send_init_controller();
 
-    /* Receive Controller instructions */
-    receive_controller();
-
-    while(1);
+    while(1)
+    {
+        /* Receive Controller instructions */
+        receive_controller();
+    }
 
     return 0;
 }

@@ -384,7 +384,7 @@ int send_handover(uint8_t * enb_num)
 		return 1;
 	if(enb_ret == 0)
 	{
-		printError("Target-eNB %d is not running yet.\n", enb_n);
+		printWarning("Target-eNB %d is not running yet.\n", enb_n);
 		return 1;
 	}
 	enb_ip_int = (uint32_t) enb_ret;
@@ -393,7 +393,7 @@ int send_handover(uint8_t * enb_num)
 	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
 	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
 	enb_ip[3] = enb_ip_int & 0xFF;
-	printf("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
+	printInfo("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
 	/* Request Source-eNB a UE transfer to Target-eNB */
 	return 0;
 }
