@@ -139,38 +139,8 @@ class RANControler:
 	def analyze_msg(self, msg):
 		if msg['type'] == 'init':
 			print('New slave at ' + msg['ip'] + ':' + str(msg['port']))
-			# Get the first not assigned UE or eNB
-			for ue in self.controller_data['UEs']:
-				if ue.get_status() == Status.STOPPED:
-					# Get associated eNB
-					assoc_enb = next((enb for enb in self.controller_data['eNBs'] if enb.get_num() == ue.get_enb_id()), None)
-					# None assoc_enb case does not exist because Verify function guarantees that (TODO: Verify database)
-					if(assoc_enb.get_status() == Status.STOPPED):
-						# This slave has to be a eNB
-						buf = assoc_enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
-						assoc_enb.set_pending()
-						assoc_enb.acquire()
-						self.sock.sendto(buf, (msg['ip'], msg['port']))
-						return
-					else:
-						# This slave is a UE
-						# Verify that this UE has not been asigned to any other slave
-						ue.acquire()
-						if ue.get_flag() == True:
-							ue.release()
-							continue
-						else:
-							ue.set_flag(True)
-						ue.release()
-						# Special race condition: eNB has been assigned but it does not already answer
-						while(assoc_enb.locked() == True):
-							time.sleep(1)
-						# TODO: Special case in which the UE is waiting to the eNB and the eNB fails
-						ue.set_pending()
-						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
-						self.sock.sendto(buf, (msg['ip'], msg['port']))
-						return
 
+			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				if enb.get_status() == Status.STOPPED:
 					# This slave has to be a eNB
@@ -178,6 +148,29 @@ class RANControler:
 					enb.set_pending()
 					enb.acquire()
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
+					return
+
+			# Get the first not assigned UE
+			for ue in self.controller_data['UEs']:
+				if ue.get_status() == Status.STOPPED:
+					# Get associated eNB
+					assoc_enb = next((enb for enb in self.controller_data['eNBs'] if enb.get_num() == ue.get_enb_id()), None)
+					# Verify that this UE has not been asigned to any other slave
+					ue.acquire()
+					if ue.get_flag() == True:
+						ue.release()
+						continue
+					else:
+						ue.set_flag(True)
+					ue.release()
+					# Special race condition: eNB has been assigned but it does not already answer
+					while(assoc_enb.locked() == True):
+						time.sleep(1)
+					# TODO: Special case in which the UE is waiting to the eNB and the eNB fails
+					ue.set_pending()
+					buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
+					self.sock.sendto(buf, (msg['ip'], msg['port']))
+					return
 
 
 		elif msg['type'] == 'enb_run':

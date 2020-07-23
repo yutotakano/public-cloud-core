@@ -388,7 +388,7 @@ int main(int argc, char const *argv[])
 {
     uint32_t ue_address;
 
-    if(argc < 2)
+    if(argc < 2 || argc > 3)
     {
         printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP (Optional)>\n");
         exit(1);
@@ -416,7 +416,7 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, &serv_addr.sin_addr.s_addr, 4);
+    //memcpy(local_ip, ue_ip, 4);
     bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 

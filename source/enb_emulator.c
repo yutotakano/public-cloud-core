@@ -75,7 +75,8 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	struct sockaddr_in target_enb;
 	uint8_t buffer_ho[1024];
 
-	printInfo("Analyzing UE message...\n");
+	printf("\n\n\n");
+	printInfo("Analyzing new request...\n");
 
 	/* UE connecting to the EPC */
 	if(buffer[0] == INIT_CODE)
@@ -269,11 +270,11 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
     		*response_len = 1;
 			return 1;
 		}
-		/* Analyze Source-eNB response */
+		/* Analyze Target-eNB response */
 		if(buffer[0] == X2_ERROR)
 		{
 			/* Error case */
-			printError("X2 Handover-Request in Target-eNB\n");
+			printError("X2 Handover-Setup in Target-eNB\n");
 			response[0] = X2_ERROR; /* X2 Error message */
     		*response_len = 1;
 			return 1;
@@ -281,6 +282,8 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 
 		/* Delete UE information in the map structure */
 		map_remove(&map, (char *)homsg->msin);
+
+		printOK("X2 Handover-Setup done\n");
 
 		/* Generate HO_OK message */
 		response[0] = X2_OK;
@@ -302,6 +305,8 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		}
 
 		/* TODO: Call S1AP procedure and check return */
+
+		printOK("X2 Handover-Request done\n");
 
 		/* Generate HO_OK message */
 		response[0] = X2_OK;
@@ -335,8 +340,6 @@ void * enb_emulator_thread(void * args)
 			perror("accept");
 			continue;
 		}
-		printf("\n\n\n");
-		printInfo("New UE connected\n");
 		/* Receive message */
 		n = recv(client, (void *) buffer, 1024, 0);
 		if(n <= 0)

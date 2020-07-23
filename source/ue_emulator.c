@@ -410,8 +410,7 @@ int send_handover(uint8_t * enb_num)
 	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
 	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
 	enb_ip[3] = enb_ip_int & 0xFF;
-	printOK("Get Target-eNB IP done\n");
-	printInfo("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
+	printOK("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
 
 
 	/*****/
