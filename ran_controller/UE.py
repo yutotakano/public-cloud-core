@@ -18,7 +18,6 @@ class UE:
 		self.command = command.replace('{TUN}', 'tun'+str(int(self.msin)))
 		self.status = Status()
 		self.enb_id = enb
-		self.enb = None
 		self.address = None
 		self.mutex = Lock()
 		self.running = False
@@ -159,6 +158,9 @@ class UE:
 
 	def set_serialized_control_plane(self, serialized_control_plane):
 		self.serialized_control_plane = serialized_control_plane
+
+	def set_enb_id(self, enb_id):
+		self.enb_id = enb_id
 
 
 	def __eq__(self, other):

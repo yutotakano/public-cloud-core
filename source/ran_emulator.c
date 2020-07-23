@@ -32,7 +32,8 @@
 #define CODE_DETACHED 0x04
 #define CODE_ATTACHED 0x05
 #define CODE_MOVE_TO_CONNECTED 0x06
-#define CODE_GET_ENB 7
+#define CODE_GET_ENB 0x7
+#define CODE_X2_HANDOVER_COMPLETED 0x08
 
 
 uint8_t local_ip[4];
@@ -333,6 +334,21 @@ uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id)
     close(sockfd);
 
     return enb_ip;
+}
+
+void send_x2_handover_complete(uint32_t ue_id, uint32_t enb_id)
+{
+    uint8_t buffer[9];
+    buffer[0] = CODE_X2_HANDOVER_COMPLETED;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    buffer[5] = (enb_id >> 24) & 0xFF;
+    buffer[6] = (enb_id >> 16) & 0xFF;
+    buffer[7] = (enb_id >> 8) & 0xFF;
+    buffer[8] = enb_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
 }
 
 void send_code_controller(int sock, struct sockaddr_in * serv_addr, int addr_size, uint8_t code)

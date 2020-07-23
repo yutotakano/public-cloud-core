@@ -52,6 +52,8 @@ void send_ue_attach_controller(uint32_t ue_id);
 void send_ue_moved_to_connected_controller(uint32_t ue_id);
 /* Request eNB IP to controller */
 uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id);
+/* Update controller eNB with X2 Handover Completed  */
+void send_x2_handover_complete(uint32_t ue_id, uint32_t enb_id);
 
 
 
@@ -512,6 +514,9 @@ int send_handover(uint8_t * enb_num)
 		return 1;
 	}
 	printOK("X2 Handover-Request done\n");
+
+	/* Update Controller */
+	send_x2_handover_complete((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
 
 	return 0;
 }
