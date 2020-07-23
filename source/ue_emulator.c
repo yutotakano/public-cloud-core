@@ -19,6 +19,10 @@
 #include <signal.h>
 
 #define ENB_PORT 2233
+#define X2_ENB_PORT 2234
+
+#define X2_SETUP_OK 0
+#define X2_SETUP_ERROR 1
 
 /* Control plane notifications */
 #define CP_INIT 0
@@ -376,9 +380,22 @@ int send_handover(uint8_t * enb_num)
 	int enb_ret;
 	uint32_t enb_ip_int;
 	uint8_t enb_ip[4];
+	int enb_sockfd;
+	ho_msg * msg;
+	int n;
+	uint8_t buffer[32];
 
+	/* 1- Get Target-eNB IP from the controller */
+	/* 2- Send HO-Setup to Source-eNB */
+	/* 3- Send HO-Request to Target-eNB */
+
+	/*****/
+	/* 1 */
+	/*****/
 	/* Generate eNB num */
 	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
+	printInfo("Staring X2 Handover to eNB %d...\n", enb_n);
+	printInfo("Getting Target-eNB IP...\n");
 	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
 	if(enb_ret == -1)
 		return 1;
@@ -393,8 +410,110 @@ int send_handover(uint8_t * enb_num)
 	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
 	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
 	enb_ip[3] = enb_ip_int & 0xFF;
+	printOK("Get Target-eNB IP done\n");
 	printInfo("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
-	/* Request Source-eNB a UE transfer to Target-eNB */
+
+
+	/*****/
+	/* 2 */
+	/*****/
+	/* Request Source-eNB a UE transfer to Target-eNB (Handover-Setup)*/
+	printInfo("Starting X2 Handover-Setup...\n");
+	/* Socket create */
+    enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (enb_sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        close(enb_sockfd);
+        return 1; 
+    }
+
+    /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
+    bzero(buffer, 32);
+    buffer[0] = HO_SETUP;
+    msg = (ho_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+	/* Target-eNB IP */
+	memcpy(msg->target_enb_ip, enb_ip, 4);
+
+	/* Send UE info to eNB and wait to a response */
+	write(enb_sockfd, buffer, sizeof(ho_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(enb_sockfd, buffer, sizeof(buffer));
+	/* Close socket */
+	close(enb_sockfd);
+	if(n < 0)
+	{
+		perror("Recv from Source-eNB");
+		return 1;
+	}
+	/* Analyze Source-eNB response */
+	if(buffer[0] == X2_SETUP_ERROR)
+	{
+		/* Error case */
+		printError("X2 Handover-Setup\n");
+		return 1;
+	}
+	printOK("X2 Handover-Setup done\n");
+
+
+	/*****/
+	/* 3 */
+	/*****/
+	/* Request Target-eNB a Path Switch Request (Handover-Request) */
+	printInfo("Starting X2 Handover-Request...\n");
+	/* Update serving eNB IP with Target-eNB IP */
+	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+
+	/* Socket create */
+	enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (enb_sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        close(enb_sockfd);
+        return 1; 
+    }
+
+    /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
+    bzero(buffer, 32);
+    buffer[0] = HO_REQUEST;
+    msg = (ho_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+	/* Target-eNB IP is 0 */
+	/* Send UE info to eNB and wait to a response */
+	write(enb_sockfd, buffer, sizeof(ho_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(enb_sockfd, buffer, sizeof(buffer));
+	/* Close socket */
+	close(enb_sockfd);
+	if(n < 0)
+	{
+		perror("Recv from Target-eNB");
+		return 1;
+	}
+	/* Analyze Source-eNB response */
+	if(buffer[0] == X2_SETUP_ERROR)
+	{
+		/* Error case */
+		printError("X2 Handover-Request\n");
+		return 1;
+	}
+	printOK("X2 Handover-Request done\n");
+
 	return 0;
 }
 
@@ -485,7 +604,6 @@ int ue_emulator_start(ue_data * data)
 	dKey(data->op_key, 16);
 	printf("Command: %s\n", data->command);
 	printf("eNB IP: %d.%d.%d.%d\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3]);
-	printf("eNB port: %d\n", data->enb_port);
 	printf("Local IP: %d.%d.%d.%d\n", data->local_ip[0], data->local_ip[1], data->local_ip[2], data->local_ip[3]);
 	printf("UE IP: %d.%d.%d.%d\n", data->ue_ip[0], data->ue_ip[1], data->ue_ip[2], data->ue_ip[3]);
 	printf("Data Plane Port: %d\n", data->spgw_port);
@@ -508,8 +626,7 @@ int ue_emulator_start(ue_data * data)
     bzero(&enb_addr, sizeof(enb_addr));
     enb_addr.sin_family = AF_INET;
     memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
-    enb_addr.sin_port = htons(data->enb_port);
-    /* TODO: set eNB port */
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 

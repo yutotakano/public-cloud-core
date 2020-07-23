@@ -7,12 +7,14 @@
 
 #define UE_DEFAULT_CAPABILITIES 0x8020
 #define TUN_NAME_LEN 32
+#define MSIN_STRING_LEN 16
 
 struct _UE
 {
 	int id;
 	uint8_t plmn[UE_PLMN_LENGTH];
 	uint8_t msin[UE_MSIN_LENGTH];
+	char msin_string[MSIN_STRING_LEN];
 	uint8_t net_capabilities[UE_CAPABILITIES_LENGTH];
 	uint8_t nas_session_security_algorithms;
 	uint32_t ue_s1ap_id;
@@ -83,8 +85,11 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
 	ue->mme_s1ap_id_len = -1;
-
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
+
+	/* Store MSIN string to support X2 UE searching */
+	memset(ue->msin_string, 0, MSIN_STRING_LEN);
+	strcpy(ue->msin_string, msin);
 
 	/* Initiate NAS Sequence number */
 	ue->nas_sequence_number = 0;
@@ -279,4 +284,9 @@ uint8_t get_mme_code(UE * ue)
 uint8_t * get_m_tmsi(UE * ue)
 {
 	return (uint8_t *) (ue->guti+6);
+}
+
+char * get_msin_string(UE * ue)
+{
+	return ue->msin_string;
 }

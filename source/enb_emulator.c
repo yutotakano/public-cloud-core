@@ -22,10 +22,12 @@
 
 #define CLIENT_NUMBER 1024
 #define ENB_PORT 2233
+#define X2_ENB_PORT 2234
+#define X2_OK 0
+#define X2_ERROR 1
 
 /* GLOBAL VARIABLES */
 eNB * enb;
-const char * enb_ip = "192.168.56.101";
 pthread_t enb_thread;
 int sockfd;
 map_void_t map;
@@ -53,22 +55,6 @@ void enb_copy_id_to_buffer(uint8_t * buffer)
 	buffer[3] = id & 0xFF;
 }
 
-void enb_copy_port_to_buffer(uint8_t * buffer)
-{
-	struct sockaddr_in sin;
-	uint16_t port;
-	socklen_t len = sizeof(sin);
-	if (getsockname(sockfd, (struct sockaddr *)&sin, &len) == -1)
-	{
-		perror("getsockname");
-		port = 0;
-	}
-	port = ntohs(sin.sin_port);
-	printf("eNB internal port: %d\n", port);
-	buffer[0] = (port >> 8) & 0xFF;
-	buffer[1] = port & 0xFF;
-}
-
 uint32_t id_to_uint32(uint8_t * id)
 {
 	uint32_t ret;
@@ -80,10 +66,14 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 {
 	init_msg * initmsg;
 	idle_msg * idlemsg;
+	ho_msg * homsg;
 	init_response_msg * res;
 	idle_response_msg * idle_res;
 	UE * ue = NULL;
 	uint8_t switch_off;
+	int target_sockfd, n;
+	struct sockaddr_in target_enb;
+	uint8_t buffer_ho[1024];
 
 	printInfo("Analyzing UE message...\n");
 
@@ -220,7 +210,6 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		}
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
-		*response_len = 1;
 
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
@@ -233,6 +222,90 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		idle_res->teid[3] = teid & 0xFF;
 		memcpy(idle_res->spgw_ip, get_spgw_ip(ue), 4);
 		*response_len = sizeof(idle_response_msg) + 1;
+	}
+
+	else if(buffer[0] == HO_SETUP)
+	{
+		printInfo("UE HO_SETUP message received\n");
+
+		homsg = (ho_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		if(ue == NULL)
+		{
+			printError("Wrong UE MSIN descriptor in Handover-Setup\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+    		return 1;
+		}
+
+		/* Open a UDP socket to connect with Target-eNB */
+	    if ( (target_sockfd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+	        perror("socket creation failed in X2 HO-Setup");
+	        response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+	        return 1;
+	    }
+
+	    /* Configure Target-eNB address */
+	    target_enb.sin_family = AF_INET;
+	    target_enb.sin_port = htons(X2_ENB_PORT);
+	    memcpy(&target_enb.sin_addr.s_addr, homsg->target_enb_ip, 4);
+	    memset(&(target_enb.sin_zero), '\0', 8);
+
+	    /* Store UE in the buffer */
+	    memcpy(buffer_ho, (uint8_t *)ue, get_ue_size());
+
+	    /* Send UE information to Target-eNB */
+	    sendto(target_sockfd, buffer_ho, get_ue_size(), 0, (const struct sockaddr *) &target_enb, sizeof(target_enb));
+
+	    /* Receive Target-eNB response */
+		n = read(target_sockfd, buffer_ho, 1024);
+		/* Close socket */
+		close(target_sockfd);
+		if(n < 0)
+		{
+			perror("Recv from Target-eNB");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+			return 1;
+		}
+		/* Analyze Source-eNB response */
+		if(buffer[0] == X2_ERROR)
+		{
+			/* Error case */
+			printError("X2 Handover-Request in Target-eNB\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+			return 1;
+		}
+
+		/* Delete UE information in the map structure */
+		map_remove(&map, (char *)homsg->msin);
+
+		/* Generate HO_OK message */
+		response[0] = X2_OK;
+    	*response_len = 1;
+	}
+	else if(buffer[0] == HO_REQUEST)
+	{
+		printInfo("UE HO_REQUEST message received\n");
+
+		homsg = (ho_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)homsg->msin);
+
+		if(ue == NULL)
+		{
+			printError("Wrong UE MSIN descriptor in Handover-Request\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+    		return 1;
+		}
+
+		/* TODO: Call S1AP procedure and check return */
+
+		/* Generate HO_OK message */
+		response[0] = X2_OK;
+    	*response_len = 1;
 	}
 	/* TODO: Implement othe kind of messages */
 	return 0;
@@ -287,10 +360,69 @@ void * enb_emulator_thread(void * args)
 
 void * x2_thread(void * args)
 {
-	/* TODO */
+	int x2sock;
+	struct sockaddr_in enb_addr;
+	struct sockaddr_in source_enb;
+	uint8_t buffer[1024];
+	int len, n;
+	UE * recv_ue;
+	uint8_t resp;
 	/* Open a socket (global to be accessed from other functions)*/
+    if ( (x2sock =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+        perror("X2 socket creation failed");
+        printError("Exiting X2 thread...\n");
+        return NULL;
+    }
+	/* Setup eNB address */
+	enb_addr.sin_family = AF_INET;
+	memcpy(&enb_addr.sin_addr.s_addr, get_enb_ip(enb), 4);
+	enb_addr.sin_port = htons(X2_ENB_PORT);
+	memset(&(enb_addr.sin_zero), '\0', 8);
 	/* Bind it to a specific port */
+
+	/* Binding process */
+	if(bind(x2sock, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
+	{
+		perror("X2 eNB bind");
+		printError("Exiting X2 thread...\n");
+		close(x2sock);
+		return NULL;
+	}
+
 	/* Listen for UE transfer requests from other eNBs */
+	while(1)
+	{
+		/* Receive UE */
+	    bzero(buffer, 1024);
+
+	    /* Receive eNB IP */
+	    n = recvfrom(x2sock, (char *)buffer, 1024, 0, (struct sockaddr *) &source_enb, (uint32_t *)&len);
+	    if(n < 0)
+	    {
+	        perror("X2 eNB recv");
+			printError("Exiting X2 thread...\n");
+			close(x2sock);
+	        return NULL;
+	    }
+	    recv_ue = (UE *)buffer;
+	    /* Add UE to map structure */
+		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
+		if(map_add(&map, get_msin_string(recv_ue), (void *)recv_ue, get_ue_size()) < 0)
+		{
+			/* Error adding the UE to the map structure */
+			resp = X2_ERROR;
+
+		}
+		else
+		{
+			/* UE added to the map structure successfully */
+			resp = X2_OK;
+		}
+		/* Send response to Source-eNB */
+		sendto(x2sock, &resp, 1, 0, (const struct sockaddr *) &source_enb, sizeof(source_enb));
+	}
+
+	close(x2sock);
 	return NULL;
 }
 
@@ -338,8 +470,7 @@ int enb_emulator_start(enb_data * data)
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
 	memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
-	/* Bind to 0 to bind to a random port */
-	enb_addr.sin_port = htons(0);
+	enb_addr.sin_port = htons(ENB_PORT);
 	memset(&(enb_addr.sin_zero), '\0', 8);
 
 	/* Binding process */

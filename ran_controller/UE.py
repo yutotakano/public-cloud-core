@@ -96,11 +96,6 @@ class UE:
 		data.append((ip >> 8) & 0xFF)
 		data.append(ip & 0xFF)
 
-		# Add eNB internal port
-		port = enb.get_ue_port()
-		data.append((port >> 8) & 0xFF)
-		data.append(port & 0xFF)
-
 		# Add Multiplexer IP
 		data.append((multiplexer >> 24) & 0xFF)
 		data.append((multiplexer >> 16) & 0xFF)

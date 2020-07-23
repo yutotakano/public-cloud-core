@@ -117,10 +117,8 @@ class RANControler:
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
-		port = data[4] << 8 | data[5]
 		for enb in self.controller_data['eNBs']:
 			if enb.get_id_int() == num:
-				enb.set_ue_port(port)
 				return enb
 		return None
 
@@ -153,7 +151,7 @@ class RANControler:
 						assoc_enb.set_pending()
 						assoc_enb.acquire()
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
-						break
+						return
 					else:
 						# This slave is a UE
 						# Verify that this UE has not been asigned to any other slave
@@ -171,7 +169,15 @@ class RANControler:
 						ue.set_pending()
 						buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 						self.sock.sendto(buf, (msg['ip'], msg['port']))
-						break
+						return
+
+			for enb in self.controller_data['eNBs']:
+				if enb.get_status() == Status.STOPPED:
+					# This slave has to be a eNB
+					buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
+					enb.set_pending()
+					enb.acquire()
+					self.sock.sendto(buf, (msg['ip'], msg['port']))
 
 
 		elif msg['type'] == 'enb_run':

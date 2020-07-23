@@ -13,6 +13,8 @@
 #define UE_SWITCH_OFF_DETACH 0x04
 #define UE_ATTACH 0x05
 #define MOVE_TO_CONNECTED 0x06
+#define HO_SETUP 0x07
+#define HO_REQUEST 0x08
 
 
 typedef struct _init_msg
@@ -39,6 +41,12 @@ typedef struct _idle_msg
 {
 	uint8_t msin[16];
 }idle_msg;
+
+typedef struct _ho_msg
+{
+	uint8_t msin[16];
+	uint8_t target_enb_ip[4];
+}ho_msg;
 
 typedef struct _idle_response_msg
 {

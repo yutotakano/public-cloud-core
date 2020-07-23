@@ -60,6 +60,7 @@ void reset_nas_sequence_number(UE * ue);
 Auth_Challenge * get_auth_challenge(UE * ue);
 uint8_t get_mme_code(UE * ue);
 uint8_t * get_m_tmsi(UE * ue);
+char * get_msin_string(UE * ue);
 
 void printUE(UE * ue);
 

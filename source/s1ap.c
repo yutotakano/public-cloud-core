@@ -2790,13 +2790,22 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	uint8_t * init_context_setup_response_buffer;
 	uint8_t * attach_complete_buffer;
 	uint8_t buffer[BUFFER_LEN];
-	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 	int flags = 0;
 	int recv_len;
 	struct sockaddr_in addr;
 	int socket = get_mme_socket(enb);
 	socklen_t from_len = (socklen_t)sizeof(struct sockaddr_in);
 	bzero((void *)&addr, sizeof(struct sockaddr_in));
+
+	/* Error check NULL UE */
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	/* Get UE Auth Challenge */
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 
 	bzero(buffer, BUFFER_LEN);
 	/* SCTP parameters */
@@ -3018,6 +3027,7 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 	struct sctp_sndrcvinfo sndrcvinfo;
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 
+	/* Error check NULL UE */
 	if(ue == NULL)
 	{
 		printError("UE NULL reference\n");
@@ -3098,7 +3108,6 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 	s1ap_initiatingMessage * ue_context_release_response;
 	uint8_t * ue_detach_buffer;
 	uint8_t * ue_context_release_response_buffer;
-	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 	uint16_t len = 0;
 	int err;
 	int socket = get_mme_socket(enb);
@@ -3112,11 +3121,15 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 	struct sctp_sndrcvinfo sndrcvinfo;
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 
+	/* Error check NULL UE */
 	if(ue == NULL)
 	{
 		printError("UE NULL reference\n");
 		return 1;
 	}
+
+	/* Get UE Auth Challenge */
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 
 	printInfo("Starting UE Detach procedure...\n");
 
@@ -3209,7 +3222,6 @@ int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip)
 	uint8_t * ue_service_request_buffer;
 	uint8_t buffer[BUFFER_LEN];
 	uint8_t * init_context_setup_response_buffer;
-	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
 	int socket = get_mme_socket(enb);
 	uint16_t len = 0;
 	int err;
@@ -3217,6 +3229,18 @@ int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip)
 	int flags;
 	int recv_len;
 	struct sockaddr_in addr;
+
+	/* Error check NULL UE */
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	/* Get UE Auth Challenge */
+	Auth_Challenge * auth_challenge = get_auth_challenge(ue);
+
+	printInfo("Starting UE Service Request procedure...\n");
 
 	/* SCTP parameters */
 	struct sctp_sndrcvinfo sndrcvinfo;

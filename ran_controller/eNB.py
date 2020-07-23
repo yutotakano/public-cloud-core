@@ -46,7 +46,7 @@ class eNB:
 	def get_address_text(self):
 		if self.address == None:
 			return 'Unknown'
-		return self.address[0] + ':' + str(self.address[1]) + ':' + str(self.ue_port)
+		return self.address[0] + ':' + str(self.address[1])
 
 	def get_ue_port(self):
 		return self.ue_port

@@ -137,21 +137,18 @@ class UserInput():
 		else:
 			return False
 
-		temp_enbs = set()
-
 		for enb in data['enbs']:
 			new_enb = eNB(enb['enb_num'], enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
-			temp_enbs.add(new_enb)
+			# Add it to the final eNB list
+			self.controller_data['eNBs'].add(new_enb)
 
 		for ue in data['ues']:
 			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'], ue['control_plane'])
-			#self.controller_data['UEs'].add(new_ue)
-			enb = self.getENB(temp_enbs, ue['enb'])
+			# Get eNB
+			enb = self.getENB(self.controller_data['eNBs'], ue['enb'])
 			if enb and self.validate_control_plane_actions(new_ue.get_control_plane()):
 				# Add serialized control plane to the UE
 				new_ue.set_serialized_control_plane(self.serialize_control_plane(new_ue.get_control_plane()))
-				# Add it to the final eNB list
-				self.controller_data['eNBs'].add(enb)
 				# Add UE to the final UE list
 				self.controller_data['UEs'].add(new_ue)
 
@@ -224,7 +221,7 @@ class UserInput():
 			html += '<th>OpKey</th>'
 			html += '<th>Control plane</th>'
 			html += '<th>Command</th>'
-			html += '<th>IP</th>'
+			html += '<th>Address</th>'
 			html += '<th>eNB</th>'
 			html += '<th>Status</th>'
 			html += '</tr>'
@@ -253,7 +250,7 @@ class UserInput():
 			html += '<th>ID</th>'
 			html += '<th>MCC</th>'
 			html += '<th>MNC</th>'
-			html += '<th>IP</th>'
+			html += '<th>Address</th>'
 			html += '<th>Status</th>'
 			html += '</tr>'
 			for enb in self.controller_data['eNBs']:
