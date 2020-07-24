@@ -44,10 +44,14 @@
 #define ID_E_RAB_SETUP_LIST_C_TXT_SU_RES 0x0033
 #define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES 0x0032
 #define ID_E_RAB_SETUP_ITEM_C_TXT_SU_RES_LEN 0x0A
+#define ID_E_RAB_TO_BE_SWITCHED_DL_LIST 0x0016
+#define ID_E_RAB_TO_BE_SWITCHED_DL_ITEM 0x0017
+#define ID_E_RAB_TO_BE_SWITCHED_DL_ITEM_LEN 0x0A
 #define ID_MME_UE_S1AP_IE 0x0000
 #define ID_ENB_UE_S1AP_IE_UE 0x0008
 #define ID_ENB_UE_S1AP_ID	0x0008
 #define ID_S_TMSI 0x0060
+#define ID_SOURCEMME_UE_S1AP_ID 0x0058
 
 
 /* UE Defines */
@@ -369,7 +373,22 @@ struct _E_RAB_Setup_List_C_txt_SU_Res
 	uint8_t value_len;
 };
 
+struct _E_RABToBeSwitchedDLList
+{
+	uint16_t id;
+	uint8_t criticality;
+	uint8_t * value;
+	uint8_t value_len;
+};
+
 struct _E_RABSetupItemCtxtSURes
+{
+	uint16_t e_rab_id;
+	uint8_t transport_layer_address[IP_LEN];
+	uint32_t gtp_teid;
+};
+
+struct _E_RABToBeSwitchedDLItem
 {
 	uint16_t e_rab_id;
 	uint8_t transport_layer_address[IP_LEN];
@@ -431,6 +450,14 @@ struct _InitialUEMessage_ServiceRequest
 	uint8_t init; /* = 0x00;*/
 	uint16_t numItems; /* 0x0006 */
 	uint8_t * items; /* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-NAS-PDU) + ProtocolIE(id-TAI) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-RRC-Establishment-Cause) + id-S-TMSI*/
+	uint16_t items_len;
+};
+
+struct _Path_Switch_Request
+{
+	uint8_t init; /* = 0x00;*/
+	uint16_t numItems; /* 0x0006 */
+	uint8_t * items; /* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-E-RABToBeSwitchedDLList) + ProtocolIE(id-SourceMME-UE-S1AP-ID) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-TAI) + ProtocolIE(id-UESecurityCapabilities)*/
 	uint16_t items_len;
 };
 
@@ -1089,6 +1116,24 @@ ProtocolIE * generate_ProtocolIE_s_tmsi(UE * ue)
 	return protocolIE;
 }
 
+ProtocolIE * generate_ProtocolIE_security_capabilities(UE * ue)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_UE_SECURITY_CAPABILITIES;
+	protocolIE->criticality = CRITICALITY_REJECT;
+
+	protocolIE->value = (uint8_t *) GC_malloc(6);
+	protocolIE->value[0] = 5; /* Length */
+
+	/* Get UE security capabilities */
+	memcpy(protocolIE->value+1, get_security_capabilities(ue), 4);
+	protocolIE->value[5] = 0;
+
+	protocolIE->value_len = 6;
+
+	return protocolIE;
+}
+
 InitialUEMessage * generate_Initial_UE_Message(eNB * enb, UE * ue)
 {
 	ProtocolIE * enb_ue_s1ap_id;
@@ -1429,6 +1474,8 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 			{
 				printf("\tEncryption Algorithm: %.4x\n", (value[offset] << 8) | value[offset+1]);
 				printf("\tIntegrity Protection Algorithm: %.4x\n", (value[offset+2] << 8) | value[offset+3]);
+				/* Store security capabilities */
+				set_security_capabilities(ue, value + offset);
 				ret = 0;
 			}
 			else if(id == ID_SECURITY_KEY)
@@ -1644,6 +1691,24 @@ ProtocolIE * generate_ProtocolIE_mme_ue_s1ap_id(UE * ue)
 	return protocolIE;
 }
 
+ProtocolIE * generate_SourceMME_UE_S1AP_ID(UE * ue)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_SOURCEMME_UE_S1AP_ID;
+	protocolIE->criticality = CRITICALITY_REJECT;
+
+	/* Intermediate struct is no necessary because id is use directly from the UE struct */
+	uint8_t len;
+	uint8_t * mme_id = get_mme_s1ap_id(ue, &len);
+
+	uint8_t * value = generate_s1ap_value(mme_id, len);
+	protocolIE->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(protocolIE->value, (void *) value, len + 1);
+	protocolIE->value_len = len + 1;
+	GC_free(value);
+	return protocolIE;
+}
+
 ProtocolIE * generate_ProtocolIE_nas_pdu_auth_response(Auth_Challenge * auth_challenge)
 {
 	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
@@ -1809,6 +1874,12 @@ void freeUEMessage_ServiceRequest(InitialUEMessage_ServiceRequest * ue_sr)
 	GC_free(ue_sr);
 }
 
+void freePathSwitchRequest(Path_Switch_Request * ue_psr)
+{
+	GC_free(ue_psr->items);
+	GC_free(ue_psr);
+}
+
 uint8_t * SecurityCommandComplete_to_buffer(Security_Command_Complete * scc, uint16_t * len)
 {
 	uint8_t * dump = (uint8_t *) GC_malloc(3 + scc->items_len);
@@ -1894,6 +1965,17 @@ uint8_t * InitialUEMessage_ServiceRequest_to_buffer(InitialUEMessage_ServiceRequ
 	dump[2] = (uint8_t)(ue_sr->numItems & 0xFF);
 	memcpy(dump+3, ue_sr->items, ue_sr->items_len);
 	*len = 3 + ue_sr->items_len;
+	return dump;
+}
+
+uint8_t * Path_Switch_Request_to_buffer(Path_Switch_Request * ue_psr, uint16_t * len)
+{
+	uint8_t * dump = (uint8_t *) GC_malloc(3 + ue_psr->items_len);
+	dump[0] = ue_psr->init;
+	dump[1] = ue_psr->numItems >> 8;
+	dump[2] = (uint8_t)(ue_psr->numItems & 0xFF);
+	memcpy(dump+3, ue_psr->items, ue_psr->items_len);
+	*len = 3 + ue_psr->items_len;
 	return dump;
 }
 
@@ -2066,6 +2148,16 @@ uint8_t * E_RABSetupItemCtxtSURes_to_buffer(E_RABSetupItemCtxtSURes * e_rabsetup
 	return dump;
 }
 
+uint8_t * E_RABToBeSwitchedDLItem_to_buffer(E_RABToBeSwitchedDLItem * e_rabtobeswitched)
+{
+	/* To avoid 4 bytes alignment, E_RABSetupItemCtxtSURes size is defined manually*/
+	uint8_t * dump = GC_malloc(ID_E_RAB_TO_BE_SWITCHED_DL_ITEM_LEN);
+	memcpy(dump, (uint8_t *) &e_rabtobeswitched->e_rab_id, 2);
+	memcpy(dump + 2, e_rabtobeswitched->transport_layer_address, IP_LEN);
+	memcpy(dump + 6, (uint8_t *) &e_rabtobeswitched->gtp_teid, 4);
+	return dump;
+}
+
 uint8_t * E_RAB_Setup_List_C_txt_SU_Res_to_buffer(E_RAB_Setup_List_C_txt_SU_Res * e_rabsetup_res, uint16_t * len)
 {
 	uint8_t * dump = GC_malloc(e_rabsetup_res->value_len + 5);
@@ -2076,6 +2168,19 @@ uint8_t * E_RAB_Setup_List_C_txt_SU_Res_to_buffer(E_RAB_Setup_List_C_txt_SU_Res 
 	dump[4] = e_rabsetup_res->value_len;
 	memcpy(dump + 5, e_rabsetup_res->value, e_rabsetup_res->value_len);
 	*len = e_rabsetup_res->value_len + 5;
+	return dump;
+}
+
+uint8_t * E_RABToBeSwitchedDLList_to_buffer(E_RABToBeSwitchedDLList * e_rabtobeswitched_list, uint16_t * len)
+{
+	uint8_t * dump = GC_malloc(e_rabtobeswitched_list->value_len + 5);
+	dump[0] = 0x00;
+	dump[1] = (e_rabtobeswitched_list->id & 0xFF00) >> 8;
+	dump[2] = e_rabtobeswitched_list->id & 0xFF;
+	dump[3] = e_rabtobeswitched_list->criticality;
+	dump[4] = e_rabtobeswitched_list->value_len;
+	memcpy(dump + 5, e_rabtobeswitched_list->value, e_rabtobeswitched_list->value_len);
+	*len = e_rabtobeswitched_list->value_len + 5;
 	return dump;
 }
 
@@ -2106,6 +2211,40 @@ ProtocolIE * generate_ProtocolIE_e_rab_setup_list_c_txt_su_res(eNB * enb, UE * u
 
 	uint8_t * value = generate_s1ap_value(e_rabsetup_res_buf, len);
 	GC_free(e_rabsetup_res_buf);
+	protocolIE->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(protocolIE->value, (void *) value, len + 1);
+	protocolIE->value_len = len + 1;
+	GC_free(value);
+	return protocolIE;
+}
+
+ProtocolIE * generate_ProtocolIE_e_rabtobeswitcheddllist(UE * ue)
+{
+	ProtocolIE * protocolIE = (ProtocolIE *) GC_malloc(sizeof(ProtocolIE));
+	protocolIE->id = ID_E_RAB_TO_BE_SWITCHED_DL_LIST;
+	protocolIE->criticality = CRITICALITY_REJECT;
+
+
+	E_RABToBeSwitchedDLItem * e_rabtobeswitched = GC_malloc(sizeof(E_RABToBeSwitchedDLItem));
+	e_rabtobeswitched->e_rab_id = 0x1f0a; /* e-RAB-ID: 5 */
+	memcpy(e_rabtobeswitched->transport_layer_address, get_ue_ip(ue), IP_LEN);
+	e_rabtobeswitched->gtp_teid = htonl(get_gtp_teid(ue));
+	uint8_t * e_rabtobeswitched_buf = E_RABToBeSwitchedDLItem_to_buffer(e_rabtobeswitched);
+	GC_free(e_rabtobeswitched);
+
+	E_RABToBeSwitchedDLList * e_rabtobeswitched_list = GC_malloc(sizeof(E_RABToBeSwitchedDLList));
+	e_rabtobeswitched_list->id = ID_E_RAB_TO_BE_SWITCHED_DL_ITEM;
+	e_rabtobeswitched_list->criticality = CRITICALITY_REJECT;
+	e_rabtobeswitched_list->value = e_rabtobeswitched_buf;
+	e_rabtobeswitched_list->value_len = ID_E_RAB_TO_BE_SWITCHED_DL_ITEM_LEN;
+	uint16_t len;
+	uint8_t * e_rabtobeswitched_list_buf = E_RABToBeSwitchedDLList_to_buffer(e_rabtobeswitched_list, &len);
+	GC_free(e_rabtobeswitched_list);
+	GC_free(e_rabtobeswitched_buf);
+
+
+	uint8_t * value = generate_s1ap_value(e_rabtobeswitched_list_buf, len);
+	GC_free(e_rabtobeswitched_list_buf);
 	protocolIE->value = (uint8_t *) GC_malloc(len + 1);
 	memcpy(protocolIE->value, (void *) value, len + 1);
 	protocolIE->value_len = len + 1;
@@ -2636,6 +2775,84 @@ InitialUEMessage_ServiceRequest * generate_InitialUEMessage_ServiceRequest(eNB *
 	return ue_sr;
 }
 
+/* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-E-RABToBeSwitchedDLList) + ProtocolIE(id-SourceMME-UE-S1AP-ID) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-TAI) + ProtocolIE(id-UESecurityCapabilities)*/
+Path_Switch_Request * generate_PathSwitchRequest(eNB * enb, UE * ue)
+{
+	ProtocolIE * enb_ue_s1ap_id;
+	ProtocolIE * e_rabtobeswitcheddllist;
+	ProtocolIE * sourcemme_ue_s1ap_id;
+	ProtocolIE * eutran_cgi;
+	ProtocolIE * tai;
+	ProtocolIE * uesecuritycapabilities;
+
+
+	Path_Switch_Request * ue_psr = GC_malloc(sizeof(InitialUEMessage));
+	ue_psr->init = 0x00;
+	ue_psr->numItems = 0x0006;
+	enb_ue_s1ap_id = generate_ProtocolIE_enb_ue_s1ap_id(ue);
+	e_rabtobeswitcheddllist = generate_ProtocolIE_e_rabtobeswitcheddllist(ue);
+	sourcemme_ue_s1ap_id = generate_SourceMME_UE_S1AP_ID(ue);
+	eutran_cgi = generate_ProtocolIE_eutran_cgi(enb);
+	tai = generate_ProtocolIE_tai(enb);
+	uesecuritycapabilities = generate_ProtocolIE_security_capabilities(ue);
+
+
+	int enb_ue_s1ap_id_len;
+	uint8_t * enb_ue_s1ap_id_buffer = ProtocolIE_to_buffer(enb_ue_s1ap_id, &enb_ue_s1ap_id_len);
+	freeProtocolIE(enb_ue_s1ap_id);
+
+	int e_rabtobeswitcheddllist_buffer_len;
+	uint8_t * e_rabtobeswitcheddllist_buffer = ProtocolIE_to_buffer(e_rabtobeswitcheddllist, &e_rabtobeswitcheddllist_buffer_len);
+	freeProtocolIE(e_rabtobeswitcheddllist);
+
+	int sourcemme_ue_s1ap_id_len;
+	uint8_t * sourcemme_ue_s1ap_id_buffer = ProtocolIE_to_buffer(sourcemme_ue_s1ap_id, &sourcemme_ue_s1ap_id_len);
+	freeProtocolIE(sourcemme_ue_s1ap_id);
+
+	int tai_len;
+	uint8_t * tai_buffer = ProtocolIE_to_buffer(tai, &tai_len);
+	freeProtocolIE(tai);
+
+	int eutran_cgi_len;
+	uint8_t * eutran_cgi_buffer = ProtocolIE_to_buffer(eutran_cgi, &eutran_cgi_len);
+	freeProtocolIE(eutran_cgi);
+
+	int uesecuritycapabilities_len;
+	uint8_t * uesecuritycapabilities_buffer = ProtocolIE_to_buffer(uesecuritycapabilities, &uesecuritycapabilities_len);
+	freeProtocolIE(uesecuritycapabilities);
+
+	int i = 0;
+	ue_psr->items = (uint8_t *) GC_malloc(enb_ue_s1ap_id_len + e_rabtobeswitcheddllist_buffer_len + sourcemme_ue_s1ap_id_len + eutran_cgi_len + tai_len + uesecuritycapabilities_len);
+
+	memcpy(ue_psr->items + i, enb_ue_s1ap_id_buffer, enb_ue_s1ap_id_len);
+	GC_free(enb_ue_s1ap_id_buffer);
+	i += enb_ue_s1ap_id_len;
+
+	memcpy(ue_psr->items + i, e_rabtobeswitcheddllist_buffer, e_rabtobeswitcheddllist_buffer_len);
+	GC_free(e_rabtobeswitcheddllist_buffer);
+	i += e_rabtobeswitcheddllist_buffer_len;
+
+	memcpy(ue_psr->items + i, sourcemme_ue_s1ap_id_buffer, sourcemme_ue_s1ap_id_len);
+	GC_free(sourcemme_ue_s1ap_id_buffer);
+	i += sourcemme_ue_s1ap_id_len;
+
+	memcpy(ue_psr->items + i, eutran_cgi_buffer, eutran_cgi_len);
+	GC_free(eutran_cgi_buffer);
+	i += eutran_cgi_len;
+
+	memcpy(ue_psr->items + i, tai_buffer, tai_len);
+	GC_free(tai_buffer);
+	i += tai_len;
+
+	memcpy(ue_psr->items + i, uesecuritycapabilities_buffer, uesecuritycapabilities_len);
+	GC_free(uesecuritycapabilities_buffer);
+	i += uesecuritycapabilities_len;
+
+	ue_psr->items_len = i;
+
+	return ue_psr;
+}
+
 UE_Context_Release_Response * generate_ue_context_release_response(UE * ue)
 {
 	ProtocolIE * mme_ue_s1ap_id;
@@ -2748,7 +2965,7 @@ s1ap_initiatingMessage * generate_Initial_UE_Message_Service_Request(eNB * enb, 
 	s1ap_ue_serv_req->criticality = CRITICALITY_IGNORE;
 
 	InitialUEMessage_ServiceRequest * ue_sr;
-	ue_sr = generate_InitialUEMessage_ServiceRequest(enb, ue, auth_challenge); /* todo */
+	ue_sr = generate_InitialUEMessage_ServiceRequest(enb, ue, auth_challenge);
 
 	uint16_t len;
 	uint8_t * ue_sr_buf = InitialUEMessage_ServiceRequest_to_buffer(ue_sr, &len);
@@ -2761,6 +2978,30 @@ s1ap_initiatingMessage * generate_Initial_UE_Message_Service_Request(eNB * enb, 
 	s1ap_ue_serv_req->value[0] = (uint8_t) len;
 	s1ap_ue_serv_req->value_len = len + 1;
 	return s1ap_ue_serv_req;
+}
+
+#define PATH_SWITCH_REQUEST 0x0003
+
+s1ap_initiatingMessage * generate_Path_Switch_Request(eNB * enb, UE * ue)
+{
+	s1ap_initiatingMessage * s1ap_path_switch_req = GC_malloc(sizeof(s1ap_initiatingMessage));
+	s1ap_path_switch_req->procedureCode = PATH_SWITCH_REQUEST;
+	s1ap_path_switch_req->criticality = CRITICALITY_IGNORE;
+
+	Path_Switch_Request * ue_psr;
+	ue_psr = generate_PathSwitchRequest(enb, ue); /* todo */
+
+	uint16_t len;
+	uint8_t * ue_psr_buf = Path_Switch_Request_to_buffer(ue_psr, &len);
+
+	freePathSwitchRequest(ue_psr);
+
+	s1ap_path_switch_req->value = (uint8_t *) GC_malloc(len + 1);
+	memcpy(s1ap_path_switch_req->value + 1, (void *) ue_psr_buf, len);
+	GC_free(ue_psr_buf);
+	s1ap_path_switch_req->value[0] = (uint8_t) len;
+	s1ap_path_switch_req->value_len = len + 1;
+	return s1ap_path_switch_req;
 }
 
 
@@ -3322,6 +3563,41 @@ int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip)
 	return 0;
 }
 
+int procedure_UE_X2_handover(eNB * enb, UE * ue)
+{
+	s1ap_initiatingMessage * pathSwitchReq;
+	uint8_t * pathSwitchReq_buffer;
+	int socket = get_mme_socket(enb);
+	uint16_t len = 0;
+	//int flags;
+
+	/* Error check NULL UE */
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	printInfo("Starting UE Path Switch Request procedure...\n");
+
+	/* SCTP parameters */
+	struct sctp_sndrcvinfo sndrcvinfo;
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+
+	/**********************/
+	/* UE Service Request */
+	/**********************/
+	pathSwitchReq = generate_Path_Switch_Request(enb, ue);
+	pathSwitchReq_buffer = s1ap_initiatingMessage_to_buffer(pathSwitchReq, &len);
+	freeS1ap_initiatingMessage(pathSwitchReq);
+
+	/* Sending Authentication Response */
+	/* MUST BE ON STREAM 1 */
+	sctp_sendmsg(socket, (void *) pathSwitchReq_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
+	GC_free(pathSwitchReq_buffer);
+
+	return 0;
+}
 
 
 /* TODO: Implement an authomatic way to detect EMM information messages without a loop */

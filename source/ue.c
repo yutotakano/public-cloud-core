@@ -33,6 +33,7 @@ struct _UE
 	uint8_t ue_ip[IP_LEN];
 	uint8_t nas_sequence_number;
 	Auth_Challenge auth_challenge;
+	uint8_t security_capabilities[4];
 };
 
 void printUE(UE * ue)
@@ -289,4 +290,14 @@ uint8_t * get_m_tmsi(UE * ue)
 char * get_msin_string(UE * ue)
 {
 	return ue->msin_string;
+}
+
+void set_security_capabilities(UE * ue, uint8_t * sec_cap)
+{
+	memcpy(ue->security_capabilities, sec_cap, 4);
+}
+
+uint8_t * get_security_capabilities(UE * ue)
+{
+	return ue->security_capabilities;
 }

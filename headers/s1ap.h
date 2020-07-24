@@ -42,6 +42,9 @@ typedef struct _non_access_stratum_pdu_service_request non_access_stratum_pdu_se
 typedef struct _UE_Detach_Accept UE_Detach_Accept;
 typedef struct _UE_Detach UE_Detach;
 typedef struct _InitialUEMessage_ServiceRequest InitialUEMessage_ServiceRequest;
+typedef struct _Path_Switch_Request Path_Switch_Request;
+typedef struct _E_RABToBeSwitchedDLItem E_RABToBeSwitchedDLItem;
+typedef struct _E_RABToBeSwitchedDLList E_RABToBeSwitchedDLList;
 
 void test(eNB * enb);
 
