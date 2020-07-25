@@ -1522,7 +1522,7 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 			else if(id == ID_SECURITY_CONTEXT)
 			{
 				printf("\tnextHopChainingCount: %d\n", value[offset]);
-				printf("\tnextHopParameter (32): \n");
+				printf("\tnextHopParameter (32): ");
 				for(j = 0; j < 32; j++)
 				{
 					printf("%.2x", value[offset + 1 + j]);
@@ -3668,11 +3668,11 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 		}
 
 		/* Analyze buffer and get Initial Context Setup Request*/
-		err = analyze_InitialContextSetupRequest(buffer, ue);
+		err = analyze_PathSwitchRequestAcknowledge(buffer, ue);
 		if(err == 1)
 		{
 			/* Analyze buffer and get Initial Context Setup Request*/
-			printError("Path Switch Request Acknowledge\n");
+			printError("Path Switch Request\n");
 	    	return 1;
 		}
 		else if(err == 2)
@@ -3682,7 +3682,7 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 		}
 		else
 		{
-			printOK("Path Switch Request Acknowledge\n");
+			printOK("Path Switch Request\n");
 			break;
 		}
 	}

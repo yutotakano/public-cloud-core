@@ -55,6 +55,6 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip);
 int procedure_UE_Context_Release(eNB *enb, UE * ue);
 int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off);
 int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip);
-
+int procedure_UE_X2_handover(eNB * enb, UE * ue);
 
 #endif

@@ -206,8 +206,8 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 			printError("Move to Attached (UEServiceRequest) error\n");
 			/* Generate UE Error response */
 			response[0] = buffer[0]; /* Without OK_CODE */
-    		*response_len = 1;
-    		return 1;
+	    		*response_len = 1;
+    			return 1;
 		}
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
@@ -304,7 +304,15 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
     		return 1;
 		}
 
-		/* TODO: Call S1AP procedure and check return */
+		/* Call S1AP procedure and check return */
+		if(procedure_UE_X2_handover(enb, ue))
+		{
+			printError("X2 Handover-Request error\n");
+                        /* Generate UE Error response */
+                        response[0] = X2_ERROR; /* X2 Error message */
+                        *response_len = 1;
+                        return 1;
+		}
 
 		printOK("X2 Handover-Request done\n");
 
