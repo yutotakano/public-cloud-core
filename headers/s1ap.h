@@ -43,6 +43,7 @@ typedef struct _UE_Detach_Accept UE_Detach_Accept;
 typedef struct _UE_Detach UE_Detach;
 typedef struct _InitialUEMessage_ServiceRequest InitialUEMessage_ServiceRequest;
 typedef struct _Path_Switch_Request Path_Switch_Request;
+typedef struct _Path_Switch_Request_Acknowledge Path_Switch_Request_Acknowledge;
 typedef struct _E_RABToBeSwitchedDLItem E_RABToBeSwitchedDLItem;
 typedef struct _E_RABToBeSwitchedDLList E_RABToBeSwitchedDLList;
 

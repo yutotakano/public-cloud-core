@@ -52,6 +52,8 @@
 #define ID_ENB_UE_S1AP_ID	0x0008
 #define ID_S_TMSI 0x0060
 #define ID_SOURCEMME_UE_S1AP_ID 0x0058
+#define ID_PATH_SWITCH_REQUEST 0x0003
+#define ID_SECURITY_CONTEXT 0x0028
 
 
 /* UE Defines */
@@ -118,6 +120,7 @@
 #define NAS_SECURITY_HEADER_TYPE_SEVICE_REQUEST 0xC0
 #define NAS_KEY_SET_IDENTIFIER(value) (value & 0xE0)
 #define SEQUENCE_NUMBER_SHORT(sqn) (sqn & 0x1F)
+#define TRANSPORT_LAYER_ADDRESS 0x0F80
 
 
 /* eNB Structures */
@@ -459,6 +462,15 @@ struct _Path_Switch_Request
 	uint16_t numItems; /* 0x0006 */
 	uint8_t * items; /* ProtocolIE(id-eNB-UE-S1AP-ID) + ProtocolIE(id-E-RABToBeSwitchedDLList) + ProtocolIE(id-SourceMME-UE-S1AP-ID) + ProtocolIE(id-EUTRAN-CGI) + ProtocolIE(id-TAI) + ProtocolIE(id-UESecurityCapabilities)*/
 	uint16_t items_len;
+};
+
+struct _Path_Switch_Request_Acknowledge
+{
+	uint8_t status;
+	uint8_t procedureCode;
+	uint8_t criticality;
+	uint8_t length;
+	uint8_t * value;
 };
 
 
@@ -1228,8 +1240,6 @@ s1ap_initiatingMessage * generate_InitiatingMessage(eNB * enb, UE * ue)
 	return s1ap_initiatingMsg;
 }
 
-#define TRANSPORT_LAYER_ADDRESS 0x0F80
-
 int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * auth_challenge, UE * ue)
 {
 	uint16_t numElems;
@@ -1509,6 +1519,17 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				printf("\n");
 				ret = 0;
 			}
+			else if(id == ID_SECURITY_CONTEXT)
+			{
+				printf("\tnextHopChainingCount: %d\n", value[offset]);
+				printf("\tnextHopParameter (32): \n");
+				for(j = 0; j < 32; j++)
+				{
+					printf("%.2x", value[offset + 1 + j]);
+				}
+				printf("\n");
+				ret = 0;
+			}
 			/* Default case */
 			else
 			{
@@ -1653,6 +1674,29 @@ int analyze_UEAccept(uint8_t * buffer, UE * ue)
 	printInfo("Analyzing UEDetachAccept\n");
 	ret = analyze_downlink_NAS_Transport(ue_da.value, ue_da.length, NULL, ue);
 	GC_free(ue_da.value);
+	return ret;
+}
+
+int analyze_PathSwitchRequestAcknowledge(uint8_t * buffer, UE * ue)
+{
+	int ret = 1;
+	Path_Switch_Request_Acknowledge ue_psra;
+
+	memcpy((void *) &ue_psra, (void *) buffer, 4);
+	ue_psra.value = (uint8_t *) GC_malloc(ue_psra.length);
+	memcpy((void *) ue_psra.value, (void *) buffer+4, ue_psra.length);
+
+	/* Special case to detect EMM information messages */
+	if(ue_psra.status != SUCCESSFUL_OUTCOME || (ue_psra.procedureCode != (uint8_t)(ID_PATH_SWITCH_REQUEST & 0xFF) && ue_psra.procedureCode != (uint8_t)DOWNLINK_NAS_TRANSPORT))
+	{
+		printError("Wrong UEContextReleaseCommand message\n");
+		return 1;
+	}
+
+	/* Analyze and extract Encryption and Integrity algorithms to derivate NAS session keys */
+	printInfo("Analyzing PathSwitchRequestAcknowledge\n");
+	ret = analyze_downlink_NAS_Transport(ue_psra.value, ue_psra.length, NULL, ue);
+	GC_free(ue_psra.value);
 	return ret;
 }
 
@@ -2980,12 +3024,10 @@ s1ap_initiatingMessage * generate_Initial_UE_Message_Service_Request(eNB * enb, 
 	return s1ap_ue_serv_req;
 }
 
-#define PATH_SWITCH_REQUEST 0x0003
-
 s1ap_initiatingMessage * generate_Path_Switch_Request(eNB * enb, UE * ue)
 {
 	s1ap_initiatingMessage * s1ap_path_switch_req = GC_malloc(sizeof(s1ap_initiatingMessage));
-	s1ap_path_switch_req->procedureCode = PATH_SWITCH_REQUEST;
+	s1ap_path_switch_req->procedureCode = ID_PATH_SWITCH_REQUEST;
 	s1ap_path_switch_req->criticality = CRITICALITY_IGNORE;
 
 	Path_Switch_Request * ue_psr;
@@ -3569,7 +3611,12 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 	uint8_t * pathSwitchReq_buffer;
 	int socket = get_mme_socket(enb);
 	uint16_t len = 0;
-	//int flags;
+	uint8_t buffer[BUFFER_LEN];
+	int flags;
+	struct sockaddr_in addr;
+	socklen_t from_len = (socklen_t)sizeof(struct sockaddr_in);
+	int err;
+	int recv_len;
 
 	/* Error check NULL UE */
 	if(ue == NULL)
@@ -3584,9 +3631,9 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 	struct sctp_sndrcvinfo sndrcvinfo;
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 
-	/**********************/
-	/* UE Service Request */
-	/**********************/
+	/***********************/
+	/* Path Switch Request */
+	/***********************/
 	pathSwitchReq = generate_Path_Switch_Request(enb, ue);
 	pathSwitchReq_buffer = s1ap_initiatingMessage_to_buffer(pathSwitchReq, &len);
 	freeS1ap_initiatingMessage(pathSwitchReq);
@@ -3595,6 +3642,50 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 	/* MUST BE ON STREAM 1 */
 	sctp_sendmsg(socket, (void *) pathSwitchReq_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(pathSwitchReq_buffer);
+
+
+
+	/***********************************/
+	/* Path Switch Request Acknowledge */
+	/***********************************/
+
+	while(1)
+	{
+		/* Receiving MME answer */
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			{
+				printError("SCTP Timeout (%s)\n", strerror(errno));
+			}
+			else
+			{
+				printError("SCTP (%s)\n", strerror(errno));
+			}
+			return 1;
+		}
+
+		/* Analyze buffer and get Initial Context Setup Request*/
+		err = analyze_InitialContextSetupRequest(buffer, ue);
+		if(err == 1)
+		{
+			/* Analyze buffer and get Initial Context Setup Request*/
+			printError("Path Switch Request Acknowledge\n");
+	    	return 1;
+		}
+		else if(err == 2)
+		{
+			/* EPC sends EMM information message after Attach complete and its detected in the authentication of the following UE */
+			printInfo("Special Case: EMM information message received\n");
+		}
+		else
+		{
+			printOK("Path Switch Request Acknowledge\n");
+			break;
+		}
+	}
 
 	return 0;
 }
