@@ -55,6 +55,8 @@ void send_ue_moved_to_connected_controller(uint32_t ue_id);
 uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id);
 /* Update controller eNB with X2 Handover Completed  */
 void send_x2_handover_complete(uint32_t ue_id, uint32_t enb_id);
+/* Update controller and controller eNB with ATTACH_TO_ENB */
+void send_ue_attach_to_enb_controller(uint32_t ue_id, uint32_t enb_id);
 
 
 
@@ -689,8 +691,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 	start_traffic_generator(ue.command);
 
 	/* Notify the controller */
-	/* TODO: send_ue_attach_to_enb_controller */
-	send_ue_attach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	send_ue_attach_to_enb_controller((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
 	/* Here the UE is in IDLE state */
 	close(enb_sockfd);
 

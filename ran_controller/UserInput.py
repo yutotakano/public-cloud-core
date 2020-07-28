@@ -67,12 +67,13 @@ class UserInput():
 					counter += self.actions[a][0]
 				except:
 					# Handover case
-					if a.startswith('handover') == False or a.startswith('attach') == False:
+					if a.startswith('handover') == False and a.startswith('attach') == False:
 						return False
 					# Handover case
 					ho = a.split('_')
 					if len(ho) != 2 or (ho[0] != 'handover' and ho[0] != 'attach') or ho[1].isdigit() == False:
 						return False
+					counter += self.special_actions[ho[0]][0]
 				if counter != 0 and counter % 2 == 0:
 					return False
 				if numFlag == False:
