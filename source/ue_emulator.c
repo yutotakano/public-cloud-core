@@ -32,6 +32,7 @@
 #define CP_MOVE_TO_IDLE 4
 #define CP_MOVE_TO_CONNECTED 5
 #define CP_HANDOVER 6
+#define CP_ATTACH_TO_ENB 7
 
 ue_data ue;
 pid_t traffic_generator;
@@ -266,7 +267,7 @@ int send_ue_attach()
 
 	/* Analyze response */
 	res = (init_response_msg *) (buffer+1);
-	/* Gert TEID */
+	/* Get TEID */
 	memcpy(gtp_teid, res->teid, 4);
 	/* Get UE IP */
 	memcpy(ue_ip, res->ue_ip, 4);
@@ -521,6 +522,183 @@ int send_handover(uint8_t * enb_num)
 	return 0;
 }
 
+int send_ue_attach_to_enb(uint8_t * enb_num)
+{
+	uint32_t enb_n;
+	int enb_ret;
+	uint32_t enb_ip_int;
+	uint8_t enb_ip[4];
+	int enb_sockfd;
+	ho_msg * msg;
+	idle_msg * imsg;
+	init_response_msg * res;
+	int n;
+	uint8_t buffer[256];
+
+
+	/* 1- Get Target-eNB IP from the controller */
+	/* 2- Send UE Transfer to Source-eNB */
+	/* 3- Send Attach to Target-eNB */
+
+	/*****/
+	/* 1 */
+	/*****/
+	/* Generate eNB num */
+	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
+	printInfo("Staring X2 Handover to eNB %d...\n", enb_n);
+	printInfo("Getting Target-eNB IP...\n");
+	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	if(enb_ret == -1)
+		return 1;
+	if(enb_ret == 0)
+	{
+		printWarning("Target-eNB %d is not running yet.\n", enb_n);
+		return 1;
+	}
+	enb_ip_int = (uint32_t) enb_ret;
+	/* Store IP as a uint8_t pointer */
+	enb_ip[0] = (enb_ip_int >> 24) & 0xFF;
+	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
+	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
+	enb_ip[3] = enb_ip_int & 0xFF;
+	printOK("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
+
+
+	/*****/
+	/* 2 */
+	/*****/
+	/* Request Source-eNB a UE transfer to Target-eNB (UE Transfer)*/
+	printInfo("Starting UE Transfer...\n");
+	/* Socket create */
+    enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (enb_sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        close(enb_sockfd);
+        return 1; 
+    }
+
+    /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
+    bzero(buffer, 256);
+    buffer[0] = UE_TRANFSER;
+    msg = (ho_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+	/* Target-eNB IP */
+	memcpy(msg->target_enb_ip, enb_ip, 4);
+
+	/* Send UE info to eNB and wait to a response */
+	write(enb_sockfd, buffer, sizeof(ho_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(enb_sockfd, buffer, sizeof(buffer));
+	/* Close socket */
+	close(enb_sockfd);
+	if(n < 0)
+	{
+		perror("Recv from Source-eNB");
+		return 1;
+	}
+	/* Analyze Source-eNB response */
+	if(buffer[0] == X2_SETUP_ERROR)
+	{
+		/* Error case */
+		printError("UE Transfer\n");
+		return 1;
+	}
+	printOK("UE Transfer done\n");
+
+
+	/*****/
+	/* 3 */
+	/*****/
+	/* Request Target-eNB an Attach Request (UEAttach) */
+	printInfo("Starting Attach Request with eNB %d...\n", enb_n);
+	/* Update serving eNB IP with Target-eNB IP */
+	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+
+	/* Socket create */
+    enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (enb_sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        return 1; 
+    }
+
+    /* Build eNB message (IDLE_CODE + MSIN) */
+    bzero(buffer, 256);
+    buffer[0] = UE_ATTACH;
+    imsg = (idle_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(imsg->msin, ue.msin, 10);
+
+	/* Send UE info to eNB and wait to a response */
+	write(enb_sockfd, buffer, sizeof(idle_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(enb_sockfd, buffer, sizeof(buffer));
+	if(n < 0)
+	{
+		perror("UE recv");
+		close(enb_sockfd);
+		return 1;
+	}
+	if(buffer[0] != (OK_CODE | UE_ATTACH))
+	{
+		printError("Error in remote eNB (UEAttach)\n");
+		close(enb_sockfd);
+		return 1;
+	}
+	printOK("UE Attached (UEAttach)\n");
+
+	/* Analyze response */
+	res = (init_response_msg *) (buffer+1);
+	/* Get TEID */
+	memcpy(gtp_teid, res->teid, 4);
+	/* Get UE IP */
+	memcpy(ue_ip, res->ue_ip, 4);
+	/* Get SPGW_IP */
+	memcpy(spgw_ip, res->spgw_ip, 4);
+
+	/* Print received parameters */
+	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+	printf("Received new information from eNB\n");
+	printf("New GTP-TEID: 0x%x\n", teid);
+	printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
+	printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+	/* Update data plane */
+	if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+	{
+		printError("Error updating data plane parameters\n");
+		close(enb_sockfd);
+		return 1;
+	}
+
+	/* Run the traffic generator process */
+	start_traffic_generator(ue.command);
+
+	/* Notify the controller */
+	/* TODO: send_ue_attach_to_enb_controller */
+	send_ue_attach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	/* Here the UE is in IDLE state */
+	close(enb_sockfd);
+
+
+
+	return 0;
+}
+
 int do_control_plane_action(uint8_t * action)
 {
 	switch(*action)
@@ -545,6 +723,9 @@ int do_control_plane_action(uint8_t * action)
 			return 0;
 		case CP_HANDOVER:
 			send_handover(action + 1);
+			return 1;
+		case CP_ATTACH_TO_ENB:
+			send_ue_attach_to_enb(action + 1);
 			return 1;
 	}
 	return 0;

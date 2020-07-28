@@ -15,6 +15,7 @@
 #define MOVE_TO_CONNECTED 0x06
 #define HO_SETUP 0x07
 #define HO_REQUEST 0x08
+#define UE_TRANFSER 0x09
 
 
 typedef struct _init_msg

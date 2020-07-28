@@ -25,6 +25,7 @@ CODE_UE_ATTACH = 0x05
 CODE_UE_MOVED_TO_CONNECTED = 0x06
 CODE_UE_GET_ENB = 0x07
 CODE_UE_X2_HANDOVER_COMPLETED = 0x08
+CODE_UE_ATTACH_TO_ENB = 0x09
 
 '''
     Bit 0 (Status)
@@ -295,6 +296,19 @@ class RANControler:
 
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' Handover completed to eNB ' + str(enb.get_num()))
 
+		elif msg['type'] == 'ue_attached_to_enb':
+			# Get UE from data
+			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
+
+			# Get eNB from data
+			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
+
+			# Update UE info
+			ue.set_enb_id(enb.get_num())
+			ue.set_traffic()
+
+			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' Attached to eNB ' + str(enb.get_num()))
+
 
 	def generate_msg(self, data, address):
 		msg = {}
@@ -340,6 +354,11 @@ class RANControler:
 			msg['data'] = data[1:]
 		elif data[0] == CODE_UE_X2_HANDOVER_COMPLETED:
 			msg['type'] = 'x2_completed'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
+		elif data[0] == CODE_UE_ATTACH_TO_ENB:
+			msg['type'] = 'ue_attached_to_enb'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
 			msg['data'] = data[1:]

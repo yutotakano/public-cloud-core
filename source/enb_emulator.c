@@ -320,6 +320,72 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		response[0] = X2_OK;
     	*response_len = 1;
 	}
+	else if(buffer[0] == UE_TRANFSER)
+	{
+		/* This procedure is identical to HO_SETUP */
+		/* Response messages reused from HO procedures */
+		printInfo("UE UE_TRANFSER message received\n");
+
+		homsg = (ho_msg *)(buffer + 1);
+		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		if(ue == NULL)
+		{
+			printError("Wrong UE MSIN descriptor in UE Transfer\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+    		return 1;
+		}
+
+		/* Open a UDP socket to connect with Target-eNB */
+	    if ( (target_sockfd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+	        perror("socket creation failed in UE Transfer");
+	        response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+	        return 1;
+	    }
+
+	    /* Configure Target-eNB address */
+	    target_enb.sin_family = AF_INET;
+	    target_enb.sin_port = htons(X2_ENB_PORT);
+	    memcpy(&target_enb.sin_addr.s_addr, homsg->target_enb_ip, 4);
+	    memset(&(target_enb.sin_zero), '\0', 8);
+
+	    /* Store UE in the buffer */
+	    memcpy(buffer_ho, (uint8_t *)ue, get_ue_size());
+
+	    /* Send UE information to Target-eNB */
+	    sendto(target_sockfd, buffer_ho, get_ue_size(), 0, (const struct sockaddr *) &target_enb, sizeof(target_enb));
+
+	    /* Receive Target-eNB response */
+		n = read(target_sockfd, buffer_ho, 1024);
+		/* Close socket */
+		close(target_sockfd);
+		if(n < 0)
+		{
+			perror("Recv from Target-eNB");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+			return 1;
+		}
+		/* Analyze Target-eNB response */
+		if(buffer[0] == X2_ERROR)
+		{
+			/* Error case */
+			printError("UE Transfer in Target-eNB\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+			return 1;
+		}
+
+		/* Delete UE information in the map structure */
+		map_remove(&map, (char *)homsg->msin);
+
+		printOK("UE Transfer done\n");
+
+		/* Generate HO_OK message */
+		response[0] = X2_OK;
+    	*response_len = 1;
+	}
 	/* TODO: Implement othe kind of messages */
 	return 0;
 }

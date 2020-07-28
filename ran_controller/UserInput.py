@@ -15,7 +15,7 @@ class UserInput():
 		'UEs': set()
 	}
 
-	actions ={
+	actions = {
 		'init': [0, 0],
 		'detach': [1, 1],
 		'detach_switch_off': [1, 2],
@@ -23,6 +23,11 @@ class UserInput():
 		'move_to_idle': [3, 4],
 		'move_to_connected': [-3, 5],
 		'handover': [0, 6],
+	}
+
+	special_actions = {
+		'handover': [0, 6],
+		'attach': [-1, 7],
 	}
 
 	def __init__(self, set_data_func):
@@ -62,11 +67,11 @@ class UserInput():
 					counter += self.actions[a][0]
 				except:
 					# Handover case
-					if a.startswith('handover') == False:
+					if a.startswith('handover') == False or a.startswith('attach') == False:
 						return False
 					# Handover case
 					ho = a.split('_')
-					if len(ho) != 2 or ho[0] != 'handover' or ho[1].isdigit() == False:
+					if len(ho) != 2 or (ho[0] != 'handover' and ho[0] != 'attach') or ho[1].isdigit() == False:
 						return False
 				if counter != 0 and counter % 2 == 0:
 					return False
@@ -88,8 +93,9 @@ class UserInput():
 				act = self.actions[a_s[i]]
 				data.append(act[1] & 0xFF) # Append the action (1 Byte)
 			except:
+				# Reusing handover structure for attach_to_enb
 				ho = a_s[i].split('_')
-				data.append(self.actions[ho[0]][1]) # Append Handover
+				data.append(self.special_actions[ho[0]][1]) # Append Handover
 				enb_id = int(ho[1]) # Get Handover target eNB
 				# Append eNB Number
 				data.append((enb_id >> 16) & 0xFF)
