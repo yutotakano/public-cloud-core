@@ -475,7 +475,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 	    	*response_len = 1;
 			return 1;
 		}
-		if(buffer_ho[0] != (OK_CODE | S1_SYNC))
+		if(buffer_ho[0] != S1_SYNC2)
 		{
 			printError("Error in Target-eNB (Sync 2)\n");
 			close(s1_sockfd);
@@ -522,7 +522,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		map_add(&map, get_msin_string(ue), (void *)ue, get_ue_size());
 
 
-		/* Send SYNC_OK to the Source-eNB */
+		/* Send SYNC_2_OK to the Source-eNB */
 		printInfo("Sending Sync 2 message to Source-eNB...\n");
 
 		response[0] = S1_SYNC2;

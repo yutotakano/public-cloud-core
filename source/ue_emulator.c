@@ -829,7 +829,7 @@ int do_control_plane_action(uint8_t * action)
 			send_ue_attach_to_enb(action + 1);
 			return 1;
 		case CP_S1_HANDOVER:
-			/* TODO: Send s1_handover */
+			send_s1_handover(action + 1);
 			return 1;
 	}
 	return 0;
