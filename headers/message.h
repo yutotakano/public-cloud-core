@@ -16,6 +16,10 @@
 #define HO_SETUP 0x07
 #define HO_REQUEST 0x08
 #define UE_TRANFSER 0x09
+#define UE_S1_HANDOVER 0x0a
+#define S1_SYNC 0x0b
+#define S1_SYNC2 0x0c
+#define S1_ERROR 0x0d
 
 
 typedef struct _init_msg

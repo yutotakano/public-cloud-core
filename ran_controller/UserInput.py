@@ -22,12 +22,12 @@ class UserInput():
 		'attach': [-1, 3],
 		'move_to_idle': [3, 4],
 		'move_to_connected': [-3, 5],
-		'handover': [0, 6],
 	}
 
 	special_actions = {
-		'handover': [0, 6],
+		'x2handover': [0, 6],
 		'attach': [-1, 7],
+		's1handover': [0, 8],
 	}
 
 	def __init__(self, set_data_func):
@@ -67,11 +67,11 @@ class UserInput():
 					counter += self.actions[a][0]
 				except:
 					# Handover case
-					if a.startswith('handover') == False and a.startswith('attach') == False:
+					if a.startswith('x2handover') == False and a.startswith('attach') == False and a.startswith('s1handover') == False:
 						return False
 					# Handover case
 					ho = a.split('_')
-					if len(ho) != 2 or (ho[0] != 'handover' and ho[0] != 'attach') or ho[1].isdigit() == False:
+					if len(ho) != 2 or (ho[0] != 'x2handover' and ho[0] != 'attach' and ho[0] != 's1handover') or ho[1].isdigit() == False:
 						return False
 					counter += self.special_actions[ho[0]][0]
 				if counter != 0 and counter % 2 == 0:

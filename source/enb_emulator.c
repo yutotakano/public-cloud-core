@@ -62,7 +62,7 @@ uint32_t id_to_uint32(uint8_t * id)
 	return ret;
 }
 
-int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response_len, uint8_t * ue_ip)
+int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, int * response_len, uint8_t * ue_ip)
 {
 	init_msg * initmsg;
 	idle_msg * idlemsg;
@@ -74,6 +74,8 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 	int target_sockfd, n;
 	struct sockaddr_in target_enb;
 	uint8_t buffer_ho[1024];
+	int s1_sockfd;
+	uint8_t sync_resp;
 
 	printf("\n\n\n");
 	printInfo("Analyzing new request...\n");
@@ -233,7 +235,7 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		ue = (UE *)map_get(&map, (char *)homsg->msin);
 		if(ue == NULL)
 		{
-			printError("Wrong UE MSIN descriptor in Handover-Setup\n");
+			printError("Wrong UE MSIN descriptor in X2 Handover-Setup\n");
 			response[0] = X2_ERROR; /* X2 Error message */
     		*response_len = 1;
     		return 1;
@@ -386,6 +388,146 @@ int analyze_ue_msg(uint8_t * buffer, int len, uint8_t * response, int * response
 		response[0] = X2_OK;
     	*response_len = 1;
 	}
+	else if(buffer[0] == UE_S1_HANDOVER)
+	{
+		printInfo("UE UE_S1_HANDOVER message received\n");
+
+		/* Get UE IMSI and Target-eNB IP */
+		homsg = (ho_msg *)(buffer + 1);
+
+		/* Get UE */
+		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		if(ue == NULL)
+		{
+			printError("Wrong UE MSIN descriptor in S1 Handover-Request\n");
+			response[0] = X2_ERROR; /* X2 Error message */
+    		*response_len = 1;
+    		return 1;
+		}
+
+		printInfo("Synchronizing with Target-eNB (%d.%d.%d.%d) ...\n", homsg->target_enb_ip[0], homsg->target_enb_ip[1], homsg->target_enb_ip[2], homsg->target_enb_ip[3]);
+
+		/* Configure Target-eNB address */
+	    target_enb.sin_family = AF_INET;
+	    target_enb.sin_port = htons(ENB_PORT);
+	    memcpy(&target_enb.sin_addr.s_addr, homsg->target_enb_ip, 4);
+	    memset(&(target_enb.sin_zero), '\0', 8);
+
+		/* To sync with Target-eNB, the UE channel is going to be used */
+		/* Socket create */
+	    s1_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+	    if (s1_sockfd == -1) {
+	    	perror("UE socket");
+	        return 1;
+	    }
+
+		/* Connect to eNB */
+		if (connect(s1_sockfd, (struct sockaddr *) &target_enb, sizeof(target_enb)) != 0) { 
+	        perror("eNB S1 connect");
+	        close(s1_sockfd);
+	        return 1; 
+	    }
+	    /* Sync message: Sync flag + UE */
+	    buffer_ho[0] = S1_SYNC;
+	    memcpy(buffer_ho+1, (uint8_t *)ue, get_ue_size());
+	    /* Send Sync msg to Target-eNB and wait until sync ack msg (During this period, Source-eNB is going to be unavailable to attend other UEs) */
+	    /* TODO: Can be solve by the use of a lock over the SCTP socket adn multithreading */
+	    write(s1_sockfd, buffer_ho, get_ue_size() + 1);
+	    /* Receive Target-eNB response */
+		n = read(s1_sockfd, buffer_ho, 1);
+		if(n < 0)
+		{
+			perror("eNB S1 recv (Sync)");
+			close(s1_sockfd);
+			return 1;
+		}
+		if(buffer_ho[0] != (OK_CODE | S1_SYNC))
+		{
+			printError("Error in Target-eNB (Sync)\n");
+			close(s1_sockfd);
+			return 1;
+		}
+
+		printInfo("Starting S1 Handover as Source-eNB...\n");
+
+		/* Start S1AP S1 source-enb procedure */
+		if(procedure_S1_Handover_Source_eNB(enb, ue))
+		{
+			printError("S1 Handover (Source-eNB) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+	    	*response_len = 1;
+	    	close(s1_sockfd);
+    		return 1;
+		}
+
+		printOK("S1 Handover (Source-eNB)\n");
+
+		/* Verify that Target-eNB has complete S1AP S1 Handover correctly */
+		/* Receive eNB response */
+		n = read(s1_sockfd, buffer_ho, 1);
+		if(n < 0)
+		{
+			perror("eNB S1 recv (Sync 2)");
+			close(s1_sockfd);
+			/* Generate error message for the UE */
+			response[0] = buffer[0]; /* Without OK_CODE */
+	    	*response_len = 1;
+			return 1;
+		}
+		if(buffer_ho[0] != (OK_CODE | S1_SYNC))
+		{
+			printError("Error in Target-eNB (Sync 2)\n");
+			close(s1_sockfd);
+			/* Generate error message for the UE */
+			response[0] = buffer[0]; /* Without OK_CODE */
+	    	*response_len = 1;
+			return 1;
+		}
+
+		printOK("S1 Handover completed successfully\n");
+
+		/* Remove UE from eNB map structure */
+		map_remove(&map, (char *)homsg->msin);
+
+		/* Generate OK response */
+		response[0] = OK_CODE | buffer[0];
+		*response_len = 1;
+	}
+	else if(buffer[0] == S1_SYNC)
+	{
+		printInfo("UE S1_SYNC message received\n");
+
+		/* Get the UE from the message */
+		ue = (UE *) buffer;
+
+		sync_resp = OK_CODE | S1_SYNC;
+		printInfo("Sending Sync message to Source-eNB...\n");
+		/* Send SYNC_OK to the Source-eNB */
+		write(client, &sync_resp, 1);
+
+		/* Start S1AP S1 target-enb procedure */
+		if(procedure_S1_Handover_Target_eNB(enb, ue))
+		{
+			printError("S1 Handover (Target-eNB) error\n");
+			/* Generate UE Error response */
+			response[0] = S1_ERROR; /* Without OK_CODE */
+	    	*response_len = 1;
+    		return 1;
+		}
+
+		printOK("S1 Handover (Target-eNB)\n");
+
+		/* Add UE to Target-eNB map structure */
+		map_add(&map, get_msin_string(ue), (void *)ue, get_ue_size());
+
+
+		/* Send SYNC_OK to the Source-eNB */
+		printInfo("Sending Sync 2 message to Source-eNB...\n");
+
+		response[0] = S1_SYNC2;
+    	*response_len = 1;
+	}
 	/* TODO: Implement othe kind of messages */
 	return 0;
 }
@@ -424,7 +566,7 @@ void * enb_emulator_thread(void * args)
 		}
 
 		/* Analyze message and generate the response*/
-		if(analyze_ue_msg(buffer, n, response, &response_len, (uint8_t *) &client_addr.sin_addr.s_addr))
+		if(analyze_ue_msg(client, buffer, n, response, &response_len, (uint8_t *) &client_addr.sin_addr.s_addr))
 		{
 			printError("S1AP error\n");
 		}

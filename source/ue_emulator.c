@@ -31,8 +31,9 @@
 #define CP_ATTACH 3
 #define CP_MOVE_TO_IDLE 4
 #define CP_MOVE_TO_CONNECTED 5
-#define CP_HANDOVER 6
+#define CP_X2_HANDOVER 6
 #define CP_ATTACH_TO_ENB 7
+#define CP_S1_HANDOVER 8
 
 ue_data ue;
 pid_t traffic_generator;
@@ -57,6 +58,8 @@ uint32_t send_get_enb_ip(uint32_t ue_id, uint32_t enb_id);
 void send_x2_handover_complete(uint32_t ue_id, uint32_t enb_id);
 /* Update controller and controller eNB with ATTACH_TO_ENB */
 void send_ue_attach_to_enb_controller(uint32_t ue_id, uint32_t enb_id);
+/* Update controller with S1 Handover Completed */
+void send_s1_handover_complete(uint32_t ue_id, uint32_t enb_id);
 
 
 
@@ -379,7 +382,7 @@ int send_move_to_connect()
 	return 0;
 }
 
-int send_handover(uint8_t * enb_num)
+int send_x2_handover(uint8_t * enb_num)
 {
 	uint32_t enb_n;
 	int enb_ret;
@@ -520,6 +523,103 @@ int send_handover(uint8_t * enb_num)
 
 	/* Update Controller */
 	send_x2_handover_complete((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+
+	return 0;
+}
+
+int send_s1_handover(uint8_t * enb_num)
+{
+	uint32_t enb_n;
+	int enb_ret;
+	uint32_t enb_ip_int;
+	uint8_t enb_ip[4];
+	int enb_sockfd;
+	ho_msg * msg;
+	int n;
+	uint8_t buffer[32];
+
+	/* 1- Get Target-eNB IP from the controller */
+	/* 2- Send S1-Request to Source-eNB with Target-eNB IP*/
+
+	/*****/
+	/* 1 */
+	/*****/
+	/* Generate eNB num */
+	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
+	printInfo("Staring S1 Handover to eNB %d...\n", enb_n);
+	printInfo("Getting Target-eNB IP...\n");
+	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	if(enb_ret == -1)
+		return 1;
+	if(enb_ret == 0)
+	{
+		printWarning("Target-eNB %d is not running yet.\n", enb_n);
+		return 1;
+	}
+	enb_ip_int = (uint32_t) enb_ret;
+	/* Store IP as a uint8_t pointer */
+	enb_ip[0] = (enb_ip_int >> 24) & 0xFF;
+	enb_ip[1] = (enb_ip_int >> 16) & 0xFF;
+	enb_ip[2] = (enb_ip_int >> 8) & 0xFF;
+	enb_ip[3] = enb_ip_int & 0xFF;
+	printOK("Target-eNB (%d) IP: %d.%d.%d.%d\n", enb_n, enb_ip[0], enb_ip[1], enb_ip[2], enb_ip[3]);
+
+
+	/*****/
+	/* 2 */
+	/*****/
+	/* Request Source-eNB a UE transfer to Target-eNB (Handover-Setup)*/
+	printInfo("Starting S1 Handover-Setup...\n");
+	/* Socket create */
+    enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (enb_sockfd == -1) {
+    	perror("UE socket");
+        return 1;
+    }
+
+	/* Connect to eNB */
+	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
+        perror("UE connect");
+        close(enb_sockfd);
+        return 1; 
+    }
+
+    /* Build eNB message (UE_S1_HANDOVER + MSIN + Target-eNB IP) */
+    bzero(buffer, 32);
+    buffer[0] = UE_S1_HANDOVER;
+    msg = (ho_msg *)(buffer+1);
+    /* MSIN */
+	memcpy(msg->msin, ue.msin, 10);
+	/* Target-eNB IP */
+	memcpy(msg->target_enb_ip, enb_ip, 4);
+
+	/* Send UE info to eNB and wait to a response */
+	write(enb_sockfd, buffer, sizeof(ho_msg) + 2);
+
+	/* Receive eNB response */
+	n = read(enb_sockfd, buffer, sizeof(buffer));
+	/* Close socket */
+	close(enb_sockfd);
+	if(n < 0)
+	{
+		perror("Recv from Source-eNB");
+		return 1;
+	}
+	/* Analyze Source-eNB response */
+	if(buffer[0] != (OK_CODE | UE_S1_HANDOVER))
+	{
+		/* Error case */
+		printError("S1 Handover\n");
+		return 1;
+	}
+	printOK("S1 Handover done\n");
+
+	/* Update serving eNB IP with Target-eNB IP */
+	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+
+	/* Update Controller */
+	send_s1_handover_complete((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+
 
 	return 0;
 }
@@ -722,11 +822,14 @@ int do_control_plane_action(uint8_t * action)
 		case CP_MOVE_TO_CONNECTED:
 			send_move_to_connect();
 			return 0;
-		case CP_HANDOVER:
-			send_handover(action + 1);
+		case CP_X2_HANDOVER:
+			send_x2_handover(action + 1);
 			return 1;
 		case CP_ATTACH_TO_ENB:
 			send_ue_attach_to_enb(action + 1);
+			return 1;
+		case CP_S1_HANDOVER:
+			/* TODO: Send s1_handover */
 			return 1;
 	}
 	return 0;

@@ -3690,6 +3690,38 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 	return 0;
 }
 
+int procedure_S1_Handover_Source_eNB(eNB * enb, UE * ue)
+{
+	/* Error check NULL UE */
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	printInfo("Starting S1 Handover (Source-eNB) procedure...\n");
+
+	printWarning("This procedure has not been implemented yet\n");
+
+	return 0;
+}
+
+int procedure_S1_Handover_Target_eNB(eNB * enb, UE * ue)
+{
+	/* Error check NULL UE */
+	if(ue == NULL)
+	{
+		printError("UE NULL reference\n");
+		return 1;
+	}
+
+	printInfo("Starting S1 Handover (Target-eNB) procedure...\n");
+
+	printWarning("This procedure has not been implemented yet\n");
+
+	return 0;
+}
+
 
 /* TODO: Implement an authomatic way to detect EMM information messages without a loop */
 
