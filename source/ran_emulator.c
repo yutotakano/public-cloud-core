@@ -435,7 +435,7 @@ int main(int argc, char const *argv[])
 {
     uint32_t ue_address;
 
-    if(argc < 2 || argc > 3)
+    if(argc != 3)
     {
         printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP (Optional)>\n");
         exit(1);
@@ -443,14 +443,16 @@ int main(int argc, char const *argv[])
 
     printOK("Starting Nervion emulator...\n");
 
-    if(argc == 3)
-    {
-        ue_address = inet_addr(argv[2]);
-        ue_ip[3] = (ue_address >> 24) & 0xFF;
-        ue_ip[2] = (ue_address >> 16) & 0xFF;
-        ue_ip[1] = (ue_address >> 8) & 0xFF;
-        ue_ip[0] = ue_address & 0xFF;
-    }
+
+    printf("Nervion parameters: \n\tRAN Controller IP: %s\n\tNODE IP: %s\n", argv[1], argv[2]);
+
+
+    ue_address = inet_addr(argv[2]);
+    ue_ip[3] = (ue_address >> 24) & 0xFF;
+    ue_ip[2] = (ue_address >> 16) & 0xFF;
+    ue_ip[1] = (ue_address >> 8) & 0xFF;
+    ue_ip[0] = ue_address & 0xFF;
+
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(CONTROLLER_PORT);
