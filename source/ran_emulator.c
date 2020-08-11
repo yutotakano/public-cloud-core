@@ -232,7 +232,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         ret = enb_emulator_start(&data);
 
         /*Generate response buffer*/
-        response[0] = buffer[0];
+        response[0] = CODE_ENB_BEHAVIOUR;
         enb_copy_id_to_buffer(response + 1);
         *res_len = 7;
         return ret;
