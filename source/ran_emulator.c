@@ -26,6 +26,7 @@
 
 #define INIT_MSG 0xFF
 #define CODE_OK 0x80
+#define CODE_ERROR 0x00
 #define CODE_ENB_BEHAVIOUR 0x01
 #define CODE_UE_BEHAVIOUR 0x02
 #define CODE_IDLE 0x03
@@ -81,9 +82,9 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
     int i, ret;
     if(len <= 0)
         return 0;
-    if( (buffer[0] & CODE_OK) == 0)
+    if( (buffer[0] & CODE_OK) == 0 || buffer[0] == CODE_ERROR)
     {
-        printError("Controller error: abort");
+        printError("Controller error: abort\n");
         return -1;
     }
     /* Message has been verified */
@@ -168,7 +169,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
             /* Wrong data format */
             printError("Wrong data format in message");
             /*Generate response buffer*/
-            response[0] = (~CODE_OK) | buffer[0];
+            response[0] = (~CODE_OK) & CODE_UE_BEHAVIOUR;
             *res_len = 1;
             return 1;
         }
@@ -178,8 +179,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
 
         ret = ue_emulator_start(&data);
         /* Generate response buffer */
-        /*Generate response buffer*/
-        response[0] = buffer[0];
+        response[0] = CODE_UE_BEHAVIOUR;
         ue_copy_id_to_buffer(response + 1);
         *res_len = 5;
 
@@ -418,7 +418,6 @@ void receive_controller()
     {
         printError("Slave error: Sending error to controller\n");
         /* Send slave error code to controller */
-        response[0] &= (~CODE_OK);
         send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
         close(sockfd);
         exit(1);
@@ -442,6 +441,8 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
+    printOK("Starting Nervion emulator...\n");
+
     if(argc == 3)
     {
         ue_address = inet_addr(argv[2]);
@@ -464,8 +465,8 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, ue_ip, 4);
-    bzero(local_ip, 4);
+    memcpy(local_ip, ue_ip, 4);
+    //bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 

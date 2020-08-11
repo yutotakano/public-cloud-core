@@ -164,7 +164,7 @@ int send_ue_context_release()
 	return 0;
 }
 
-int send_ue_detach(uint8_t switch_off)
+int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
 {
 	int sockfd;
 	idle_msg * msg;
@@ -172,7 +172,8 @@ int send_ue_detach(uint8_t switch_off)
 	uint8_t buffer[32];
 
 	/* Kill the traffic generator child process before send the Detach message to the eNB */
-	stop_traffic_generator();
+	if(traffic_flag == 1)
+		stop_traffic_generator();
 
 	/* Socket create */
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -217,7 +218,8 @@ int send_ue_detach(uint8_t switch_off)
 	}
 	printOK("UE Detached (UEDetach)\n");
 	/* Notify the controller */
-	send_ue_detach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	if(traffic_flag)
+		send_ue_detach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
 	/* Here the UE is in IDLE state */
 	close(sockfd);
 	return 0;
@@ -808,10 +810,10 @@ int do_control_plane_action(uint8_t * action)
 			/* Do nothing */
 			return 0;
 		case CP_DETACH:
-			send_ue_detach(0);
+			send_ue_detach(0, 1);
 			return 0;
 		case CP_DETACH_SWITCH_OFF:
-			send_ue_detach(1);
+			send_ue_detach(1, 1);
 			return 0;
 		case CP_ATTACH:
 			send_ue_attach();
@@ -983,9 +985,12 @@ int ue_emulator_start(ue_data * data)
 		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
 	else
 		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, ue.ue_ip, teid, data->spgw_port);
+
 	if(ret == 1)
 	{
 		printError("start_data_plane error\n");
+		printInfo("Detaching from EPC...\n");
+		send_ue_detach(1, 0);
 		return 1;
 	}
 

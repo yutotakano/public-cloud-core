@@ -175,6 +175,12 @@ class RANControler:
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
 					return
 
+			# Send error message to the slave
+			print('ERROR: No role available for the slave at ' + msg['ip'] + ':' + str(msg['port']))
+			buf = bytearray()
+			buf.append(CODE_ERROR)
+			self.sock.sendto(buf, (msg['ip'], msg['port']))
+			return
 
 		elif msg['type'] == 'enb_run':
 			# eNB slave answers with OK message
@@ -214,7 +220,8 @@ class RANControler:
 
 			# Save UE address
 			ue.set_stopped()
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
+			ue.set_flag(False)
+			print('UE error at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_idle':
 			# UE slave informs that its new state is Idle
@@ -325,7 +332,7 @@ class RANControler:
 
 	def generate_msg(self, data, address):
 		msg = {}
-		# Special code case: 0000 0001
+
 		if data[0] == CODE_INIT:
 			msg['type'] = 'init'
 			msg['ip'] = address[0]
@@ -423,8 +430,8 @@ class RANControler:
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
-		config.load_incluster_config()
-		v1 = client.CoreV1Api()
+		#config.load_incluster_config()
+		#v1 = client.CoreV1Api()
 		print('Staring Slave Pods...')
 		for i in range(tot_len):
 			# Configure POD Manifest for each slave
@@ -432,7 +439,7 @@ class RANControler:
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+			#v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
 		print('Slave pods started')
 		return
 
