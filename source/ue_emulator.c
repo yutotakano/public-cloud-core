@@ -278,8 +278,6 @@ int send_ue_attach()
 	memcpy(gtp_teid, res->teid, 4);
 	/* Get UE IP */
 	memcpy(ue_ip, res->ue_ip, 4);
-	/* Get SPGW_IP */
-	memcpy(spgw_ip, res->spgw_ip, 4);
 
 	/* Print received parameters */
 	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
@@ -357,8 +355,6 @@ int send_move_to_connect()
 	res = (idle_response_msg *) (buffer+1);
 	/* Gert TEID */
 	memcpy(gtp_teid, res->teid, 4);
-	/* Get SPGW_IP */
-	memcpy(spgw_ip, res->spgw_ip, 4);
 
 	/* Print received parameters */
 	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
@@ -771,8 +767,6 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 	memcpy(gtp_teid, res->teid, 4);
 	/* Get UE IP */
 	memcpy(ue_ip, res->ue_ip, 4);
-	/* Get SPGW_IP */
-	memcpy(spgw_ip, res->spgw_ip, 4);
 
 	/* Print received parameters */
 	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
