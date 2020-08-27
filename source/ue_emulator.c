@@ -978,7 +978,10 @@ int ue_emulator_start(ue_data * data)
 	if(data->spgw_port == 2152)
 		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
 	else
-		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, ue.ue_ip, teid, data->spgw_port);
+	{
+		memcpy(spgw_ip, ue.ue_ip, 4);
+		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
+	}
 
 	if(ret == 1)
 	{
