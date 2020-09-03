@@ -30,15 +30,17 @@ class UserInput():
 		's1handover': [0, 8],
 	}
 
-	def __init__(self, set_data_func):
+	def __init__(self, set_data_func, restart):
 		self.app = Flask(__name__)
 		# Disable Flask logs
-		log = logging.getLogger('werkzeug')
-		log.disabled = True
-		self.app.logger.disabled = True
+		#log = logging.getLogger('werkzeug')
+		#log.disabled = True
+		#self.app.logger.disabled = True
 
 		self.configuration = True
+		self.restarted = False
 		self.set_data_func = set_data_func
+		self.restart = restart
 		# Async socket
 		self.socketio = SocketIO(self.app, async_mode=None)
 		# Async thread
@@ -159,8 +161,8 @@ class UserInput():
 				# Add UE to the final UE list
 				self.controller_data['UEs'].add(new_ue)
 
-
-		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer)
+		if self.restarted == False:
+			self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer)
 
 		return True
 	
@@ -189,6 +191,15 @@ class UserInput():
 				self.configuration = False
 		return redirect(url_for('index'))
 
+	def restart_experiment(self):
+		print('Restarting experiment...')
+		self.restart()
+		self.controller_data['UEs'] = set()
+		self.controller_data['eNBs'] = set()
+		self.configuration = True
+		self.restarted = True
+		return redirect(url_for('index'))
+
 	def updateThread(self):
 		print("Starting web user updater thread")
 		while not self.thread_stop_event.isSet():
@@ -211,6 +222,7 @@ class UserInput():
 		# Main routes
 		self.add_endpoint(endpoint='/', endpoint_name='index', handler=self.index)
 		self.add_endpoint(endpoint='/config/', endpoint_name='config', handler=self.config, methods=['POST'])
+		self.add_endpoint(endpoint='/restart/', endpoint_name='restart', handler=self.restart_experiment)
 
 		# Async routes
 		self.socketio.on_event('connect', self.update, namespace='/update')

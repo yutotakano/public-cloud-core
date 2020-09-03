@@ -9,8 +9,11 @@ import time
 import struct
 
 from kubernetes import config, client
-#from kubernetes.client import Configuration
-#from kubernetes.client.api import core_v1_api
+
+# Debug variable to use in local testbed
+k8s = True
+
+
 
 # Codes definitions
 
@@ -88,7 +91,7 @@ class RANControler:
 		}
 
 	def start_user_input(self):
-		self.user_input = UserInput(self.start_controller)
+		self.user_input = UserInput(self.start_controller, self.kubernetes_restart)
 		self.user_input.run()
 
 		
@@ -430,8 +433,9 @@ class RANControler:
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
-		config.load_incluster_config()
-		v1 = client.CoreV1Api()
+		if k8s == True:
+			config.load_incluster_config()
+			v1 = client.CoreV1Api()
 		print('Staring Slave Pods...')
 		for i in range(tot_len):
 			# Configure POD Manifest for each slave
@@ -439,11 +443,22 @@ class RANControler:
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
-		print('Slave pods started')
+			if k8s == True:
+				v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+		print('Slave pods started!')
 		return
 
+	def kubernetes_restart(self):
+		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
+		if k8s == True:
+			core_v1 = client.CoreV1Api()
+			delete_options = client.V1DeleteOptions()
+			print('Removing Slave Pods')
+			for i in range(tot_len):
+				core_v1.delete_namespaced_pod(name='slave-' + str(i), namespace='default', body=delete_options)
+		print('Pods removed!')
+		return
 		
 
 if __name__ == '__main__':
