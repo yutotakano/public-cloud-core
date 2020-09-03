@@ -13,7 +13,8 @@
 
 #define SCTP_OUT_STREAMS 32
 #define SCTP_IN_STREAMS 32
-#define SCTP_MAX_ATTEMPTS 5
+#define SCTP_MAX_ATTEMPTS 2
+#define SCTP_TIMEOUT 5
 #define SOCKET_READ_TIMEOUT_SEC 1
 
 #define MME_OAI_PORT 36412
@@ -113,38 +114,16 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     struct sctp_event_subscribe events;
     struct sctp_initmsg init;
     struct timeval timeout;
+    int assoc_id;
 
     /*******************/
     /* Creating socket */
     /*******************/
-	sock_sctp = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
+    sock_sctp = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
     if (sock_sctp < 0)
     {
         perror("sctp socket error");
     	return 1;
-    }
-
-    /***************************/
-    /* Set up SCTP eNB address */
-    /***************************/
-    /* Binding simulator to eNB IP to avoid multi IP issues */
-    //if (inet_pton (AF_INET, enb_ip, &enb_addr.sin_addr.s_addr) != 1) {
-    //    perror("IP address to network type error");
-    //    return -1;
-    //}
-    memcpy((void*) &enb_addr.sin_addr.s_addr, get_enb_ip(enb), sizeof(struct in_addr));
-    enb_addr.sin_family = AF_INET;
-    /* Same port than MME */
-    enb_addr.sin_port = htons(MME_OAI_PORT);
-    memset(&(enb_addr.sin_zero), 0, sizeof(struct sockaddr));
-
-    /***********/
-    /* Binding */
-    /***********/
-    if (bind(sock_sctp,(struct sockaddr *)&enb_addr, sizeof(struct sockaddr)) == -1)
-    {
-        perror("Bind eNB");
-        return 1;
     }
 
     /***********/
@@ -155,6 +134,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     init.sinit_num_ostreams = SCTP_OUT_STREAMS;
     init.sinit_max_instreams = SCTP_IN_STREAMS;
     init.sinit_max_attempts = SCTP_MAX_ATTEMPTS;
+    init.sinit_max_init_timeo = SCTP_TIMEOUT;
     if (setsockopt (sock_sctp, IPPROTO_SCTP, SCTP_INITMSG, &init, (socklen_t) sizeof (struct sctp_initmsg)) < 0)
     {
         perror("setsockopt in/out streams");
@@ -164,10 +144,10 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
 
     /* OPT 2 */
     /* Sets the data_io_event to be able to use sendrecv_info */
-    /* Subscribes to the SCTP_SHUTDOWN event, to handle graceful shutdown */
+    /* Subscribe to all events */
     memset(&events, 0, sizeof(events));
-    events.sctp_data_io_event          = 1;
-    events.sctp_shutdown_event         = 1;
+    events.sctp_data_io_event = 1;
+    events.sctp_shutdown_event = 1;
     if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
         perror("setsockopt events");
         close(sock_sctp);
@@ -195,6 +175,27 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
         return 1;
     }
 
+
+    /***************************/
+    /* Set up SCTP eNB address */
+    /***************************/
+    /* Binding simulator to eNB IP to avoid multi IP issues */
+    memcpy((void*) &enb_addr.sin_addr.s_addr, get_enb_ip(enb), sizeof(struct in_addr));
+    enb_addr.sin_family = AF_INET;
+    /* Same port than MME */
+    enb_addr.sin_port = htons(MME_OAI_PORT);
+    memset(&(enb_addr.sin_zero), 0, sizeof(struct sockaddr));
+
+    /***********/
+    /* Binding */
+    /***********/
+    if (sctp_bindx(sock_sctp,(struct sockaddr*)&enb_addr, 1, SCTP_BINDX_ADD_ADDR) == -1)
+    {
+        perror("Bind eNB");
+        return 1;
+    }
+
+
     /***************************/
     /* Set up SCTP MME address */
     /***************************/
@@ -210,7 +211,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     /******************************/
     /* Connect to the SCTP server */
     /******************************/
-    if (sctp_connectx(sock_sctp, (struct sockaddr *) &mme_addr, 1, NULL))
+    if (sctp_connectx(sock_sctp, (struct sockaddr *) &mme_addr, 1, &assoc_id))
     {
         perror("sctp connect error");
         close(sock_sctp);
