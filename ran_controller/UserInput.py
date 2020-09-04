@@ -161,8 +161,7 @@ class UserInput():
 				# Add UE to the final UE list
 				self.controller_data['UEs'].add(new_ue)
 
-		if self.restarted == False:
-			self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer)
+		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted)
 
 		return True
 	

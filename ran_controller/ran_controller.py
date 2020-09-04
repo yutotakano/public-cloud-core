@@ -96,12 +96,16 @@ class RANControler:
 
 		
 
-	def start_controller(self, controller_data, docker_image, epc, multiplexer):
+	def start_controller(self, controller_data, docker_image, epc, multiplexer, restart):
 		self.controller_data = controller_data
 		self.docker_image = docker_image
 		self.epc = epc
 		self.multiplexer = multiplexer
-		self.execute()
+		if restart == False:
+			self.execute()
+		else:
+			kubernetes_t = threading.Thread(target=self.kubernetes_thread)
+			kubernetes_t.start()
 
 	def execute(self):
 		# Create a socket
