@@ -206,7 +206,8 @@ class UserInput():
 		print("Starting web user updater thread")
 		while not self.thread_stop_event.isSet():
 			# Generate data
-			data = '<h3>UEs</h3>'
+			data = '<h4> Number of UEs running: ' + self.controller_data['running_ues'] + ' </h4>'
+			data += '<h3>UEs</h3>'
 			data += self.ues_to_html()
 			data += '<h3>eNBs</h3>'
 			data += self.enbs_to_html()

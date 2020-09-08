@@ -12,8 +12,8 @@
 		<p>MME IP: {{ mme_ip }}</p>
 		<p>Multiplexer IP: {{ multi_ip }}</p>
 		<h4>Slave Docker Image: {{ docker_image }} </h4>
-		<h4> Number of running UEs: {{running_ues}} </h4>
 		<div id="data">
+			<h4> Number of UEs running: {{running_ues}} </h4>
 			<h3>UEs</h3>
 			{{ ue_table|safe }}
 			<h3>eNBs</h3>
