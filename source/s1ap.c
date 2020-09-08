@@ -1345,10 +1345,6 @@ int analyze_downlink_NAS_Transport(uint8_t * value, int len, Auth_Challenge * au
 				offset_nas_pdu++;
 			}
 
-			if(value[offset_nas_pdu] == 0x00)
-				printf("\t\tASME (KSIasme)\n");
-			else
-				flag = -1;
 			offset_nas_pdu++;
 
 			if(flag == 0 && auth_challenge != NULL) /* Getting RAND and AUTN */

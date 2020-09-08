@@ -18,7 +18,7 @@ struct _UE
 	uint8_t net_capabilities[UE_CAPABILITIES_LENGTH];
 	uint8_t nas_session_security_algorithms;
 	uint32_t ue_s1ap_id;
-	uint8_t mme_s1ap_id[4];
+	uint8_t mme_s1ap_id[16];
 	uint8_t mme_s1ap_id_len;
 	uint8_t key[KEY_LENGTH];
 	uint8_t op_key[KEY_LENGTH];
