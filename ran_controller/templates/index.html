@@ -11,8 +11,8 @@
 		<h3>Core Network</h3>
 		<p>MME IP: {{ mme_ip }}</p>
 		<p>Multiplexer IP: {{ multi_ip }}</p>
-		<h3>Slave Docker Image</h3>
-		<p>Image: {{ docker_image }}</p>
+		<h4>Slave Docker Image: {{ docker_image }} </h4>
+		<h4> Number of running UEs: {{running_ues}} </h4>
 		<div id="data">
 			<h3>UEs</h3>
 			{{ ue_table|safe }}

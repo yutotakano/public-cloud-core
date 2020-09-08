@@ -12,7 +12,8 @@ class UserInput():
 
 	controller_data = {
 		'eNBs': set(),
-		'UEs': set()
+		'UEs': set(),
+		'running_ues' = 0
 	}
 
 	actions = {
@@ -173,6 +174,7 @@ class UserInput():
 			templateData = {
 				'ue_table' : self.ues_to_html(),
 				'enb_table' : self.enbs_to_html(),
+				'running_ues' : str(self.controller_data['running_ues'])
 				'mme_ip' : self.epc_ip,
 				'multi_ip': self.multi_ip,
 				'docker_image' : self.docker_image
@@ -195,6 +197,7 @@ class UserInput():
 		self.restart()
 		self.controller_data['UEs'] = set()
 		self.controller_data['eNBs'] = set()
+		self.controller_data['running_ues'] = 0
 		self.configuration = True
 		self.restarted = True
 		return redirect(url_for('index'))

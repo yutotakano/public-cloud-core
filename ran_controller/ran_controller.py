@@ -255,6 +255,7 @@ class RANControler:
 
 			# Save UE address
 			ue.set_traffic()
+			self.controller_data['running_ues'] = self.controller_data['running_ues'] + 1
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 
 		elif msg['type'] == 'moved_to_connected':
