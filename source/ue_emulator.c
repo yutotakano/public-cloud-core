@@ -141,6 +141,7 @@ int send_ue_context_release()
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -208,6 +209,7 @@ int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -277,6 +279,7 @@ int send_ue_attach()
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -367,6 +370,7 @@ int send_move_to_connect()
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -490,6 +494,7 @@ int send_x2_handover(uint8_t * enb_num)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -553,6 +558,7 @@ int send_x2_handover(uint8_t * enb_num)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -654,6 +660,7 @@ int send_s1_handover(uint8_t * enb_num)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -765,6 +772,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -828,6 +836,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}
@@ -1023,6 +1032,7 @@ int ue_emulator_start(ue_data * data)
 		}
 		else
 		{
+			sleep(2);
 			break;
 		}
 	}

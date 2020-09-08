@@ -14,7 +14,7 @@
 #define SCTP_OUT_STREAMS 32
 #define SCTP_IN_STREAMS 32
 #define SCTP_MAX_ATTEMPTS 2
-#define SCTP_TIMEOUT 5
+#define SCTP_TIMEOUT 1
 #define SOCKET_READ_TIMEOUT_SEC 1
 
 #define MME_OAI_PORT 36412
@@ -182,8 +182,7 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     /* Binding simulator to eNB IP to avoid multi IP issues */
     memcpy((void*) &enb_addr.sin_addr.s_addr, get_enb_ip(enb), sizeof(struct in_addr));
     enb_addr.sin_family = AF_INET;
-    /* Same port than MME */
-    enb_addr.sin_port = htons(MME_OAI_PORT);
+    enb_addr.sin_port = 0; /* Bind to a random port */
     memset(&(enb_addr.sin_zero), 0, sizeof(struct sockaddr));
 
     /***********/
