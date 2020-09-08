@@ -17,6 +17,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
+
 
 #define ENB_PORT 2233
 #define X2_ENB_PORT 2234
