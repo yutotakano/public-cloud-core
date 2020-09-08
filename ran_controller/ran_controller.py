@@ -152,35 +152,36 @@ class RANControler:
 
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
+				enb.acquire_assign()
 				if enb.get_status() == Status.STOPPED:
-					# This slave has to be a eNB
-					buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
 					enb.set_pending()
 					enb.acquire()
+					enb.release_assign()
+					# This slave has to be a eNB
+					buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
 					return
+				enb.release_assign()
 
 			# Get the first not assigned UE
 			for ue in self.controller_data['UEs']:
+				ue.acquire()
 				if ue.get_status() == Status.STOPPED:
+					ue.set_pending()
+					ue.release()
+					# At this point, only one thread can execute the following sentences
+
 					# Get associated eNB
 					assoc_enb = next((enb for enb in self.controller_data['eNBs'] if enb.get_num() == ue.get_enb_id()), None)
-					# Verify that this UE has not been asigned to any other slave
-					ue.acquire()
-					if ue.get_flag() == True:
-						ue.release()
-						continue
-					else:
-						ue.set_flag(True)
-					ue.release()
+
 					# Special race condition: eNB has been assigned but it does not already answer
 					while(assoc_enb.locked() == True):
 						time.sleep(1)
-					# TODO: Special case in which the UE is waiting to the eNB and the eNB fails
-					ue.set_pending()
+
 					buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
 					return
+				ue.release()
 
 			# Send error message to the slave
 			print('ERROR: No role available for the slave at ' + msg['ip'] + ':' + str(msg['port']))
@@ -218,6 +219,7 @@ class RANControler:
 			# Save UE address
 			ue.set_addr((msg['ip'], msg['port']))
 			ue.set_traffic()
+			self.controller_data['running_ues'] = self.controller_data['running_ues'] + 1
 			print('New UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_error_run':
@@ -255,7 +257,6 @@ class RANControler:
 
 			# Save UE address
 			ue.set_traffic()
-			self.controller_data['running_ues'] = self.controller_data['running_ues'] + 1
 			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 
 		elif msg['type'] == 'moved_to_connected':

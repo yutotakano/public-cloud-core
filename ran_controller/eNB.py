@@ -11,6 +11,7 @@ class eNB:
 		self.status = Status()
 		self.address = None
 		self.mutex = Lock()
+		self .mutex_assign = Lock()
 
 	def printENB(self):
 		print('eNB ' + str(self.get_num()) + ':')
@@ -97,6 +98,15 @@ class eNB:
 
 	def locked(self):
 		return self.mutex.locked()
+
+	def acquire_assign(self):
+		self.mutex_assign.acquire()
+
+	def release_assign(self):
+		self.mutex_assign.release()
+
+	def locked_assign(self):
+		return self.mutex_assign.locked()
 
 
 	def __eq__(self, other):

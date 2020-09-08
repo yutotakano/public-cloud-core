@@ -170,7 +170,8 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
             printError("Wrong data format in message");
             /*Generate response buffer*/
             response[0] = (~CODE_OK) & CODE_UE_BEHAVIOUR;
-            *res_len = 1;
+            ue_copy_id_to_buffer(response + 1);
+            *res_len = 5;
             return 1;
         }
 
