@@ -20,7 +20,7 @@
 #include <pthread.h>
 #include <sys/socket.h> 
 
-#define CLIENT_NUMBER 1024
+#define CLIENT_NUMBER 128
 #define ENB_PORT 2233
 #define X2_ENB_PORT 2234
 #define X2_OK 0

@@ -127,10 +127,21 @@ int send_ue_context_release()
     }
 
 	/* Connect to eNB */
-	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (IDLE_CODE + MSIN) */
     bzero(buffer, 32);
@@ -183,10 +194,21 @@ int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
     }
 
 	/* Connect to eNB */
-	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (IDLE_CODE + MSIN) */
     bzero(buffer, 32);
@@ -241,10 +263,21 @@ int send_ue_attach()
     }
 
 	/* Connect to eNB */
-	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (IDLE_CODE + MSIN) */
     bzero(buffer, 256);
@@ -320,10 +353,21 @@ int send_move_to_connect()
     }
 
 	/* Connect to eNB */
-	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (IDLE_CODE + MSIN) */
     bzero(buffer, 256);
@@ -431,12 +475,22 @@ int send_x2_handover(uint8_t * enb_num)
         return 1;
     }
 
-	/* Connect to eNB */
-	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        close(enb_sockfd);
-        return 1; 
-    }
+    /* Connect to eNB */
+	while(1)
+	{
+		if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(enb_sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
     bzero(buffer, 32);
@@ -484,12 +538,22 @@ int send_x2_handover(uint8_t * enb_num)
         return 1;
     }
 
-	/* Connect to eNB */
-	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        close(enb_sockfd);
-        return 1; 
-    }
+    /* Connect to eNB */
+	while(1)
+	{
+		if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(enb_sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
     bzero(buffer, 32);
@@ -576,11 +640,21 @@ int send_s1_handover(uint8_t * enb_num)
     }
 
 	/* Connect to eNB */
-	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        close(enb_sockfd);
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(enb_sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (UE_S1_HANDOVER + MSIN + Target-eNB IP) */
     bzero(buffer, 32);
@@ -677,11 +751,21 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
     }
 
 	/* Connect to eNB */
-	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        close(enb_sockfd);
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(enb_sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (HO_SETUP + MSIN + Target-eNB IP) */
     bzero(buffer, 256);
@@ -730,10 +814,21 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
     }
 
 	/* Connect to eNB */
-	if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(enb_sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(enb_sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
     /* Build eNB message (IDLE_CODE + MSIN) */
     bzero(buffer, 256);
@@ -914,10 +1009,21 @@ int ue_emulator_start(ue_data * data)
     enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
-	if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) { 
-        perror("UE connect");
-        return 1; 
-    }
+	while(1)
+	{
+		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+			if (errno != ECONNREFUSED)
+			{
+				close(sockfd);
+				perror("UE connect");
+				return 1;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
 	/* Filling buffer with the UE information */
 	buffer[0] = INIT_CODE;
