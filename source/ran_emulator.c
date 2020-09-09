@@ -408,7 +408,7 @@ void send_init_controller()
     uint8_t code_send[5];
     code_send[0] = INIT_MSG;
     memcpy(code_send+1, ue_ip, 4);
-    if(sendto(sockfd_controller, (uint8_t *)&code_send, 5, 0, (const struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
+    if(sendto(sockfd_controller, code_send, 5, 0, (const struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
     {
         perror("send_init_code_controller");
     }
