@@ -179,6 +179,15 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         memcpy(data.local_ip, local_ip, 4);
 
         ret = ue_emulator_start(&data);
+        if(ret != 0)
+        {
+            printError("Error starting UE functionality");
+            /*Generate response buffer*/
+            response[0] = (~CODE_OK) & CODE_UE_BEHAVIOUR;
+            ue_copy_id_to_buffer(response + 1);
+            *res_len = 5;
+            return ret;
+        }
         /* Generate response buffer */
         response[0] = CODE_UE_BEHAVIOUR;
         ue_copy_id_to_buffer(response + 1);
@@ -225,17 +234,27 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
             printError("Wrong data format in message");
             /*Generate response buffer*/
             response[0] = (~CODE_OK) | buffer[0];
-            *res_len = 1;
+            enb_copy_id_to_buffer(response + 1);
+            *res_len = 5;
             return 1;
         }
 
         /* Once the data has been structured, the eNB functionality is created */
         ret = enb_emulator_start(&data);
+        if(ret != 0)
+        {
+            printError("Error starting eNB functionality");
+            /*Generate response buffer*/
+            response[0] = (~CODE_OK) | buffer[0];
+            enb_copy_id_to_buffer(response + 1);
+            *res_len = 5;
+            return 1;
+        }
 
         /*Generate response buffer*/
         response[0] = CODE_ENB_BEHAVIOUR;
         enb_copy_id_to_buffer(response + 1);
-        *res_len = 7;
+        *res_len = 5;
         return ret;
     }
     return 0;
@@ -384,18 +403,15 @@ void send_s1_handover_complete(uint32_t ue_id, uint32_t enb_id)
     send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
 }
 
-void send_code_controller(int sock, struct sockaddr_in * serv_addr, int addr_size, uint8_t code)
-{
-    uint8_t code_send = code;
-    if(sendto(sock, (uint8_t *)&code_send, 1, 0, (const struct sockaddr *) serv_addr, addr_size) == -1)
-    {
-        perror("send_code_controller");
-    }
-}
-
 void send_init_controller()
 {
-    send_code_controller(sockfd_controller, &serv_addr, sizeof(serv_addr), INIT_MSG);
+    uint8_t code_send[5];
+    code_send[0] = INIT_MSG;
+    memcpy(code_send+1, ue_ip, 4);
+    if(sendto(sock, (uint8_t *)&code_send, 5, 0, (const struct sockaddr *) serv_addr, addr_size) == -1)
+    {
+        perror("send_init_code_controller");
+    }
 }
 
 void receive_controller()

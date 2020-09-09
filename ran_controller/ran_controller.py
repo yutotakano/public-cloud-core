@@ -154,9 +154,9 @@ class RANControler:
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				enb.acquire_assign()
-				if enb.get_status() == Status.STOPPED and msg['ip'] not in self.enb_ips:
+				if enb.get_status() == Status.STOPPED and msg['ip_node'] not in self.enb_ips:
 					enb.set_pending()
-					self.enb_ips.append(msg['ip'])
+					self.enb_ips.append(msg['ip_node'])
 					enb.acquire()
 					enb.release_assign()
 					# This slave has to be a eNB
@@ -348,6 +348,7 @@ class RANControler:
 			msg['type'] = 'init'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
+			msg['ip_node'] = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
 		elif data[0] == CODE_OK | CODE_ENB_BEHAVIOUR:
 			msg['type'] = 'enb_run'
 			msg['ip'] = address[0]
