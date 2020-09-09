@@ -101,6 +101,7 @@ class RANControler:
 		self.docker_image = docker_image
 		self.epc = epc
 		self.multiplexer = multiplexer
+		self.enb_ips = []
 		if restart == False:
 			self.execute()
 		else:
@@ -153,8 +154,9 @@ class RANControler:
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				enb.acquire_assign()
-				if enb.get_status() == Status.STOPPED:
+				if enb.get_status() == Status.STOPPED and msg['ip'] not in self.enb_ips:
 					enb.set_pending()
+					self.enb_ips.append(msg['ip'])
 					enb.acquire()
 					enb.release_assign()
 					# This slave has to be a eNB
@@ -455,6 +457,8 @@ class RANControler:
 		return
 
 	def kubernetes_restart(self):
+		# Remove all eNB IPs
+		self.enb_ips = []
 		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		if k8s == True:
