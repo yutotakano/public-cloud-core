@@ -26,8 +26,8 @@ typedef struct _init_msg
 {
 	uint8_t id[4];
 	uint8_t mcc[4];
-	uint8_t mnc[3];
-	uint8_t msin[11];
+	uint8_t mnc[4];
+	uint8_t msin[12];
 	uint8_t key[16];
 	uint8_t op_key[16];
 	uint8_t ue_ip[4];

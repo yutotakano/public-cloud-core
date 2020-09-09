@@ -117,9 +117,11 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         offset += 4;
         /* Getting MCC */
         memcpy(data.mcc, buffer+offset, 3);
+	/* Asumes that MCC is 3 bytes length */
         offset += 3;
         /* Getting MNC */
         memcpy(data.mnc, buffer+offset, 2);
+	/* Asumes that MNC is 2 bytes length */
         offset += 2;
         /* Getting MSIN */
         memcpy(data.msin, buffer+offset, 10);

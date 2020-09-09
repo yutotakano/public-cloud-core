@@ -85,28 +85,42 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 	{
 		printInfo("UE INIT message received\n");
 		initmsg = (init_msg *)(buffer+1);
+		/* Security checkings */
+		/* Add 0 to the end of every string */
+		initmsg->mcc[3] = 0;
+		initmsg->mnc[2] = 0;
+		initmsg->msin[10] = 0;
 		/* Create UE */
 		ue = init_UE((char *)initmsg->mcc, (char *)initmsg->mnc, (char *)initmsg->msin, initmsg->key, initmsg->op_key, initmsg->ue_ip);
-		printUE(ue);
+
+		printInfo("Creating new UE: %s-%s-%s\n", (char *)initmsg->mcc, (char *)initmsg->mnc, (char *)initmsg->msin);
 
 		/* Add to map structure */
 		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
-		map_add(&map, (char *)initmsg->msin, (void *)ue, get_ue_size());
+		if(map_add(&map, (char *)initmsg->msin, (void *)ue, get_ue_size()) < 0)
+		{
+			printError("Error adding UE (%s)\n", (char *)initmsg->msin);
+			free_UE(ue);
+			/* Generate UE Error response */
+                        response[0] = buffer[0]; /* Without OK_CODE */
+                        *response_len = 1;
+                        return 1;
+		}
 
 		/* Free the original object and use the copy stored in the MAP structure */
 		free_UE(ue);
 		ue = (UE *)map_get(&map, (char *)initmsg->msin);
 
 		/* Attach UE 1 */
-    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
-    	{
-    		printf("Attach and Setup default bearer error\n");
-    		free_UE(ue);
-    		/* Generate UE Error response */
-    		response[0] = buffer[0]; /* Without OK_CODE */
-    		*response_len = 1;
-    		return 1;
-    	}
+	    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
+    		{
+    			printf("Attach and Setup default bearer error\n");
+    			free_UE(ue);
+    			/* Generate UE Error response */
+    			response[0] = buffer[0]; /* Without OK_CODE */
+    			*response_len = 1;
+    			return 1;
+    		}
 
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
