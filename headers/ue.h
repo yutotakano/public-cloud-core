@@ -63,6 +63,7 @@ uint8_t * get_m_tmsi(UE * ue);
 char * get_msin_string(UE * ue);
 void set_security_capabilities(UE * ue, uint8_t * sec_cap);
 uint8_t * get_security_capabilities(UE * ue);
+int ue_compare(void * data, void * key);
 
 void printUE(UE * ue);
 

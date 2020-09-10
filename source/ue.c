@@ -105,7 +105,8 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 
 void free_UE(UE * ue)
 {
-	GC_free(ue);
+	if(ue != NULL)
+		GC_free(ue);
 }
 
 uint8_t * get_ue_plmn(UE * ue)
@@ -301,4 +302,10 @@ void set_security_capabilities(UE * ue, uint8_t * sec_cap)
 uint8_t * get_security_capabilities(UE * ue)
 {
 	return ue->security_capabilities;
+}
+
+int ue_compare(void * data, void * key)
+{
+	UE * ue = (UE *)data;
+	return memcmp((uint8_t *)ue->msin_string, (uint8_t *)key, 10);
 }

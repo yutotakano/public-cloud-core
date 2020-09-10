@@ -5,7 +5,7 @@
 #include "log.h"
 #include "ue.h"
 #include "message.h"
-#include "map.h"
+#include "list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +30,7 @@
 eNB * enb;
 pthread_t enb_thread;
 int sockfd;
-map_void_t map;
+List * list;
 
 void dump(uint8_t * pointer, int len)
 {
@@ -95,32 +95,27 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 
 		printInfo("Creating new UE: %s-%s-%s\n", (char *)initmsg->mcc, (char *)initmsg->mnc, (char *)initmsg->msin);
 
-		/* Add to map structure */
-		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
-		if(map_add(&map, (char *)initmsg->msin, (void *)ue, get_ue_size()) < 0)
+		/* Add to list structure */
+		if(addElem(list, (void *)ue))
 		{
 			printError("Error adding UE (%s)\n", (char *)initmsg->msin);
 			free_UE(ue);
 			/* Generate UE Error response */
-                        response[0] = buffer[0]; /* Without OK_CODE */
-                        *response_len = 1;
-                        return 1;
+            response[0] = buffer[0]; /* Without OK_CODE */
+            *response_len = 1;
+            return 1;
 		}
 
-		/* Free the original object and use the copy stored in the MAP structure */
-		free_UE(ue);
-		ue = (UE *)map_get(&map, (char *)initmsg->msin);
-
 		/* Attach UE 1 */
-	    	if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
-    		{
-    			printf("Attach and Setup default bearer error\n");
-    			free_UE(ue);
-    			/* Generate UE Error response */
-    			response[0] = buffer[0]; /* Without OK_CODE */
-    			*response_len = 1;
-    			return 1;
-    		}
+	    if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
+    	{
+    		printf("Attach and Setup default bearer error\n");
+    		free_UE(ue);
+    		/* Generate UE Error response */
+    		response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+    	}
 
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
@@ -139,7 +134,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE MOVE_TO_IDLE message received\n");
 
 		idlemsg = (idle_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		/* Move UE to idle */
 		if(procedure_UE_Context_Release(enb, ue))
@@ -161,7 +156,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		switch_off = buffer[0] & UE_SWITCH_OFF_DETACH;
 
 		idlemsg = (idle_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		/* Detach UE */
 		if(procedure_UE_Detach(enb, ue, switch_off))
@@ -181,7 +176,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE UE_ATTACH message received\n");
 
 		idlemsg = (idle_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		/* Detach UE */
 		if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
@@ -214,7 +209,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE MOVE_TO_CONNECTED message received\n");
 
 		idlemsg = (idle_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)idlemsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		/* Detach UE */
 		if(procedure_UE_Service_Request(enb, ue, get_ue_ip(ue)))
@@ -246,7 +241,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE HO_SETUP message received\n");
 
 		homsg = (ho_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 		if(ue == NULL)
 		{
 			printError("Wrong UE MSIN descriptor in X2 Handover-Setup\n");
@@ -296,8 +291,8 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 			return 1;
 		}
 
-		/* Delete UE information in the map structure */
-		map_remove(&map, (char *)homsg->msin);
+		/* Delete UE information in the list structure */
+		free_UE(getElem(list, (void *)homsg->msin));
 
 		printOK("X2 Handover-Setup done\n");
 
@@ -310,7 +305,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE HO_REQUEST message received\n");
 
 		homsg = (ho_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		if(ue == NULL)
 		{
@@ -343,7 +338,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		printInfo("UE UE_TRANFSER message received\n");
 
 		homsg = (ho_msg *)(buffer + 1);
-		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 		if(ue == NULL)
 		{
 			printError("Wrong UE MSIN descriptor in UE Transfer\n");
@@ -393,8 +388,8 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 			return 1;
 		}
 
-		/* Delete UE information in the map structure */
-		map_remove(&map, (char *)homsg->msin);
+		/* Delete UE information in the list structure */
+		free_UE(getElem(list, (void *)homsg->msin));
 
 		printOK("UE Transfer done\n");
 
@@ -410,7 +405,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		homsg = (ho_msg *)(buffer + 1);
 
 		/* Get UE */
-		ue = (UE *)map_get(&map, (char *)homsg->msin);
+		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 		if(ue == NULL)
 		{
 			printError("Wrong UE MSIN descriptor in S1 Handover-Request\n");
@@ -501,8 +496,8 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 
 		printOK("S1 Handover completed successfully\n");
 
-		/* Remove UE from eNB map structure */
-		map_remove(&map, (char *)homsg->msin);
+		/* Remove UE from eNB list structure */
+		free_UE(getElem(list, (void *)homsg->msin));
 
 		/* Generate OK response */
 		response[0] = OK_CODE | buffer[0];
@@ -532,8 +527,8 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 
 		printOK("S1 Handover (Target-eNB)\n");
 
-		/* Add UE to Target-eNB map structure */
-		map_add(&map, get_msin_string(ue), (void *)ue, get_ue_size());
+		/* Add UE to Target-eNB list structure */
+		addElem(list, (void *)ue);
 
 
 		/* Send SYNC_2_OK to the Source-eNB */
@@ -557,8 +552,8 @@ void * enb_emulator_thread(void * args)
 
 	addrlen = sizeof(client_addr);
 
-	/* Init UE map */
-	map_init(&map);
+	/* Init UE list */
+	list = initList(ue_compare);
 
 	/* Wait for UE messages */
 	while(1)
@@ -638,17 +633,16 @@ void * x2_thread(void * args)
 	        return NULL;
 	    }
 	    recv_ue = (UE *)buffer;
-	    /* Add UE to map structure */
-		/* NOTE: Because the MAP implementation, the key has to be the UE msin string */
-		if(map_add(&map, get_msin_string(recv_ue), (void *)recv_ue, get_ue_size()) < 0)
+	    /* Add UE to list structure */
+		if(addElem(list, (void *)recv_ue))
 		{
-			/* Error adding the UE to the map structure */
+			/* Error adding the UE to the list structure */
 			resp = X2_ERROR;
 
 		}
 		else
 		{
-			/* UE added to the map structure successfully */
+			/* UE added to the list structure successfully */
 			resp = X2_OK;
 		}
 		/* Send response to Source-eNB */
