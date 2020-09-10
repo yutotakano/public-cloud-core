@@ -454,6 +454,8 @@ int main(int argc, char const *argv[])
 {
     uint32_t ue_address;
 
+    setvbuf(stdout, NULL, _IONBF, 0); 
+
     if(argc != 3)
     {
         printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP (Optional)>\n");

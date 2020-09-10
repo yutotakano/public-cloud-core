@@ -12,12 +12,11 @@ struct map_node_t {
 
 
 static unsigned map_hash(const char *str) {
-    return atoi(str+1);
-    /*unsigned hash = 5381;
+    unsigned hash = 5381;
     while (*str) {
         hash = ((hash << 5) + hash) ^ *str++;
     }
-    return hash;*/
+    return hash;
 }
 
 
