@@ -64,8 +64,8 @@ uint32_t id_to_uint32(uint8_t * id)
 
 int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, int * response_len, uint8_t * ue_ip)
 {
-	init_msg * initmsg;
-	idle_msg * idlemsg;
+	init_msg * initmsg = NULL;
+	idle_msg * idlemsg = NULL;
 	ho_msg * homsg;
 	init_response_msg * res;
 	idle_response_msg * idle_res;
