@@ -15,7 +15,7 @@ class UE:
 		self.key = self.processKey(key)
 		self.op_key_plain = op_key
 		self.op_key = self.processKey(op_key)
-		self.command = command.replace('{TUN}', 'tun'+str(int(self.msin)))
+		self.command = command.replace('{TUN}', 'tunNervion')
 		self.status = Status()
 		self.enb_id = enb
 		self.address = None

@@ -70,7 +70,7 @@ void generate_tun_name(UE * ue, char * msin)
 {
 	uint32_t num = atoi(msin);
 	ue->id = num;
-	sprintf(ue->tun_name, "tun%d", num);
+	sprintf(ue->tun_name, "tunNervion");
 }
 
 UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key, uint8_t * ue_ip)
@@ -79,6 +79,11 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	ue = (UE *) GC_malloc(sizeof(UE));
 	if(ue == NULL)
 		return NULL;
+
+	/* Store MSIN string to support X2 UE searching */
+	memset(ue->msin_string, 0, MSIN_STRING_LEN);
+	memcpy(ue->msin_string, msin, MSIN_STRING_LEN);
+
 	generate_plmn_UE(ue->plmn, mcc, mnc);
 	generate_msin(ue->msin, msin);
 	generate_net_capabilities(ue->net_capabilities, UE_DEFAULT_CAPABILITIES);
@@ -87,10 +92,6 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
 	ue->mme_s1ap_id_len = -1;
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
-
-	/* Store MSIN string to support X2 UE searching */
-	memset(ue->msin_string, 0, MSIN_STRING_LEN);
-	strcpy(ue->msin_string, msin);
 
 	/* Initiate NAS Sequence number */
 	ue->nas_sequence_number = 0;
