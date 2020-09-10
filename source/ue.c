@@ -85,9 +85,9 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	memcpy(ue->msin_string, msin, MSIN_STRING_LEN);
 
 	generate_plmn_UE(ue->plmn, mcc, mnc);
-	generate_msin(ue->msin, msin);
+	generate_msin(ue->msin, ue->msin_string);
 	generate_net_capabilities(ue->net_capabilities, UE_DEFAULT_CAPABILITIES);
-	generate_tun_name(ue, msin);
+	generate_tun_name(ue, ue->msin_string);
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
 	ue->mme_s1ap_id_len = -1;
