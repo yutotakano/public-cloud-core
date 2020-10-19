@@ -1,17 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libconfig.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+
 #include "log.h"
 #include "user.h"
 #include "crypto.h"
+#include "hashmap.h"
+#include "api.h"
 
 #define OK 0
 #define ERROR 1
+#define CONFIG_FILE_PATH "db.conf"
+#define LISTEN_QUEUE_SIZE 128
+#define BUFFER_LEN 1024
 
-/* Create two hashmaps with the following structure:
+/* DB structure
 * HashMap1: <IMSI><UserInfo>
 * HashMap2: <TMSI><UserInfo>
 */
+
+HashMap * imsi_map;
+HashMap * tmsi_map;
+
+/* Global socket */
+int sock;
 
 const uint8_t ascii_map[] =
 {
@@ -84,7 +103,9 @@ void process_line(char * line, ssize_t line_len)
 	/* Allocate memory for a new user */
 	new_user = new_user_info();
 	if(new_user == NULL) {
+#ifdef DEBUG
 		printError("Unable to allocate memory for a new user.\n");
+#endif
 		return;
 	}
 
@@ -106,8 +127,10 @@ void process_line(char * line, ssize_t line_len)
 				else if(!strcmp(token, "op"))
 					opc_flag = 1;
 				else {
+#ifdef DEBUG
 					printError("Invalid operator's code type.\n");
-					free_user_info(new_user);
+#endif
+					free_user_info((void *)new_user);
 					return;
 				}
 				break;
@@ -127,11 +150,30 @@ void process_line(char * line, ssize_t line_len)
 		token = strtok(NULL, delim); /* Get next token */
 	}
 
+	/* Complete user information */
+	complete_user_info(new_user);
+
+	/* Add UserInfo structure to both hashmap structures */
+	if(hashmap_add(imsi_map, (uint8_t *) new_user, user_info_size()) == ERROR) {
+#ifdef DEBUG
+		printWarning("Unable to add user (%s) to IMSI HasMap.\n", get_user_imsi(new_user));
+#endif
+		free_user_info((void *)new_user);
+		return;
+	}
+	if(hashmap_add(tmsi_map, (uint8_t *) new_user, user_info_size()) == ERROR) {
+#ifdef DEBUG
+		printWarning("Unable to add user (0x%.8x) to TMSI HasMap.\n", hash_tmsi_user_info(new_user));
+#endif
+		free_user_info((void *)new_user);
+		return;
+	}
+
 #ifdef DEBUG
 	show_user_info(new_user);
 #endif
 
-	/* Add UserInfo structure to both hashmap structures */
+	free_user_info((void *)new_user);
 
 	return;
 }
@@ -153,26 +195,327 @@ int read_db_file(const char * db_file)
 		process_line(line, read);
 	}
 
+	/* Free line after the last call to getline to avoid memory leaks */
+	free(line);
+	fclose(file);
+
 	return OK;
 }
 
-int init_db(const char * db_file)
+int init_db(const char * db_file, int hashmap_size)
 {
 	/* Initialize hashmap structures */
-	/* TODO */
+	/* IMSI HashMap */
+	imsi_map = init_hashmap(hashmap_size, hash_imsi_user_info);
+	if(imsi_map == NULL) {
+		printError("Error creating IMSI HashMap.\n");
+		return ERROR;
+
+	}
+	/* TMSI HashMap */
+	tmsi_map = init_hashmap(hashmap_size, hash_tmsi_user_info);
+	if(tmsi_map == NULL) {
+		printError("Error creating TMSI HashMap.\n");
+		free_hashmap(imsi_map, free_user_info);
+		return ERROR;
+
+	}
 
 	/* Read DB from file */
 	if(read_db_file(db_file) == ERROR) {
 		printError("Error reading DB file.\n");
+		/* Destroy HashMaps */
+		free_hashmap(imsi_map, free_user_info);
+		free_hashmap(tmsi_map, free_user_info);
 		return ERROR;
 	}
 
 	return OK;
 }
 
+int configure_network(const char * ip_address, int port)
+{
+	struct sockaddr_in db_addr;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock == -1) {
+		printError("%s\n", strerror(errno));
+		return ERROR;
+	}
+	/* Disable Nagle's algorithm */
+	int nodelay = 1;
+	if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
+		printError("setsockopt no_delay (%s)\n", strerror(errno));
+		close(sock);
+		return ERROR;
+	}
+
+	/* Setup DB address */
+	db_addr.sin_family = AF_INET;
+	db_addr.sin_addr.s_addr = inet_addr(ip_address);
+	db_addr.sin_port = htons(port);
+	memset(&(db_addr.sin_zero), '\0', 8);
+
+	/* Binding socket */
+	if(bind(sock, (struct sockaddr *) &db_addr, sizeof(struct sockaddr)) == -1)
+	{
+		printError("socket bind (%s)\n", strerror(errno));
+		close(sock);
+		return ERROR;
+	}
+
+	/* Setup listen */
+	if(listen(sock, LISTEN_QUEUE_SIZE) == -1)
+	{
+		printError("socket listen (%s)\n", strerror(errno));
+		close(sock);
+		return ERROR;
+	}
+
+
+	return OK;
+}
+
+void analyze_request(uint8_t * request, int request_len, uint8_t * response, int * response_len) {
+	UserInfo * user;
+	int offset = 0, res_offset = 0; 
+
+	/* Get user info based on the client's ID*/
+	switch(request[0]) {
+		case IMSI:
+			user = (UserInfo *) hashmap_get(imsi_map, hash_imsi((char *)(request+1)));
+			break;
+		case MSIN:
+			user = (UserInfo *) hashmap_get(imsi_map, hash_msin((char *)(request+1)));
+			break;
+		case TMSI:
+			user = (UserInfo *) hashmap_get(tmsi_map, hash_tmsi(request+1));
+			break;
+		default:
+			response[0] = 0;
+			*response_len = 1;
+			return;
+	}
+	offset += 17;
+
+	/* Update user info based on the PUSH items */
+	while(request[offset] != 0) {
+		switch(request[offset]) {
+			case ENB_UE_S1AP_ID:
+				memcpy(get_user_enb_ue_id(user), request+offset+1, ENB_UE_S1AP_ID_LEN);
+				break;
+			case UE_TEID:
+				memcpy(get_user_ue_teid(user), request+offset+1, TEID_LEN);
+				break;
+			case SPGW_IP:
+				memcpy(get_user_spgw_ip(user), request+offset+1, IP_LEN);
+				break;
+			case ENB_IP:
+				memcpy(get_user_enb_ip(user), request+offset+1, IP_LEN);
+				break;
+			case PDN_IP:
+				memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
+				break;
+			case EPC_NAS_SEQUENCE_NUMBER:
+				set_user_epc_nas_sequence_number(user, request[offset+1]);
+				break;
+			case UE_NAS_SEQUENCE_NUMBER:
+				set_user_ue_nas_sequence_number(user, request[offset+1]);
+				break;
+			default:
+				/* Undefined Item */
+				break;
+		}
+		offset += 17;
+	}
+
+	/* Copy the fields specified in the PULL item list */
+	while(offset < request_len) {
+		switch(request[offset]) {
+			case IMSI:
+				break;
+			case MSIN:
+				break;
+			case TMSI:
+				break;
+			case ENB_UE_S1AP_ID:
+				break;
+			case UE_TEID:
+				break;
+			case SPGW_IP:
+				break;
+			case ENB_IP:
+				break;
+			case PDN_IP:
+				break;
+			case EPC_NAS_SEQUENCE_NUMBER:
+				/* Copy and increase EPC NAS Sequence number */
+				break;
+			case UE_NAS_SEQUENCE_NUMBER:
+				/* Copy and increase UE NAS Sequence number */
+				break;
+			case KEY:
+				break;
+			case OPC:
+				break;
+			case RAND:
+				/* Copy and generate a new RAND array */
+				break;
+			case MME_UE_S1AP_ID:
+				break;
+			case EPC_TEID:
+				break;
+		}
+		res_offset += 17;
+		offset++;
+	}
+	*response_len = res_offset;
+	return;
+}
+
+void * attend_request(void * args)
+{
+	int client, * client_ref;
+	uint8_t request[BUFFER_LEN], response[BUFFER_LEN];
+	int request_len, response_len;
+
+	client_ref = (int *) args;
+	client = *client_ref;
+
+	while(1) {
+		/* Read client's request */
+		request_len = recv(client, request, BUFFER_LEN, 0);
+		if(request_len == 0) {
+			close(client);
+			return NULL;
+		}
+		/* Analyze request and generate the response message */
+		analyze_request(request, request_len, response, &response_len);
+		/* Send response to client and close connection */
+		send(client, response, response_len, 0);
+	}
+
+	return NULL;
+}
+
+void main_worker()
+{
+	pthread_t worker;
+	int client;
+	struct sockaddr_in client_addr;
+	socklen_t addrlen;
+
+	addrlen = sizeof(client_addr);
+
+	while(1) {
+		/* Accept client */
+		client = accept(sock, (struct sockaddr *)&client_addr, &addrlen);
+		if(client == -1)
+		{
+			printError("socket accept (%s)\n", strerror(errno));
+			continue;
+		}
+		/* Create a thread toa ttend client's request */
+		if (pthread_create(&worker, NULL, attend_request, &client) != 0) {
+			printError("Error creating worker thread (%s)\n", strerror(errno));
+			close(client);
+		}
+	}
+
+	return;
+}
+
 int main(int argc, char const *argv[])
 {
+	UserInfo * user;
+	config_t cfg;
+	const char * db_file_path = NULL;
+	const char * db_ip_address = NULL;
+	int hashmap_size, db_port;
+
+	config_init(&cfg);
+	if (!config_read_file(&cfg, CONFIG_FILE_PATH)) {
+		printError("Unable to open config file (%s:%d - %s).\n",
+			config_error_file(&cfg),
+			config_error_line(&cfg),
+			config_error_text(&cfg));
+		config_destroy(&cfg);
+		return ERROR;
+	}
+
+	/* Retrieve information from the config file */
+	/* Get config file path */
+	if (!config_lookup_string(&cfg, "db.users_db", &db_file_path)) {
+		printError("Config file error: db.users_db not defined.\n");
+		config_destroy(&cfg);
+		return ERROR;
+	}
+	/* Get hashmap_size */
+	if (!config_lookup_int(&cfg, "db.hashmap_size", &hashmap_size)) {
+		printError("Config file error: db.hashmap_size not defined.\n");
+		config_destroy(&cfg);
+		return ERROR;
+	}
+	/* Get db_ip_address */
+	if (!config_lookup_string(&cfg, "network.db_ip_address", &db_ip_address)) {
+		printError("Config file error: network.db_ip_address not defined.\n");
+		config_destroy(&cfg);
+		return ERROR;
+	}
+	/* Get db_port */
+	if (!config_lookup_int(&cfg, "network.db_port", &db_port)) {
+		printError("Config file error: network.db_port not defined.\n");
+		config_destroy(&cfg);
+		return ERROR;
+	}
+
+	printOK("Config file successfully readed.\n");
+#ifdef DEBUG
+	printf("DB file: %s\n", db_file_path);
+	printf("Hashmap Table size: %d\n", hashmap_size);
+	printf("Network address: %s:%d\n", db_ip_address, db_port);
+#endif
+
 	printInfo("Starting CoreKubeDB...\n");
-	init_db(argv[1]);
-	return 0;
+	if(init_db(db_file_path, hashmap_size) == ERROR)
+	{
+		printError("Error initializing DB.\n");
+		config_destroy(&cfg);
+		return ERROR;
+	}
+	printOK("Database initialized.\n");
+
+	printInfo("Configuring network...\n");
+	if(configure_network(db_ip_address, db_port) == ERROR)
+	{
+		printError("Error configuring network.\n");
+		config_destroy(&cfg);
+		free_hashmap(imsi_map, free_user_info);
+		free_hashmap(tmsi_map, free_user_info);
+		return ERROR;
+	}
+	printOK("Network configured.\n");
+
+	/* Initialize workers pool */
+	main_worker();
+
+
+
+
+
+	/* Some examples */
+
+	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000004"));
+	show_user_info(user);
+	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000006"));
+	show_user_info(user);
+	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000009"));
+	show_user_info(user);
+
+	user = (UserInfo *) hashmap_get(tmsi_map, 0xdeadbee6);
+	show_user_info(user);
+
+	free_hashmap(imsi_map, free_user_info);
+	free_hashmap(tmsi_map, free_user_info);
+	return OK;
 }

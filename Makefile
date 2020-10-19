@@ -7,10 +7,10 @@ CC = gcc
 CFLAGS = -c -Wall -ansi -g -std=c99
 
 #LIB FLAGS
-LIBFLAGS = -lpthread
+LIBFLAGS = # -lpthread
 
 #LINK FLAGS
-LINKFLAGS = 
+LINKFLAGS = -lconfig -lpthread
 
 TARGET = corekubeDB
 
@@ -23,23 +23,24 @@ BUILD_DIRECTORY = build/
 CFILES = $(wildcard $(SOURCE_DIRECTORY)*.c)
 OBJECTS = $(patsubst $(SOURCE_DIRECTORY)%.c, $(OBJECT_DIRECTORY)%.o, $(CFILES))
 
-all: $(OBJECT_DIRECTORY) $(TARGET)
+all: $(LIB) $(OBJECT_DIRECTORY) $(TARGET)
 
 debug: CFLAGS += -DDEBUG 
 debug: $(OBJECT_DIRECTORY) $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	@echo "Building $@..."
-	@$(CC) $(OBJECTS) $(LIBFLAGS) $(LINKFLAGS) -o $@
+	@echo "$(CURRENT_DIR)$(LIB_PATH)$(LIB)"
+	@$(CC) $(OBJECTS) $(LINKFLAGS) -o $@
 
 $(OBJECT_DIRECTORY):
 	@mkdir $(OBJECT_DIRECTORY)
 
 $(OBJECT_DIRECTORY)%.o: $(SOURCE_DIRECTORY)%.c
 	@echo "Building $@..."
-	@$(CC) -I $(INCLUDE_DIRECTORY) $(CFLAGS) $(LIBFLAGS) $< -o $@
+	@$(CC) -I $(INCLUDE_DIRECTORY) -I $(LIB_PATH)include/ $(CFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
-	@echo "Removing objects files"
+	@echo "Removing objects files..."
 	@rm -rf $(OBJECT_DIRECTORY) $(TARGET)

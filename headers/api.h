@@ -1,0 +1,12 @@
+#ifndef __CK_API__
+#define __CK_API__
+
+#include <stdint.h>
+
+enum ITEM_TYPE
+{
+	IMSI=1, MSIN, TMSI, ENB_UE_S1AP_ID, UE_TEID, SPGW_IP, ENB_IP, PDN_IP, UE_NAS_SEQUENCE_NUMBER, EPC_NAS_SEQUENCE_NUMBER, KEY, OPC, RAND, MME_UE_S1AP_ID, EPC_TEID
+};
+typedef uint8_t ITEM_TYPE;
+
+#endif
