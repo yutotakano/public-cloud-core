@@ -2,6 +2,7 @@
 #define __USER__
 
 #define IMSI_LEN 16
+#define MSIN_LEN 11
 #define KEY_LEN 16
 #define ENB_UE_S1AP_ID_LEN 4
 #define MME_UE_S1AP_ID_LEN 4
@@ -16,6 +17,7 @@ UserInfo * new_user_info();
 void free_user_info(void * user);
 void set_user_imsi(UserInfo * user, char  * imsi);
 char * get_user_imsi(UserInfo * user);
+char * get_user_msin(UserInfo * user);
 uint8_t * get_user_key(UserInfo * user);
 uint8_t * get_user_opc(UserInfo * user);
 uint8_t * get_user_rand(UserInfo * user);

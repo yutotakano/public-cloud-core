@@ -16,7 +16,7 @@
 #include "api.h"
 
 #define OK 0
-#define ERROR 1
+#define ERROR -1
 #define CONFIG_FILE_PATH "db.conf"
 #define LISTEN_QUEUE_SIZE 128
 #define BUFFER_LEN 1024
@@ -279,6 +279,7 @@ int configure_network(const char * ip_address, int port)
 void analyze_request(uint8_t * request, int request_len, uint8_t * response, int * response_len) {
 	UserInfo * user;
 	int offset = 0, res_offset = 0; 
+	uint8_t tmp_nas;
 
 	/* Get user info based on the client's ID*/
 	switch(request[0]) {
@@ -297,6 +298,11 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			return;
 	}
 	offset += 17;
+
+#ifdef DEBUG
+	printInfo("Requested User Info: \n");
+	show_user_info(user);
+#endif
 
 	/* Update user info based on the PUSH items */
 	while(request[offset] != 0) {
@@ -329,41 +335,84 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 		offset += 17;
 	}
 
+	/* Skip the 0 byte used to separate PUSH items from PULL items */
+	offset++;
+
 	/* Copy the fields specified in the PULL item list */
 	while(offset < request_len) {
 		switch(request[offset]) {
 			case IMSI:
+				response[res_offset] = IMSI;
+				memcpy(response+res_offset+1, (uint8_t *)get_user_imsi(user), IMSI_LEN);
+				response[res_offset+16] = 0;
 				break;
 			case MSIN:
+				response[res_offset] = MSIN;
+				memcpy(response+res_offset+1, (uint8_t *)get_user_msin(user), MSIN_LEN);
 				break;
 			case TMSI:
+				response[res_offset] = TMSI;
+				memcpy(response+res_offset+1, get_user_tmsi(user), TMSI_LEN);
 				break;
 			case ENB_UE_S1AP_ID:
+				response[res_offset] = ENB_UE_S1AP_ID;
+				memcpy(response+res_offset+1, get_user_enb_ue_id(user), ENB_UE_S1AP_ID_LEN);
 				break;
 			case UE_TEID:
+				response[res_offset] = UE_TEID;
+				memcpy(response+res_offset+1, get_user_ue_teid(user), TEID_LEN);
 				break;
 			case SPGW_IP:
+				response[res_offset] = SPGW_IP;
+				memcpy(response+res_offset+1, get_user_spgw_ip(user), SPGW_IP);
 				break;
 			case ENB_IP:
+				response[res_offset] = ENB_IP;
+				memcpy(response+res_offset+1, get_user_enb_ip(user), ENB_IP);
 				break;
 			case PDN_IP:
+				response[res_offset] = PDN_IP;
+				memcpy(response+res_offset+1, get_user_pdn_ipv4(user), PDN_IP);
 				break;
 			case EPC_NAS_SEQUENCE_NUMBER:
 				/* Copy and increase EPC NAS Sequence number */
+				response[res_offset] = EPC_NAS_SEQUENCE_NUMBER;
+				tmp_nas = get_user_epc_nas_sequence_number(user);
+				response[res_offset+1] = tmp_nas;
+				set_user_epc_nas_sequence_number(user, tmp_nas+1);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
 				/* Copy and increase UE NAS Sequence number */
+				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
+				tmp_nas = get_user_ue_nas_sequence_number(user);
+				response[res_offset+1] = tmp_nas;
+				set_user_ue_nas_sequence_number(user, tmp_nas+1);
 				break;
 			case KEY:
+				response[res_offset] = KEY;
+				memcpy(response+res_offset+1, get_user_key(user), KEY_LEN);
 				break;
 			case OPC:
+				response[res_offset] = OPC;
+				memcpy(response+res_offset+1, get_user_opc(user), KEY_LEN);
 				break;
 			case RAND:
+				response[res_offset] = RAND;
+				memcpy(response+res_offset+1, get_user_rand(user), RAND_LEN);
+				break;
+			case RAND_UPDATE:
 				/* Copy and generate a new RAND array */
+				response[res_offset] = RAND_UPDATE;
+				memcpy(response+res_offset+1, get_user_rand(user), RAND_LEN);
+				generate_rand(user);
 				break;
 			case MME_UE_S1AP_ID:
+				response[res_offset] = MME_UE_S1AP_ID;
+				memcpy(response+res_offset+1, get_user_mme_ue_id(user), MME_UE_S1AP_ID_LEN);
 				break;
 			case EPC_TEID:
+				response[res_offset] = EPC_TEID;
+				memcpy(response+res_offset+1, get_user_epc_teid(user), TEID_LEN);
 				break;
 		}
 		res_offset += 17;
@@ -389,8 +438,14 @@ void * attend_request(void * args)
 			close(client);
 			return NULL;
 		}
+#ifdef DEBUG
+		printInfo("Analyzing request...\n");
+#endif
 		/* Analyze request and generate the response message */
 		analyze_request(request, request_len, response, &response_len);
+#ifdef DEBUG
+		printInfo("Sending answer to client...\n");
+#endif
 		/* Send response to client and close connection */
 		send(client, response, response_len, 0);
 	}
@@ -415,6 +470,9 @@ void main_worker()
 			printError("socket accept (%s)\n", strerror(errno));
 			continue;
 		}
+#ifdef DEBUG
+		printInfo("New client at %s\n", inet_ntoa(client_addr.sin_addr));
+#endif
 		/* Create a thread toa ttend client's request */
 		if (pthread_create(&worker, NULL, attend_request, &client) != 0) {
 			printError("Error creating worker thread (%s)\n", strerror(errno));
@@ -497,6 +555,7 @@ int main(int argc, char const *argv[])
 	printOK("Network configured.\n");
 
 	/* Initialize workers pool */
+	printOK("CoreKubeDB running.\n");
 	main_worker();
 
 

@@ -60,6 +60,11 @@ char * get_user_imsi(UserInfo * user)
 	return user->imsi;
 }
 
+char * get_user_msin(UserInfo * user)
+{
+	return user->imsi+5;
+}
+
 uint8_t * get_user_key(UserInfo * user)
 {
 	return user->key;

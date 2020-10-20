@@ -5,7 +5,7 @@
 #include "jhash.h"
 
 #define OK 0
-#define ERROR 1
+#define ERROR -1
 
 typedef struct _ListNode
 {
