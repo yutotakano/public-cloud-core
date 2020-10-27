@@ -156,8 +156,6 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		switch_off = buffer[0] & UE_SWITCH_OFF_DETACH;
 
 		idlemsg = (idle_msg *)(buffer + 1);
-		printf("\n\n\nMOVIDA\n");
-		dump(idlemsg->msin, 16);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
 		/* Detach UE */
