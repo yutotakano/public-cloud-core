@@ -51,7 +51,7 @@ void * peekElem(List * l, void * key)
 
 	while(iter != NULL)
 	{
-		if(l->cmp(iter->data, key))
+		if(l->cmp(iter->data, key) == 0)
 			return iter->data;
 		iter = iter->next;
 	}

@@ -29,6 +29,7 @@
 #define BUFFER_DATA_LEN 2048
 #define GTP_FLAGS 0x30
 #define GTP_MESSAGE_TYPE 0xFF
+#define GTP_IFACE_NAME "tunNervion"
 
 UE * tun_descriptors[MAX_TUN_DESCRIPTORS];
 pthread_mutex_t lock;
@@ -179,7 +180,7 @@ int start_data_plane(uint8_t * local_ip, char * msin, uint8_t * _ue_ip, uint8_t 
 
 
     /* Generate TUN name */
-    sprintf(tun_name, "tun%d", atoi(msin));
+    sprintf(tun_name, "%s", GTP_IFACE_NAME);
     /* Store parameters */
     memcpy(ue_ip, _ue_ip, 4);
     gtp_teid = _gtp_teid;
