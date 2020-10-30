@@ -34,6 +34,10 @@ struct _UserInfo
 	uint8_t enb_ip[IP_LEN]; /* ENB IP */
 	uint8_t pdn_ipv4[IP_LEN]; /* Internal LTE UE IP */
 
+	uint8_t auth_res[AUTH_RES_LEN]; /* Challenge result */
+	uint8_t enc_key[KEY_LEN]; /* Key used in the NAS encryption */
+	uint8_t int_key[KEY_LEN]; /* Key used in the NAS integrity */
+
 	uint8_t epc_nas_sequence_number;
 	uint8_t ue_nas_sequence_number;
 };
@@ -138,6 +142,21 @@ uint8_t get_user_ue_nas_sequence_number(UserInfo * user)
 void set_user_ue_nas_sequence_number(UserInfo * user, uint8_t value)
 {
 	user->ue_nas_sequence_number = value;
+}
+
+uint8_t * get_user_auth_res(UserInfo * user)
+{
+	return user->auth_res;
+}
+
+uint8_t * get_user_enc_key(UserInfo * user)
+{
+	return user->enc_key;
+}
+
+uint8_t * get_user_int_key(UserInfo * user)
+{
+	return user->int_key;
 }
 
 void generate_rand(UserInfo * user)

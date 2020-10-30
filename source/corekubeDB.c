@@ -328,6 +328,15 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			case UE_NAS_SEQUENCE_NUMBER:
 				set_user_ue_nas_sequence_number(user, request[offset+1]);
 				break;
+			case AUTH_RES:
+				memcpy(get_user_auth_res(user), request+offset+1, AUTH_RES_LEN);
+				break;
+			case ENC_KEY:
+				memcpy(get_user_enc_key(user), request+offset+1, KEY_LEN);
+				break;
+			case INT_KEY:
+				memcpy(get_user_int_key(user), request+offset+1, KEY_LEN);
+				break;
 			default:
 				/* Undefined Item */
 				break;
@@ -413,6 +422,18 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			case EPC_TEID:
 				response[res_offset] = EPC_TEID;
 				memcpy(response+res_offset+1, get_user_epc_teid(user), TEID_LEN);
+				break;
+			case AUTH_RES:
+				response[res_offset] = AUTH_RES;
+				memcpy(response+res_offset+1, get_user_auth_res(user), AUTH_RES_LEN);
+				break;
+			case ENC_KEY:
+				response[res_offset] = ENC_KEY;
+				memcpy(response+res_offset+1, get_user_enc_key(user), KEY_LEN);
+				break;
+			case INT_KEY:
+				response[res_offset] = INT_KEY;
+				memcpy(response+res_offset+1, get_user_int_key(user), KEY_LEN);
 				break;
 		}
 		res_offset += 17;

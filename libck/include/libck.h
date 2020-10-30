@@ -15,6 +15,7 @@
 #define TMSI_LEN 4
 #define TEID_LEN 4
 #define RAND_LEN 16
+#define AUTH_RES_LEN 8
 
 enum ITEM_TYPE
 {
@@ -22,7 +23,8 @@ enum ITEM_TYPE
 	MSIN,
 	TMSI,
 	ENB_UE_S1AP_ID,
-	UE_TEID, SPGW_IP,
+	UE_TEID,
+	SPGW_IP,
 	ENB_IP,
 	PDN_IP,
 	UE_NAS_SEQUENCE_NUMBER,
@@ -32,7 +34,10 @@ enum ITEM_TYPE
 	RAND,
 	RAND_UPDATE,
 	MME_UE_S1AP_ID,
-	EPC_TEID
+	EPC_TEID,
+	AUTH_RES,
+	ENC_KEY,
+	INT_KEY
 };
 typedef uint8_t ITEM_TYPE;
 

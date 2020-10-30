@@ -97,6 +97,18 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			buffer[0] = UE_NAS_SEQUENCE_NUMBER;
 			buffer[1] = *value;
 			break;
+		case AUTH_RES:
+			buffer[0] = AUTH_RES;
+			memcpy(buffer+1, value, AUTH_RES_LEN);
+			break;
+		case ENC_KEY:
+			buffer[0] = ENC_KEY;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
+		case INT_KEY:
+			buffer[0] = INT_KEY;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
 		default:
 			/* Undefined Item */
 			return buffer;
