@@ -138,7 +138,7 @@ db_sock = db_connect("192.168.1.25", db_port);
 db_disconnect(db_sock);
 ```
 
-** Update UE TEID, ENB IP, and UE NAS Sequence Number fields in the DB and request UE KEY, OPC KEY, and RAND. **
+**Update UE TEID, ENB IP, and UE NAS Sequence Number fields in the DB and request UE KEY, OPC KEY, and RAND.**
 ```c
 uint8_t buf[1024];
 uint8_t recv_buf[1024];
