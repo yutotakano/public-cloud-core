@@ -9,7 +9,7 @@ CFLAGS = -c -Wall -ansi -g -std=c99
 #LIB FLAGS
 LIBFLAGS = -lpthread
 
-#LINK FLAGS
+#LINK FLAGS 
 LINKFLAGS = -lsctp
 
 TARGET = corekube_listener
