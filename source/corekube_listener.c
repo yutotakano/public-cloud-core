@@ -8,7 +8,11 @@
 #include <netinet/in.h>
 #include <netinet/sctp.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+
 #include "log.h"
+#include "uplink.h"
+#include "downlink.h"
 
 
 #define MME_LISTEN_PORT 36412
@@ -18,21 +22,7 @@
 #define SCTP_TIMEOUT 1
 #define SOCKET_READ_TIMEOUT_SEC 1
 #define SOCKET_LISTEN_QUEUE 5 /* Extract from openair-cn (openair-cn/SCTP/sctp_primitives_server.c) */
-#define BUFFER_LEN 1024
-
-
-void dumpMessage(uint8_t * message, int len)
-{
-	int i;
-	printf("(%d)\n", len);
-	for(i = 0; i < len; i++)
-	{
-		if( i % 16 == 0)
-			printf("\n");
-		printf("%.2x ", message[i]);
-	}
-	printf("\n");
-}
+#define UDP_PORT 5566
 
 int configure_sctp_socket(char * mme_ip_address)
 {
@@ -118,16 +108,46 @@ int configure_sctp_socket(char * mme_ip_address)
 	return sock_sctp;
 }
 
-
-void start_listener(char * mme_ip_address)
+int configure_udp_socket(char * mme_ip_address)
 {
-	int sock_sctp;
-	int sock_enb;
-	int flags = 0, n;
-	socklen_t from_len;
-	struct sctp_sndrcvinfo sinfo;
-	struct sockaddr_in addr;
-	uint8_t buffer[BUFFER_LEN];
+	int sock_udp;
+	struct sockaddr_in udp_addr;
+
+	/*****************/
+	/* Create socket */
+	/*****************/
+	sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock_udp < 0) { 
+        perror("socket creation failed"); 
+        return -1;
+    }
+
+    udp_addr.sin_addr.s_addr = inet_addr(mme_ip_address);
+    udp_addr.sin_family = AF_INET;
+    udp_addr.sin_port = htons(UDP_PORT);
+    memset(&(udp_addr.sin_zero), 0, sizeof(struct sockaddr));
+
+    /***********/
+    /* Binding */
+    /***********/
+    if(bind(sock_udp, (const struct sockaddr *)&udp_addr, sizeof(udp_addr)) < 0) 
+    { 
+        perror("Bind MME UDP socket"); 
+    	close(sock_udp);
+    	return -1;
+    }
+
+    return sock_udp;
+}
+
+
+void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
+{
+	int sock_sctp, sock_udp, sock_enb;
+	uplink_args * uargs;
+	downlink_args dargs;
+
+	pthread_t downlink_t, uplink_t;
 
 
 	sock_sctp = configure_sctp_socket(mme_ip_address);
@@ -135,42 +155,75 @@ void start_listener(char * mme_ip_address)
 		printError("Error configuring SCTP socket.\n");
 		return;
 	}
-
 	printOK("SCTP socket configured correctly.\n");
 
-	/* This prototype only accepts one client (eNB) at the time */
-	if ((sock_enb = accept(sock_sctp, NULL, NULL)) < 0) {
-		perror("MME Socket accept");
+	sock_udp = configure_udp_socket(mme_ip_address);
+	if(sock_udp < 0) {
+		printError("Error configuring UDP socket.\n");
+		close(sock_sctp);
 		return;
 	}
+	printOK("UDP socket configured correctly.\n");
 
-	printOK("New eNB connected.\n");
+	/* Assemble downlink thread arguments structure */
+	dargs.sock_udp = sock_udp;
 
-	/* Receive S1AP messages and dump the content */
-	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
-	from_len = (socklen_t)sizeof(struct sockaddr_in);
-	memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+	/* Create downlink thread */
+	if(pthread_create(&downlink_t, NULL, downlink_thread, (void *)&dargs) != 0) {
+		perror("downlink thread");
+		printError("Closing open sockets.\n");
+		close(sock_sctp);
+		close(sock_udp);
+		return;
+	}
+	printOK("Downlink thread initialized correctly.\n");
 
+	/* Each eNB has one dedicated socket and one thread in the uplink direction */
+	while(1) {
+		if ((sock_enb = accept(sock_sctp, NULL, NULL)) < 0) {
+			perror("MME Socket accept");
+			continue;
+		}
 
-	while ( (n = sctp_recvmsg(sock_enb, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
-		printf("Received with PPID: %d\n", ntohl(sinfo.sinfo_ppid));
-		dumpMessage(buffer, n);
+		printOK("New eNB connected.\n");
+
+		/* Assemble uplink thread arguments structure */
+		uargs = (uplink_args *) malloc(sizeof(uplink_args));
+		if(uargs == NULL) {
+			printError("Error allocating uplink args structure.\n");
+			close(sock_enb);
+			continue;
+		}
+		/* Set eNB socket */
+		uargs->sock_enb = sock_enb;
+		uargs->epc_sock = sock_udp;
+		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
+
+		/* Create uplink thread */
+		if(pthread_create(&uplink_t, NULL, uplink_thread, (void *)&uargs) != 0) {
+			perror("Error creating uplink thread");
+			close(sock_enb);
+			free(uargs);
+			continue;
+		}
+		printOK("Uplink thread initialized correctly.\n");
 	}
 
+	printInfo("Closing SCTP socket...\n");
 	close(sock_enb);
-	close(sock_sctp);
-
+	printInfo("Closing UDP socket...\n");
+	close(sock_udp);
 }
 
 
 int main(int argc, char const *argv[])
 {
-	if(argc != 2) {
-		printf("RUN: ./listener <MME_IP_ADDRESS>\n");
+	if(argc != 3) {
+		printf("RUN: ./listener <FRONTEND_IP_ADDRESS> <K8S_LOADBALANCER_IP_ADDRESS>\n");
 		return 1;
 	}
 
-	start_listener((char *)argv[1]);
+	frontend((char *)argv[1], (char *)argv[2]);
 
 	return 0;
 }
