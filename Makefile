@@ -4,7 +4,7 @@
 CC = gcc
 
 #FLAGS
-CFLAGS = -c -Wall -ansi -g -std=c99
+CFLAGS = -c -Wall -ansi -g -std=c99 -DTHREAD_LOGS
 
 #LIB FLAGS
 LIBFLAGS = -lpthread
@@ -12,7 +12,7 @@ LIBFLAGS = -lpthread
 #LINK FLAGS 
 LINKFLAGS = -lsctp
 
-TARGET = corekube_listener
+TARGET = corekube_frontend
 
 # PATHS
 SOURCE_DIRECTORY = source/

@@ -8,7 +8,9 @@
 #include <netinet/in.h>
 #include <netinet/sctp.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include "uplink.h"
+#include "log.h"
 
 #define S1AP_PPID 18
 #define BUFFER_LEN 1020
@@ -17,9 +19,8 @@
 void dumpMessage(uint8_t * message, int len)
 {
 	int i;
-	printf("(%d)\n", len);
-	for(i = 0; i < len; i++)
-	{
+	printf("Message dump (%d):", len);
+	for(i = 0; i < len; i++) {
 		if( i % 16 == 0)
 			printf("\n");
 		printf("%.2x ", message[i]);
@@ -51,26 +52,32 @@ void * uplink_thread(void * args)
 	struct sockaddr_in addr, epc_addr;
 	uint8_t buffer[BUFFER_LEN+4];
 
-
 	/* Extract the eNB socket from args and free the args structure */
 	int sock_enb = ((uplink_args *)args)->sock_enb;
 	int sock_epc = ((uplink_args *)args)->epc_sock;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	free(args);
+	#ifdef THREAD_LOGS
+	printThread("Uplink thread arguments extracted.\n");
+	#endif
 
 	/* Configure EPC UDP address */
 	epc_addr.sin_addr.s_addr = epc_ip_addr;
     epc_addr.sin_family = AF_INET;
     epc_addr.sin_port = htons(EPC_UDP_PORT);
     memset(&(epc_addr.sin_zero), 0, sizeof(struct sockaddr));
-
+    #ifdef THREAD_LOGS
+	printThread("Kubernetes loadbalancer information initialized.\n");
+	#endif
 
 	/* Reset structures */
 	reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 
 	/* Copy the socket number into the UDP/S1AP message to be used in the downlink thread */
 	int_to_array(sock_enb, buffer);
-
+	#ifdef THREAD_LOGS
+	printThread("Socket data added to the buffer.\n");
+	#endif
 
 	while ( (n = sctp_recvmsg(sock_enb, (void *)(buffer + 4), BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
 		/* Only messages with PPID 18 are accepted */
@@ -79,14 +86,20 @@ void * uplink_thread(void * args)
 			continue;
 		}
 
-		#ifdef DEBUG
-		printInfo("[Thread ID: %d] Uplink message received.\n", pthread_self());
+		#ifdef THREAD_LOGS
+		printThread("Uplink message received.\n");
 		dumpMessage(buffer+4, n);
 		#endif
 
 		n += 4;
-		/* Send message to Kubernetes Loadbalancer (EPC Address) using UDP*/
+		/* Send message to Kubernetes Loadbalancer (EPC Address) using UDP */
 		sendto(sock_epc, buffer, n, 0, (const struct sockaddr *) &epc_addr, sizeof(epc_addr));
+		#ifdef THREAD_LOGS
+		printThread("UDP message sent.\n");
+		#endif
+
+		/* Reset structures */
+		reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 	}
 
 	close(sock_enb);

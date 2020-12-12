@@ -200,7 +200,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
 
 		/* Create uplink thread */
-		if(pthread_create(&uplink_t, NULL, uplink_thread, (void *)&uargs) != 0) {
+		if(pthread_create(&uplink_t, NULL, uplink_thread, (void *)uargs) != 0) {
 			perror("Error creating uplink thread");
 			close(sock_enb);
 			free(uargs);
