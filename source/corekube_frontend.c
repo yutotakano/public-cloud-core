@@ -143,9 +143,9 @@ int configure_udp_socket(char * mme_ip_address)
 
 void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 {
-	int sock_sctp, sock_udp, sock_enb;
+	int sock_sctp, sock_udp, sock_enb, enb_count = 0;
 	uplink_args * uargs;
-	downlink_args dargs;
+	downlink_args * dargs;
 
 	pthread_t downlink_t, uplink_t;
 
@@ -165,33 +165,40 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 	}
 	printOK("UDP socket configured correctly.\n");
 
-	/* Assemble downlink thread arguments structure */
-	dargs.sock_udp = sock_udp;
-
-	/* Create downlink thread */
-	if(pthread_create(&downlink_t, NULL, downlink_thread, (void *)&dargs) != 0) {
-		perror("downlink thread");
-		printError("Closing open sockets.\n");
-		close(sock_sctp);
-		close(sock_udp);
-		return;
-	}
-	printOK("Downlink thread initialized correctly.\n");
-
 	/* Each eNB has one dedicated socket and one thread in the uplink direction */
 	while(1) {
 		if ((sock_enb = accept(sock_sctp, NULL, NULL)) < 0) {
 			perror("MME Socket accept");
 			continue;
 		}
+		printOK("New eNB (%d) connected.\n", enb_count);
 
-		printOK("New eNB connected.\n");
+		/* Assemble downlink thread arguments structure */
+		dargs = (downlink_args *) malloc(sizeof(downlink_args));
+		if(dargs == NULL) {
+			printError("Error allocating downlink args structure.");
+			close(sock_enb);
+			continue;
+		}
+		dargs->sock_udp = sock_udp;
+
+		/* Create downlink thread */
+		if(pthread_create(&downlink_t, NULL, downlink_thread, (void *)dargs) != 0) {
+			perror("downlink thread");
+			printError("Closing open sockets.\n");
+			close(sock_sctp);
+			close(sock_udp);
+			return;
+		}
+		printOK("Downlink thread initialized correctly for eNB %d.\n", enb_count);
 
 		/* Assemble uplink thread arguments structure */
 		uargs = (uplink_args *) malloc(sizeof(uplink_args));
 		if(uargs == NULL) {
 			printError("Error allocating uplink args structure.\n");
 			close(sock_enb);
+			/* Kill downlink thread */
+			pthread_cancel(downlink_t);
 			continue;
 		}
 		/* Set eNB socket */
@@ -206,7 +213,9 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 			free(uargs);
 			continue;
 		}
-		printOK("Uplink thread initialized correctly.\n");
+		printOK("Uplink thread initialized correctly for eNB %d.\n", enb_count);
+
+		enb_count++;
 	}
 
 	printInfo("Closing SCTP socket...\n");

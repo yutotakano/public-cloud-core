@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -23,6 +24,7 @@ void * downlink_thread(void * args)
 	uint8_t buffer[BUFFER_LEN];
 
 	int sock_udp = ((downlink_args *)args)->sock_udp;
+	free(args);
 	#ifdef THREAD_LOGS
 	printThread("Uplink thread arguments extracted.\n");
 	#endif
