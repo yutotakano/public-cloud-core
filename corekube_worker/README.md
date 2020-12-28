@@ -8,14 +8,10 @@ Additionally, a simple `udp_client` is included with the UDP variant to allow fo
 
 # Compiling
 
-## Dependencies
-
-Download the [NextEPC source](https://nextepc.org/installation/). Setup the `$NEXTEPC_FOLDER` environment variable to point to the base of the nextepc source folder. (e.g: `NEXTEPC_FOLDER=~/nextepc/` if built in the home folder).
-
 ## Compiling the SCTP variant
 
 Compile the required files:  
-`gcc -c -I $NEXTEPC_FOLDER/lib/core/include -I $NEXTEPC_FOLDER/lib/ -I $NEXTEPC_FOLDER/lib/s1ap/asn1c/ *.c`
+`gcc -c -I lib/core/include -I lib/ -I lib/s1ap/asn1c/ *.c`
 
 Link to form the `corekube_worker`:  
 `rm udp_client.o udp_listener.o && ld /usr/lib/x86_64-linux-gnu/crti.o /usr/lib/x86_64-linux-gnu/crtn.o /usr/lib/x86_64-linux-gnu/crt1.o bin/libcore.so.1 bin/libs1ap.so.1 bin/libs1apasn1c.so.1 -rpath=bin/ -lsctp -lc *.o -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o corekube_worker`
@@ -25,7 +21,7 @@ To run, start `./corekube_worker` then run the OpenAirInterface RAN.
 ## Compiling the UDP variant
 
 Compile the required files:  
-`gcc -c -I $NEXTEPC_FOLDER/lib/core/include -I $NEXTEPC_FOLDER/lib/ -I $NEXTEPC_FOLDER/lib/s1ap/asn1c/ *.c`
+`gcc -c -I lib/core/include -I lib/ -I lib/s1ap/asn1c/ *.c`
 
 Link to form the `udp_client` (useful for testing):  
 `ld /usr/lib/x86_64-linux-gnu/crti.o /usr/lib/x86_64-linux-gnu/crtn.o /usr/lib/x86_64-linux-gnu/crt1.o bin/libcore.so.1 bin/libs1ap.so.1 bin/libs1apasn1c.so.1 -rpath=bin/ -lsctp -lc udp_client.o -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o udp_client`
