@@ -53,7 +53,7 @@ int configure_udp_socket(char * mme_ip_address)
 	/***************************/
     /* Set up MME address */
     /***************************/
-    listener_addr.sin_addr.s_addr = INADDR_ANY; //inet_addr(mme_ip_address);
+    listener_addr.sin_addr.s_addr = inet_addr(mme_ip_address); //INADDR_ANY;
     listener_addr.sin_family = AF_INET;
     listener_addr.sin_port = htons(MME_LISTEN_PORT);
     memset(&(listener_addr.sin_zero), 0, sizeof(struct sockaddr));
