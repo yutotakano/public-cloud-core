@@ -26,7 +26,7 @@ void * downlink_thread(void * args)
 	int sock_udp = ((downlink_args *)args)->sock_udp;
 	free(args);
 	#ifdef THREAD_LOGS
-	printThread("Uplink thread arguments extracted.\n");
+	printThread("Downlink thread arguments extracted.\n");
 	#endif
 
 	
@@ -36,7 +36,7 @@ void * downlink_thread(void * args)
 		#endif
 		sock_enb = array_to_int(buffer);
 		n -= 4;
-		sctp_sendmsg(sock_enb, buffer, n, NULL, 0, htonl(S1AP_PPID), 0, 1, 0, 0);
+		sctp_sendmsg(sock_enb, buffer+4, n, NULL, 0, htonl(S1AP_PPID), 0, 1, 0, 0);
 	}
 
 	return NULL;
