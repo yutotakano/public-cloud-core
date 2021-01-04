@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "libck.h"
+#include <libck.h>
 
 void dump_mem(uint8_t * value, int len)
 {
@@ -35,15 +35,15 @@ int main(int argc, char const *argv[])
 	enb_ip[2] = 1;
 	enb_ip[3] = 1;
 
-	n = push_items(buf, IMSI, (uint8_t *)imsi, 3, 
-		UE_TEID, teid, 
-		ENB_IP, enb_ip, 
-		UE_NAS_SEQUENCE_NUMBER, &nas_seq_num);
-	n = pull_items(buf, n, 3, KEY, OPC, RAND);
+	n = push_items(buf, IMSI, (uint8_t *)imsi, 0);
+	n = pull_items(buf, n, 2, KEY, OPC);
+
+	printf("REQUEST:");
+	dump_mem(buf, n);
 
 	send_request(sock, buf, n);
 
-	n = recv_response(sock, buf, n);
+	n = recv_response(sock, buf, 64);
 
 	printf("RESPONSE:");
 	dump_mem(buf, n);

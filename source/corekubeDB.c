@@ -1,3 +1,4 @@
+#define  _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,18 @@
 * HashMap1: <IMSI><UserInfo>
 * HashMap2: <TMSI><UserInfo>
 */
+
+void dump_mem(uint8_t * value, int len)
+{
+	int i;
+
+	for(i = 0; i < len; i++) {
+		if(i % 17 == 0)
+			printf("\n");
+		printf("%.2x ", value[i]);
+	}
+	printf("\n");
+}
 
 HashMap * imsi_map;
 HashMap * tmsi_map;
@@ -461,11 +474,15 @@ void * attend_request(void * args)
 		}
 #ifdef DEBUG
 		printInfo("Analyzing request...\n");
+		printf("REQUEST:\n");
+		dump_mem(request, request_len);
 #endif
 		/* Analyze request and generate the response message */
 		analyze_request(request, request_len, response, &response_len);
 #ifdef DEBUG
 		printInfo("Sending answer to client...\n");
+		printf("RESPONSE:\n");
+		dump_mem(response, response_len);
 #endif
 		/* Send response to client and close connection */
 		send(client, response, response_len, 0);
@@ -506,7 +523,6 @@ void main_worker()
 
 int main(int argc, char const *argv[])
 {
-	UserInfo * user;
 	config_t cfg;
 	const char * db_file_path = NULL;
 	const char * db_ip_address = NULL;
@@ -578,22 +594,6 @@ int main(int argc, char const *argv[])
 	/* Initialize workers pool */
 	printOK("CoreKubeDB running.\n");
 	main_worker();
-
-
-
-
-
-	/* Some examples */
-
-	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000004"));
-	show_user_info(user);
-	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000006"));
-	show_user_info(user);
-	user = (UserInfo *) hashmap_get(imsi_map, hash_imsi("208930000000009"));
-	show_user_info(user);
-
-	user = (UserInfo *) hashmap_get(tmsi_map, 0xdeadbee6);
-	show_user_info(user);
 
 	free_hashmap(imsi_map, free_user_info);
 	free_hashmap(tmsi_map, free_user_info);

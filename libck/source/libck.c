@@ -126,8 +126,6 @@ int push_items(uint8_t * buffer, ITEM_TYPE id, uint8_t * id_value, int num_items
 	va_start(ap, num_items);
 	ptr = add_identifier(buffer, id, id_value);
 
-	printf("1\n");
-
 	for(i = 0; i < num_items; i++) {
 		type = (ITEM_TYPE) va_arg(ap, int);
 		item = va_arg(ap, uint8_t*);
