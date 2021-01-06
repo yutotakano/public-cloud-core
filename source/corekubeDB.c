@@ -24,7 +24,6 @@
 
 /* DB structure
 * HashMap1: <IMSI><UserInfo>
-* HashMap2: <TMSI><UserInfo>
 */
 
 void dump_mem(uint8_t * value, int len)
@@ -40,7 +39,6 @@ void dump_mem(uint8_t * value, int len)
 }
 
 HashMap * imsi_map;
-HashMap * tmsi_map;
 
 /* Global socket */
 int sock;
@@ -174,13 +172,6 @@ void process_line(char * line, ssize_t line_len)
 		free_user_info((void *)new_user);
 		return;
 	}
-	if(hashmap_add(tmsi_map, (uint8_t *) new_user, user_info_size()) == ERROR) {
-#ifdef DEBUG
-		printWarning("Unable to add user (0x%.8x) to TMSI HasMap.\n", hash_tmsi_user_info(new_user));
-#endif
-		free_user_info((void *)new_user);
-		return;
-	}
 
 #ifdef DEBUG
 	show_user_info(new_user);
@@ -225,21 +216,12 @@ int init_db(const char * db_file, int hashmap_size)
 		return ERROR;
 
 	}
-	/* TMSI HashMap */
-	tmsi_map = init_hashmap(hashmap_size, hash_tmsi_user_info);
-	if(tmsi_map == NULL) {
-		printError("Error creating TMSI HashMap.\n");
-		free_hashmap(imsi_map, free_user_info);
-		return ERROR;
-
-	}
 
 	/* Read DB from file */
 	if(read_db_file(db_file) == ERROR) {
 		printError("Error reading DB file.\n");
 		/* Destroy HashMaps */
 		free_hashmap(imsi_map, free_user_info);
-		free_hashmap(tmsi_map, free_user_info);
 		return ERROR;
 	}
 
@@ -297,13 +279,28 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	/* Get user info based on the client's ID*/
 	switch(request[0]) {
 		case IMSI:
+#ifdef DEBUG
+			printInfo("Accessing DB using the IMSI\n");
+#endif
 			user = (UserInfo *) hashmap_get(imsi_map, hash_imsi((char *)(request+1)));
 			break;
 		case MSIN:
+#ifdef DEBUG
+			printInfo("Accessing DB using the MSIN\n");
+#endif
 			user = (UserInfo *) hashmap_get(imsi_map, hash_msin((char *)(request+1)));
 			break;
 		case TMSI:
-			user = (UserInfo *) hashmap_get(tmsi_map, hash_tmsi(request+1));
+#ifdef DEBUG
+			printInfo("Accessing DB using the TMSI\n");
+#endif
+			user = (UserInfo *) hashmap_get(imsi_map, hash_tmsi(request+1));
+			break;
+		case MME_UE_S1AP_ID:
+#ifdef DEBUG
+			printInfo("Accessing DB using the MME_UE_S1AP_ID\n");
+#endif
+			user = (UserInfo *) hashmap_get(imsi_map, hash_mme_ue_s1ap_id(request+1));
 			break;
 		default:
 			response[0] = 0;
@@ -311,6 +308,16 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			return;
 	}
 	offset += 17;
+
+	/* Invalid user ID */
+	if(user == NULL) {
+#ifdef DEBUG
+		printError("Invalid user ID\n");
+#endif
+		response[0] = 0;
+		*response_len = 1;
+		return;
+	}
 
 #ifdef DEBUG
 	printInfo("Requested User Info: \n");
@@ -586,7 +593,6 @@ int main(int argc, char const *argv[])
 		printError("Error configuring network.\n");
 		config_destroy(&cfg);
 		free_hashmap(imsi_map, free_user_info);
-		free_hashmap(tmsi_map, free_user_info);
 		return ERROR;
 	}
 	printOK("Network configured.\n");
@@ -596,6 +602,5 @@ int main(int argc, char const *argv[])
 	main_worker();
 
 	free_hashmap(imsi_map, free_user_info);
-	free_hashmap(tmsi_map, free_user_info);
 	return OK;
 }

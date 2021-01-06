@@ -46,6 +46,7 @@ uint32_t hash_msin(char * imsi);
 uint32_t hash_msin_user_info(void * user);
 uint32_t hash_tmsi(uint8_t * tmsi);
 uint32_t hash_tmsi_user_info(void * user);
+uint32_t hash_mme_ue_s1ap_id(uint8_t * id);
 size_t user_info_size();
 
 #endif

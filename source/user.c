@@ -177,13 +177,12 @@ void generate_rand(UserInfo * user)
 void complete_user_info(UserInfo * user)
 {
 	/* TODO: generate the seed randomly */ 
-	uint32_t hash, seed = 0xDEADBEEF;
+	uint32_t hash;
 
 	/* This function initialize the uncompleted user information */
 	user->epc_nas_sequence_number = 0;
 	/* To simplify the process, EPC TEID, MME UE S1AP ID and TMSI are going to be equal and generated from the IMSI */
 	hash = hash_imsi_user_info(user);
-	hash ^= seed;
 	UINT32_TO_ARRAY(user->mme_ue_s1ap_id, hash);
 	UINT32_TO_ARRAY(user->tmsi, hash);
 	UINT32_TO_ARRAY(user->epc_teid, hash);
@@ -253,6 +252,13 @@ uint32_t hash_tmsi(uint8_t * tmsi)
 uint32_t hash_tmsi_user_info(void * user)
 {
 	return hash_tmsi(((UserInfo *)user)->tmsi);
+}
+
+uint32_t hash_mme_ue_s1ap_id(uint8_t * id)
+{
+	uint32_t hash;
+	ARRAY_TO_UINT32(hash, id);
+	return hash;
 }
 
 size_t user_info_size()
