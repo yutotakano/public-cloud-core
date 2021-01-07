@@ -153,6 +153,7 @@ void start_listener(char * mme_ip_address)
 	from_len = (socklen_t)sizeof(struct sockaddr_in);
 	memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 
+	int stream_id = 0;
 
 	while ( (n = sctp_recvmsg(sock_enb, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
 		if (n == 0) {
@@ -169,7 +170,9 @@ void start_listener(char * mme_ip_address)
 		if (outcome == NO_RESPONSE)
 			continue;
 
-		int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, 0, 0, 0 );
+		int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, stream_id, 0, 0 );
+
+		stream_id = 1;
 
 		pkbuf_free(setupResponsePkBuf);
 
