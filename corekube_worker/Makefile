@@ -10,10 +10,10 @@ CFLAGS = -c -Wall -g -DTHREAD_LOGS # -ansi -std=c99
 LIBFLAGS = $(LIB_BIN_DIRECTORY)*
 
 #LINK FLAGS 
-LINKFLAGS = -Wl,-rpath=$(LIB_BIN_DIRECTORY) -lsctp
+LINKFLAGS = -Wl,-rpath=$(LIB_BIN_DIRECTORY) -lsctp -lck
 
 #INCLUDE FLAGS
-INCLUDE_FLAGS = -I lib/core/include -I lib/ -I lib/s1ap/asn1c/ -I headers/
+INCLUDE_FLAGS = -I lib/core/include -I lib/ -I lib/s1ap/asn1c/ -I lib/nas -I lib/hss -I headers/
 
 TARGETS = corekube_udp_worker corekube_sctp_worker udp_client
 

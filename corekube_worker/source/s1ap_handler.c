@@ -19,6 +19,7 @@
 
 #include "s1ap_handler.h"
 #include "s1setuprequest.h"
+#include "initialuemessage.h"
 #include "core/include/3gpp_types.h"
 
 S1AP_handle_outcome_t s1ap_handler_entrypoint(void *incoming, int incoming_len, pkbuf_t **outgoing) {
@@ -78,6 +79,7 @@ static status_t message_to_bytes(s1ap_message_t *message, pkbuf_t **pkbuf)
 }
 
 static S1AP_handle_outcome_t s1ap_message_handler(s1ap_message_t *message, s1ap_message_t *response) {
+    asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
     switch (message->present) {
         case S1AP_S1AP_PDU_PR_initiatingMessage:
             return s1ap_initiatingMessage_handler(message, response);
@@ -95,6 +97,8 @@ static S1AP_handle_outcome_t s1ap_initiatingMessage_handler(s1ap_message_t *init
     switch (initiatingMessage->choice.initiatingMessage->value.present) {
         case S1AP_InitiatingMessage__value_PR_S1SetupRequest:
             return handle_s1setuprequest(initiatingMessage, response);
+        case S1AP_InitiatingMessage__value_PR_InitialUEMessage:
+            return handle_initialuemessage(initiatingMessage, response);
         default:
             return NO_RESPONSE;
     }
