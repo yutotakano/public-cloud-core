@@ -80,7 +80,11 @@ static status_t message_to_bytes(S1AP_handler_response_t *response)
 static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response) {
     int s1ap_print = asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
     d_assert(s1ap_print == 0, return CORE_ERROR, "Failed to print S1AP message");
-    
+
+    // with a single exception (S1SetupResponse),
+    // the SCTP stream ID should be 1
+    response->sctpStreamID = 1;
+
     switch (message->present) {
         case S1AP_S1AP_PDU_PR_initiatingMessage:
             return s1ap_initiatingMessage_handler(message, response);

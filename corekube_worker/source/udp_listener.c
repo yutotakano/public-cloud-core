@@ -99,9 +99,10 @@ void start_listener(char * mme_ip_address)
 		if (response.outcome == NO_RESPONSE)
 			continue;
 
-		uint8_t response_out[responseBuffer->len + 4];
+		uint8_t response_out[responseBuffer->len + 5];
 		memcpy(response_out, buffer, 4);
-		memcpy(response_out+4, responseBuffer->payload, responseBuffer->len);
+		response_out[4] = response.sctpStreamID;
+		memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
 		
 		int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 4,
 			MSG_CONFIRM, (const struct sockaddr *) &client_addr,

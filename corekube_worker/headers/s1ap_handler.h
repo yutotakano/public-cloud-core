@@ -9,6 +9,9 @@ typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE} S1AP_handle_outcome
 
 typedef struct S1AP_handler_response {
     S1AP_handle_outcome_t outcome;
+    // the SCTP stream ID differs depending on whether
+    // this is a S1Setup message or a UE message
+    c_uint8_t sctpStreamID;
     // the response can either be a pointer to an s1ap_message_t
     // or a pointer to a pkbuf_t, so use void* to allow it to
     // take on both types

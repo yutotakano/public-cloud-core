@@ -32,6 +32,10 @@ status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_re
 
     response->outcome = HAS_RESPONSE;
 
+    // the S1SetupResponse is the only time that
+    // the SCTP stream ID must be 0
+    response->sctpStreamID = 0;
+
     return CORE_OK;
 }
 
