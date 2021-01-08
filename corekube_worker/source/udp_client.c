@@ -7,7 +7,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h> 
 #include <arpa/inet.h> 
-#include <netinet/in.h> 
+#include <netinet/in.h>
 
 #include "s1ap/asn1c/asn_system.h"
 #include "core/include/core_lib.h"
@@ -18,23 +18,19 @@
 
 void dumpTheMessage(uint8_t * message, int len)
 {
-	int i;
-	printf("(%d)\n", len);
-	for(i = 0; i < len; i++)
-	{
-		if( i % 16 == 0)
-			printf("\n");
-		printf("%.2x ", message[i]);
-	}
-	printf("\n");
+    int i;
+    printf("(%d)\n", len);
+    for(i = 0; i < len; i++)
+    {
+        if( i % 16 == 0)
+            printf("\n");
+        printf("%.2x ", message[i]);
+    }
+    printf("\n");
 }
   
 // Driver code 
-int main(int argc, char const *argv[]) { 
-    if(argc != 2) {
-		printf("RUN: ./udp_client <MME_IP_ADDRESS>\n");
-		return 1;
-	}
+int send_message(char *mme_ip, char *payload) {
 
     int sockfd; 
     char buffer[MAXLINE]; 
@@ -51,25 +47,10 @@ int main(int argc, char const *argv[]) {
     // Filling server information 
     servaddr.sin_family = AF_INET; 
     servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = inet_addr((char *)argv[1]);; 
+    servaddr.sin_addr.s_addr = inet_addr(mme_ip);
       
     int n, len; 
 
-    /*char*payload= // S1SetupRequest
-        "0f0a0c0e"
-        "00110037000004003b00080002f83900"
-        "00e000003c40140880654e425f457572"
-        "65636f6d5f4c5445426f780040000700"
-        "00004002f8390089400140";*/
-
-    char *payload = //InitualUEMessage
-        "0f0a0c0e"
-        "000c405c000005000800048006692d00"
-        "1a003231074171082980390000000010"
-        "02802000200201d011271a8080211001"
-        "00001081060000000083060000000000"
-        "0d00000a00004300060002f839000100"
-        "6440080002f83900e000000086400130";
     char hexbuf[MAX_SDU_LEN];
     CORE_HEX(payload, strlen(payload), hexbuf);
 
@@ -88,4 +69,56 @@ int main(int argc, char const *argv[]) {
   
     close(sockfd); 
     return 0; 
+}
+
+// Driver code
+int main(int argc, char const *argv[]) {
+    if(argc != 3) {
+        printf("RUN: ./udp_client <MME_IP_ADDRESS> [MESSAGE_NUMBER=0]\n");
+        return 1;
+    }
+
+    int message_number = atoi(argv[2]);
+
+    char *S1SetupRequest =
+        "0f0a0c0e"
+        "00110037000004003b00080002f83900"
+        "00e000003c40140880654e425f457572"
+        "65636f6d5f4c5445426f780040000700"
+        "00004002f8390089400140";
+
+    char *InitualUEMessage =
+        "0f0a0c0e"
+        "000c405c000005000800048006692d00"
+        "1a003231074171082980390000000010"
+        "02802000200201d011271a8080211001"
+        "00001081060000000083060000000000"
+        "0d00000a00004300060002f839000100"
+        "6440080002f83900e000000086400130";
+
+    char *UplinkNASTransport =
+        "0f0a0c0e"
+        "000d403a00000500000005c0deadbeee"
+        "000800048006692d001a000c0b075308"
+        "5206154f10536d29006440080002f839"
+        "00e00000004340060002f8390001";
+
+    switch (message_number) {
+        case 1:
+            send_message((char *)argv[1], S1SetupRequest);
+            break;
+        case 2:
+            send_message((char *)argv[1], InitualUEMessage);
+            break;
+        case 3:
+            send_message((char *)argv[1], UplinkNASTransport);
+            break;
+        default:
+            send_message((char *)argv[1], S1SetupRequest);
+            send_message((char *)argv[1], InitualUEMessage);
+            send_message((char *)argv[1], UplinkNASTransport);
+
+    }
+
+    return 0;
 }
