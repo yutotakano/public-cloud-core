@@ -27,19 +27,23 @@ status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_
     s1ap_message_t outgoing_s1ap;
 
     // Decode the incoming message
-    bytes_to_message(incoming, incoming_len, &incoming_s1ap);
+    status_t b_to_m = bytes_to_message(incoming, incoming_len, &incoming_s1ap);
+    d_assert(b_to_m == CORE_OK, return CORE_ERROR, "Failed to decode incoming S1AP message");
 
     // Handle the decoded message
     response->response = &outgoing_s1ap;
-    s1ap_message_handler(&incoming_s1ap, response);
+    status_t message_handle = s1ap_message_handler(&incoming_s1ap, response);
+    d_assert(message_handle == CORE_OK, return CORE_ERROR, "Failed to handle S1AP message");
     
     // Encode the outgoing message, if one exists
     if (response->outcome == HAS_RESPONSE) {
-        message_to_bytes(response);
+        status_t m_to_b = message_to_bytes(response);
+        d_assert(m_to_b == CORE_OK, return CORE_ERROR, "Failed to encode outgoing S1AP message");
     }
 
     // Free up memory
-    s1ap_free_pdu(&incoming_s1ap);
+    status_t free_incoming = s1ap_free_pdu(&incoming_s1ap);
+    d_assert(free_incoming == CORE_OK, return CORE_ERROR, "Failed to free memory from incoming message");
     // the S1AP response is freed in message_to_bytes() above
 
     return CORE_OK;
@@ -54,14 +58,9 @@ static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t 
     memcpy(pkbuf->payload, payload, pkbuf->len);
 
     status_t decode_result = s1ap_decode_pdu(message, pkbuf);
-
     pkbuf_free(pkbuf);
+    d_assert(decode_result == CORE_OK, return CORE_ERROR, "Failed to decode bytes");
 
-    if (decode_result != CORE_OK)
-    {
-        d_error("failed to decode bytes");
-        return CORE_ERROR;
-    }
     return CORE_OK;
 }
 
@@ -69,21 +68,19 @@ static status_t message_to_bytes(S1AP_handler_response_t *response)
 {
     pkbuf_t *pkbuf;
     status_t encode_result = s1ap_encode_pdu(&pkbuf, response->response);
+    d_assert(encode_result == CORE_OK, return CORE_ERROR, "Failed to encode bytes");
 
-    if (encode_result != CORE_OK)
-    {
-        d_error("failed to encode bytes");
-        return CORE_ERROR;
-    }
-
-    s1ap_free_pdu(response->response);
+    status_t free_pdu = s1ap_free_pdu(response->response);
+    d_assert(free_pdu == CORE_OK, return CORE_ERROR, "Failed to free S1AP message");
     response->response = pkbuf;
 
     return CORE_OK;
 }
 
 static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response) {
-    asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
+    int s1ap_print = asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
+    d_assert(s1ap_print == 0, return CORE_ERROR, "Failed to print S1AP message");
+    
     switch (message->present) {
         case S1AP_S1AP_PDU_PR_initiatingMessage:
             return s1ap_initiatingMessage_handler(message, response);

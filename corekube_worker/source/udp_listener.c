@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "log.h"
 
 #include "s1ap_handler.h"
 #include "core/include/core_general.h"
@@ -44,10 +43,7 @@ int configure_udp_socket(char * mme_ip_address)
 	/* Create socket */
 	/*****************/
 	sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sock_udp < 0) {
-		perror("Socket UDP setup");
-		return -1;
-	}
+	d_assert(sock_udp >= 0, return -1, "Failed to setup UDP socket");
 
 
 	/***************************/
@@ -61,11 +57,8 @@ int configure_udp_socket(char * mme_ip_address)
     /***********/
     /* Binding */
     /***********/
-    if (bind(sock_udp,(struct sockaddr*)&listener_addr, sizeof(listener_addr)) == -1) {
-        perror("Bind MME socket");
-        close(sock_udp);
-        return -1;
-    }
+	int bind_outcome = bind(sock_udp,(struct sockaddr*)&listener_addr, sizeof(listener_addr));
+	d_assert(bind_outcome != -1, close(sock_udp); return -1, "Failed to bind MME socket");
 
 	return sock_udp;
 }
@@ -85,25 +78,22 @@ void start_listener(char * mme_ip_address)
 
 	/* Configure the socket */
 	sock_udp = configure_udp_socket(mme_ip_address);
-	if(sock_udp < 0) {
-		printError("Error configuring UDP socket.\n");
-		return;
-	}
-	printOK("UDP socket configured correctly.\n");
+	d_assert(sock_udp >= 0, return, "Error configuring UDP socket");
+	d_info("UDP socket configured correctly.\n");
 
 	while (1) {
 
 		/* Wait to receive a message */
 		n = recvfrom(sock_udp, (char *)buffer, BUFFER_LEN, MSG_WAITALL, ( struct sockaddr *) &client_addr, &from_len); 
-
-		if (n == 0)
-			break;
+		d_assert(n > 0, break, "No longer connected to eNB");
 		
 		dumpMessage(buffer, n);
 
 		S1AP_handler_response_t response;
 
-		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer+4, n-4, &response);
+		status_t outcome = s1ap_handler_entrypoint(buffer+4, n-4, &response);
+		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");
+
 		pkbuf_t *responseBuffer = response.response;
 
 		if (response.outcome == NO_RESPONSE)
@@ -119,12 +109,8 @@ void start_listener(char * mme_ip_address)
 
 		pkbuf_free(responseBuffer);
 
-		if (ret == -1) {
-			printError("Failed to send UDP message.\n");
-		}
-		else {
-			printf("Send %d bytes over UDP.\n", ret);
-		}
+		d_assert(ret != -1, continue, "Failed to send SCTP message");
+		d_info("Send %d bytes over UDP.\n", ret);
 	}
 
 	/* Close the socket when done */

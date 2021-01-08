@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <netinet/sctp.h>
 #include <arpa/inet.h>
-#include "log.h"
 
 #include "s1ap_handler.h"
 #include "core/include/core_general.h"
@@ -48,10 +47,7 @@ int configure_sctp_socket(char * mme_ip_address)
 	/* Create socket */
 	/*****************/
 	sock_sctp = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
-	if(sock_sctp < 0) {
-		perror("Socket SCTP setup");
-		return -1;
-	}
+	d_assert(sock_sctp >= 0, return -1, "Failed to setup SCTP socket");
 
 
 	/****************************/
@@ -63,11 +59,8 @@ int configure_sctp_socket(char * mme_ip_address)
     init.sinit_max_instreams = SCTP_IN_STREAMS;
     init.sinit_max_attempts = SCTP_MAX_ATTEMPTS;
     init.sinit_max_init_timeo = SCTP_TIMEOUT;
-    if (setsockopt (sock_sctp, IPPROTO_SCTP, SCTP_INITMSG, &init, (socklen_t) sizeof (struct sctp_initmsg)) < 0) {
-        perror("setsockopt in/out streams");
-        close(sock_sctp);
-        return -1;
-    }
+	int sockopt_outcome = setsockopt (sock_sctp, IPPROTO_SCTP, SCTP_INITMSG, &init, (socklen_t) sizeof (struct sctp_initmsg));
+	d_assert(sockopt_outcome >= 0, close(sock_sctp); return -1, "Failed to set SCTP socket in/out streams");
 
     /* OPT 2 */
     /* Subscribe to all events */
@@ -75,20 +68,14 @@ int configure_sctp_socket(char * mme_ip_address)
     events.sctp_data_io_event = 1;
     events.sctp_shutdown_event = 1;
     //memset((void *)&events, 1, sizeof(struct sctp_event_subscribe));
-    if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(struct sctp_event_subscribe)) < 0) {
-        perror("setsockopt events");
-        close(sock_sctp);
-        return -1;
-    }
+	sockopt_outcome = setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(struct sctp_event_subscribe));
+	d_assert(sockopt_outcome >= 0, close(sock_sctp); return -1, "Failed to set SCTP socket events");
 
     /* OPT 3 */
     /* Set SCTP_NODELAY option to disable Nagle algorithm */
     int nodelay = 1;
-    if (setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
-        perror("setsockopt no_delay");
-        close(sock_sctp);
-        return -1;
-    }
+	sockopt_outcome = setsockopt(sock_sctp, IPPROTO_SCTP, SCTP_NODELAY, &nodelay, sizeof(nodelay));
+	d_assert(sockopt_outcome >= 0, close(sock_sctp); return -1, "Failed to set SCTP socket no_delay");
 
 
 	/***************************/
@@ -102,20 +89,14 @@ int configure_sctp_socket(char * mme_ip_address)
     /***********/
     /* Binding */
     /***********/
-    if (sctp_bindx(sock_sctp,(struct sockaddr*)&listener_addr, 1, SCTP_BINDX_ADD_ADDR) == -1) {
-        perror("Bind MME socket");
-        close(sock_sctp);
-        return -1;
-    }
+	int sock_bind = sctp_bindx(sock_sctp,(struct sockaddr*)&listener_addr, 1, SCTP_BINDX_ADD_ADDR);
+	d_assert(sock_bind != -1, close(sock_sctp); return -1, "Failed to bind MME socket");
 	
 	/**********/
 	/* Listen */
 	/**********/
-	if (listen(sock_sctp, SOCKET_LISTEN_QUEUE) < 0) {
-    	perror("MME Socket listen");
-    	close(sock_sctp);
-		return -1;
-	}
+	int sock_listen = listen(sock_sctp, SOCKET_LISTEN_QUEUE);
+	d_assert(sock_listen >= 0, close(sock_sctp); return -1, "Failed to listen on MME socket");
 
 	return sock_sctp;
 }
@@ -133,20 +114,13 @@ void start_listener(char * mme_ip_address)
 
 
 	sock_sctp = configure_sctp_socket(mme_ip_address);
-	if(sock_sctp < 0) {
-		printError("Error configuring SCTP socket.\n");
-		return;
-	}
-
-	printOK("SCTP socket configured correctly.\n");
+	d_assert(sock_sctp >= 0, return, "Error configuring SCTP socket");
+	d_info("SCTP socket configured correctly.\n");
 
 	/* This prototype only accepts one client (eNB) at the time */
-	if ((sock_enb = accept(sock_sctp, NULL, NULL)) < 0) {
-		perror("MME Socket accept");
-		return;
-	}
-
-	printOK("New eNB connected.\n");
+	sock_enb = accept(sock_sctp, NULL, NULL);
+	d_assert(sock_enb >= 0, return, "MME socket failed to accept");
+	d_info("New eNB connected.\n");
 
 	/* Receive S1AP messages and dump the content */
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
@@ -156,17 +130,16 @@ void start_listener(char * mme_ip_address)
 	int stream_id = 0;
 
 	while ( (n = sctp_recvmsg(sock_enb, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
-		if (n == 0) {
-			// something has gone wrong, we're no longer connected
-			break;
-		}
+		d_assert(n > 0, break, "No longer connected to eNB");
 
-		printf("Received with PPID: %d\n", ntohl(sinfo.sinfo_ppid));
+		d_info("Received with PPID: %d\n", ntohl(sinfo.sinfo_ppid));
 		dumpMessage(buffer, n);
 
 		//////////////////////////////////////////////////////////
 		S1AP_handler_response_t response;
-		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer, n, &response);
+		status_t outcome = s1ap_handler_entrypoint(buffer, n, &response);
+		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");
+
 		pkbuf_t *setupResponsePkBuf = response.response;
 		if (response.outcome == NO_RESPONSE)
 			continue;
@@ -177,14 +150,10 @@ void start_listener(char * mme_ip_address)
 
 		pkbuf_free(setupResponsePkBuf);
 
-		if (ret == -1)
-		{
-                	printError("Failed to send SCTP message.\n");
-		}
-		else
-		{
-			printf("Send %d bytes over SCTP.\n", ret);
-		}
+		d_assert(ret != -1, continue, "Failed to send SCTP message");
+
+		d_info("Sent %d bytes over SCTP.\n", ret);
+
 		/////////////////////////////////////////////////////////
 	}
 

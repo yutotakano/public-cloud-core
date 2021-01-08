@@ -25,7 +25,8 @@ status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_re
 {
     S1AP_PLMNidentity_t *PLMNidentity; // TODO: free this
 
-    getPLMNidentity(received_message, &PLMNidentity);
+    status_t getPLMN = getPLMNidentity(received_message, &PLMNidentity);
+    d_assert(getPLMN == CORE_OK, return CORE_ERROR, "Failed to get PLMN identity");
 
     s1ap_build_setup_resp(response->response, PLMNidentity);
 
