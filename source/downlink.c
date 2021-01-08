@@ -20,7 +20,7 @@ int array_to_int(uint8_t * buffer)
 
 void * downlink_thread(void * args)
 {
-	int n, sock_enb;
+	int n, sock_enb, sid;
 	uint8_t buffer[BUFFER_LEN];
 
 	int sock_udp = ((downlink_args *)args)->sock_udp;
@@ -35,8 +35,9 @@ void * downlink_thread(void * args)
 		printThread("Downlink message received.\n");
 		#endif
 		sock_enb = array_to_int(buffer);
-		n -= 4;
-		sctp_sendmsg(sock_enb, buffer+4, n, NULL, 0, htonl(S1AP_PPID), 0, 1, 0, 0);
+		sid = (int) buffer[4];
+		n -= 5;
+		sctp_sendmsg(sock_enb, buffer+5, n, NULL, 0, htonl(S1AP_PPID), 0, sid, 0, 0);
 	}
 
 	return NULL;
