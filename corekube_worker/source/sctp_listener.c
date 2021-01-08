@@ -165,9 +165,10 @@ void start_listener(char * mme_ip_address)
 		dumpMessage(buffer, n);
 
 		//////////////////////////////////////////////////////////
-		pkbuf_t *setupResponsePkBuf;
-		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer, n, &setupResponsePkBuf);
-		if (outcome == NO_RESPONSE)
+		S1AP_handler_response_t response;
+		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer, n, &response);
+		pkbuf_t *setupResponsePkBuf = response.response;
+		if (response.outcome == NO_RESPONSE)
 			continue;
 
 		int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, stream_id, 0, 0 );

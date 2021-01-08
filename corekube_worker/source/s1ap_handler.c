@@ -22,28 +22,27 @@
 #include "initialuemessage.h"
 #include "core/include/3gpp_types.h"
 
-S1AP_handle_outcome_t s1ap_handler_entrypoint(void *incoming, int incoming_len, pkbuf_t **outgoing) {
+status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
     s1ap_message_t incoming_s1ap;
     s1ap_message_t outgoing_s1ap;
-    memset(&incoming_s1ap, 0, sizeof (s1ap_message_t));
-    memset(&outgoing_s1ap, 0, sizeof (s1ap_message_t));
 
     // Decode the incoming message
     bytes_to_message(incoming, incoming_len, &incoming_s1ap);
 
     // Handle the decoded message
-    S1AP_handle_outcome_t outcome = s1ap_message_handler(&incoming_s1ap, &outgoing_s1ap);
+    response->response = &outgoing_s1ap;
+    s1ap_message_handler(&incoming_s1ap, response);
     
     // Encode the outgoing message, if one exists
-    if (outcome == HAS_RESPONSE)
-        message_to_bytes(&outgoing_s1ap, outgoing);
+    if (response->outcome == HAS_RESPONSE) {
+        message_to_bytes(response);
+    }
 
     // Free up memory
     s1ap_free_pdu(&incoming_s1ap);
-    s1ap_free_pdu(&outgoing_s1ap);
+    // the S1AP response is freed in message_to_bytes() above
 
-    // Return the outcome
-    return outcome;
+    return CORE_OK;
 }
 
 static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message)
@@ -66,40 +65,45 @@ static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t 
     return CORE_OK;
 }
 
-static status_t message_to_bytes(s1ap_message_t *message, pkbuf_t **pkbuf)
+static status_t message_to_bytes(S1AP_handler_response_t *response)
 {
-    status_t encode_result = s1ap_encode_pdu(pkbuf, message);
+    pkbuf_t *pkbuf;
+    status_t encode_result = s1ap_encode_pdu(&pkbuf, response->response);
 
     if (encode_result != CORE_OK)
     {
         d_error("failed to encode bytes");
         return CORE_ERROR;
     }
+
+    s1ap_free_pdu(response->response);
+    response->response = pkbuf;
+
     return CORE_OK;
 }
 
-static S1AP_handle_outcome_t s1ap_message_handler(s1ap_message_t *message, s1ap_message_t *response) {
+static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response) {
     asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
     switch (message->present) {
         case S1AP_S1AP_PDU_PR_initiatingMessage:
             return s1ap_initiatingMessage_handler(message, response);
         case S1AP_S1AP_PDU_PR_successfulOutcome:
-            return NO_RESPONSE;
         case S1AP_S1AP_PDU_PR_unsuccessfulOutcome:
-            return NO_RESPONSE;
         case S1AP_S1AP_PDU_PR_NOTHING:
         default:
-            return NO_RESPONSE;
+            response->outcome = NO_RESPONSE;
+            return CORE_OK;
     }
 }
 
-static S1AP_handle_outcome_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, s1ap_message_t *response) {
+static status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response) {
     switch (initiatingMessage->choice.initiatingMessage->value.present) {
         case S1AP_InitiatingMessage__value_PR_S1SetupRequest:
             return handle_s1setuprequest(initiatingMessage, response);
         case S1AP_InitiatingMessage__value_PR_InitialUEMessage:
             return handle_initialuemessage(initiatingMessage, response);
         default:
-            return NO_RESPONSE;
+            response->outcome = NO_RESPONSE;
+            return CORE_OK;
     }
 }

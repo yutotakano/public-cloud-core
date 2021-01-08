@@ -12,7 +12,7 @@
 // Forward declaration
 c_int32_t nas_decode_attach_request(nas_message_t *message, pkbuf_t *pkbuf);
 
-S1AP_handle_outcome_t handle_initialuemessage(s1ap_message_t *received_message, s1ap_message_t *response);
+status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response);
 
 status_t extract_PLMNidentity(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_PLMNidentity_t **PLMNidentity);
 

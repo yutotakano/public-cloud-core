@@ -101,21 +101,22 @@ void start_listener(char * mme_ip_address)
 		
 		dumpMessage(buffer, n);
 
-		pkbuf_t *responseBuffer;
+		S1AP_handler_response_t response;
 
-		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer+4, n-4, &responseBuffer);
+		S1AP_handle_outcome_t outcome = s1ap_handler_entrypoint(buffer+4, n-4, &response);
+		pkbuf_t *responseBuffer = response.response;
 
-		if (outcome == NO_RESPONSE)
+		if (response.outcome == NO_RESPONSE)
 			continue;
 
-		uint8_t response[responseBuffer->len + 4];
-		memcpy(response, buffer, 4);
-		memcpy(response+4, responseBuffer->payload, responseBuffer->len);
+		uint8_t response_out[responseBuffer->len + 4];
+		memcpy(response_out, buffer, 4);
+		memcpy(response_out+4, responseBuffer->payload, responseBuffer->len);
 		
-		int ret = sendto(sock_udp, (void *)response, responseBuffer->len + 4,  
-        	MSG_CONFIRM, (const struct sockaddr *) &client_addr, 
-            from_len); 
-    	
+		int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 4,
+			MSG_CONFIRM, (const struct sockaddr *) &client_addr,
+			from_len);
+
 		pkbuf_free(responseBuffer);
 
 		if (ret == -1) {

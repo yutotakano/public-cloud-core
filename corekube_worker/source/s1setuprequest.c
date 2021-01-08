@@ -21,15 +21,17 @@
 #include "s1ap_handler.h"
 #include "s1setupresponse.h"
 
-S1AP_handle_outcome_t handle_s1setuprequest(s1ap_message_t *received_message, s1ap_message_t *response)
+status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_response_t *response)
 {
     S1AP_PLMNidentity_t *PLMNidentity; // TODO: free this
 
     getPLMNidentity(received_message, &PLMNidentity);
 
-    s1ap_build_setup_resp(response, PLMNidentity);
+    s1ap_build_setup_resp(response->response, PLMNidentity);
 
-    return HAS_RESPONSE;
+    response->outcome = HAS_RESPONSE;
+
+    return CORE_OK;
 }
 
 static status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity)

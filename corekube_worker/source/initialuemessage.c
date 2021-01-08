@@ -5,7 +5,7 @@
 
 #include <libck.h>
 
-S1AP_handle_outcome_t handle_initialuemessage(s1ap_message_t *received_message, s1ap_message_t *response) {
+status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
 
     S1AP_InitialUEMessage_t *initialUEMessage = &received_message->choice.initiatingMessage->value.choice.InitialUEMessage;
 
@@ -51,13 +51,15 @@ S1AP_handle_outcome_t handle_initialuemessage(s1ap_message_t *received_message, 
     mme_ue_id += db_pulls.mme_ue_s1ap_id[2] << 8;
     mme_ue_id += db_pulls.mme_ue_s1ap_id[3];
 
-    status_t get_downlink = generate_downlinknastransport(nas_pkbuf, mme_ue_id, *enb_ue_id, response);
+    status_t get_downlink = generate_downlinknastransport(nas_pkbuf, mme_ue_id, *enb_ue_id, response->response);
     d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
 
     status_t save_to_db = save_initialue_info_in_db(imsi, &auth_vec, enb_ue_id);
     d_assert(save_to_db == CORE_OK, return CORE_ERROR, "Failed to save InitialUE values into DB");
 
-    return HAS_RESPONSE;
+    response->outcome = HAS_RESPONSE;
+
+    return CORE_OK;
 }
 
 status_t extract_PLMNidentity(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_PLMNidentity_t **PLMNidentity) {
