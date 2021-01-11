@@ -15,7 +15,7 @@
 
 int array_to_int(uint8_t * buffer)
 {
-	return (int)((buffer[0] << 24) | (buffer[0] << 16) | (buffer[0] << 8) | buffer[3]);
+	return (int)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
 }
 
 void * downlink_thread(void * args)
