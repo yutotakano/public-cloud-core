@@ -164,6 +164,77 @@ int pull_items(uint8_t * buffer, int push_len, int num_items, ...)
 	return (int)(ptr - buffer);
 }
 
+void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
+
+	for (int i = 0; i < n; i += 17) {
+		switch(buffer[i]) {
+			case IMSI:
+				db_pulls->imsi = buffer+i+1;
+				break;
+			case MSIN:
+				db_pulls->msin = buffer+i+1;
+				break;
+			case TMSI:
+				db_pulls->tmsi = buffer+i+1;
+				break;
+			case ENB_UE_S1AP_ID:
+				db_pulls->enb_ue_s1ap_id = buffer+i+1;
+				break;
+			case UE_TEID:
+				db_pulls->ue_teid = buffer+i+1;
+				break;
+			case SPGW_IP:
+				db_pulls->spgw_ip = buffer+i+1;
+				break;
+			case ENB_IP:
+				db_pulls->enb_ip = buffer+i+1;
+				break;
+			case PDN_IP:
+				db_pulls->pdn_ip = buffer+i+1;
+				break;
+			case UE_NAS_SEQUENCE_NUMBER:
+				db_pulls->ue_nas_sequence_number = buffer+i+1;
+				break;
+			case EPC_NAS_SEQUENCE_NUMBER:
+				db_pulls->epc_nas_sequence_number = buffer+i+1;
+				break;
+			case KEY:
+				db_pulls->key = buffer+i+1;
+				break;
+			case OPC:
+				db_pulls->opc = buffer+i+1;
+				break;
+			case RAND:
+				db_pulls->rand = buffer+i+1;
+				break;
+			case RAND_UPDATE:
+				// RAND_UPDATE is a special case, it just returns
+				// RAND but ensures the next RAND returns is random
+				// (as opposed to the value saved in the DB)
+				db_pulls->rand = buffer+i+1;
+				break;
+			case MME_UE_S1AP_ID:
+				db_pulls->mme_ue_s1ap_id = buffer+i+1;
+				break;
+			case EPC_TEID:
+				db_pulls->epc_teid = buffer+i+1;
+				break;
+			case AUTH_RES:
+				db_pulls->auth_res = buffer+i+1;
+				break;
+			case ENC_KEY:
+				db_pulls->enc_key = buffer+i+1;
+				break;
+			case INT_KEY:
+				db_pulls->int_key = buffer+i+1;
+				break;
+			default:
+				// Unrecognised item
+				"do nothing";
+		}
+	}
+}
+
 void send_request(int sock, uint8_t * buffer, int buffer_len)
 {
 	send(sock, buffer, buffer_len, 0);
