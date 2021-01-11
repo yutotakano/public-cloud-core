@@ -2,6 +2,7 @@
 #include "s1ap_handler.h"
 #include "nas_authentication_request.h"
 #include "downlinknastransport.h"
+#include "s1ap_conv.h"
 
 #include <libck.h>
 
@@ -128,6 +129,9 @@ status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authen
     status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
     d_assert(get_raw_imsi == CORE_OK, return CORE_ERROR, "Could not get raw IMSI");
 
+    OCTET_STRING_t raw_enb_ue_id;
+    s1ap_uint32_to_OCTET_STRING(*enb_ue_id, &raw_enb_ue_id);
+
     int sock = db_connect("127.0.0.1", 0);
     uint8_t buf[1024];
     int n;
@@ -136,7 +140,7 @@ status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authen
         AUTH_RES, auth_vec->res,
         ENC_KEY, auth_vec->knas_enc,
         INT_KEY, auth_vec->knas_int,
-        ENB_UE_S1AP_ID, enb_ue_id);
+        ENB_UE_S1AP_ID, raw_enb_ue_id.buf);
     n = pull_items(buf, n, 0);
     send_request(sock, buf, n);
 
