@@ -233,8 +233,8 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 				db_pulls->int_key = buffer+i+1;
 				break;
 			default:
-				// Unrecognised item
-				"do nothing";
+				printError("Unre] item\n");
+				break;
 		}
 	}
 }
