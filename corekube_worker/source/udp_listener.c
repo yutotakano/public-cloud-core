@@ -17,7 +17,7 @@
 int configure_udp_socket(char * mme_ip_address)
 {
 	int sock_udp;
-	struct sockaddr_in listener_addr, client_addr;
+	struct sockaddr_in listener_addr;
 
 	/****************************/
 	/* Initialise socket struct */
@@ -53,7 +53,7 @@ int configure_udp_socket(char * mme_ip_address)
 void start_listener(char * mme_ip_address)
 {
 	int sock_udp;
-	int flags = 0, n;
+	int n;
 	socklen_t from_len;
 	struct sockaddr_in client_addr;
 	uint8_t buffer[BUFFER_LEN];

@@ -25,9 +25,6 @@ void s1ap_build_setup_resp(s1ap_message_t *response, S1AP_PLMNidentity_t *derive
 {
     d_info("Building S1AP S1SetupResponse message");
 
-    status_t rv;
-    int i, j;
-
     S1AP_SuccessfulOutcome_t *successfulOutcome = NULL;
     S1AP_S1SetupResponse_t *S1SetupResponse = NULL;
 
