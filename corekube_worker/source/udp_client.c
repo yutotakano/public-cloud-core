@@ -37,7 +37,7 @@ int send_message(char *mme_ip, char *payload) {
     servaddr.sin_port = htons(PORT); 
     servaddr.sin_addr.s_addr = inet_addr(mme_ip);
       
-    int n, len; 
+    uint n, len; 
 
     char hexbuf[MAX_SDU_LEN];
     CORE_HEX(payload, strlen(payload), hexbuf);
