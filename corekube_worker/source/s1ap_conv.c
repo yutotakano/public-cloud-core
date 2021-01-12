@@ -1,26 +1,8 @@
-/*************************************************************************** 
-
-    Copyright (C) 2019 NextEPC Inc. All rights reserved.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-***************************************************************************/
-
-
 #include "s1ap_conv.h"
 #include "s1ap/asn1c/asn_SEQUENCE_OF.h"
 
+// Some of these functions are taken from, or heavily
+// inspired by, the functions in nextepc/src/mme/s1ap_conv.c
 
 void s1ap_uint8_to_OCTET_STRING(c_uint8_t uint8, OCTET_STRING_t *octet_string)
 {
@@ -57,4 +39,9 @@ void s1ap_buffer_to_OCTET_STRING(
     tbcd_string->buf = core_calloc(tbcd_string->size, sizeof(c_uint8_t));
 
     memcpy(tbcd_string->buf, buf, size);
+}
+
+int array_to_int(uint8_t * buffer)
+{
+	return (int)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
 }

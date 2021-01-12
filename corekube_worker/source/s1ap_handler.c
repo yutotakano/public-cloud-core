@@ -18,8 +18,11 @@
 ***************************************************************************/
 
 #include "s1ap_handler.h"
+
 #include "s1setuprequest.h"
 #include "initialuemessage.h"
+#include "uplinknastransport.h"
+
 #include "core/include/3gpp_types.h"
 
 status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
@@ -103,6 +106,8 @@ static status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage
             return handle_s1setuprequest(initiatingMessage, response);
         case S1AP_InitiatingMessage__value_PR_InitialUEMessage:
             return handle_initialuemessage(initiatingMessage, response);
+        case S1AP_InitiatingMessage__value_PR_UplinkNASTransport:
+            return handle_uplinknastransport(initiatingMessage, response);
         default:
             response->outcome = NO_RESPONSE;
             return CORE_OK;

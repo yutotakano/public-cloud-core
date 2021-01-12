@@ -34,5 +34,7 @@ CORE_DECLARE(void) s1ap_uint32_to_OCTET_STRING(
 CORE_DECLARE(void) s1ap_buffer_to_OCTET_STRING(
         void *buf, int size, S1AP_TBCD_STRING_t *tbcd_string);
 
+int array_to_int(uint8_t * buffer);
+
 #endif /* __S1AP_CONV_H__ */
 
