@@ -14,20 +14,6 @@
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
 
-
-void dumpMessage(uint8_t * message, int len)
-{
-	int i;
-	printf("(%d)\n", len);
-	for(i = 0; i < len; i++)
-	{
-		if( i % 16 == 0)
-			printf("\n");
-		printf("%.2x ", message[i]);
-	}
-	printf("\n");
-}
-
 int configure_udp_socket(char * mme_ip_address)
 {
 	int sock_udp;
@@ -87,7 +73,7 @@ void start_listener(char * mme_ip_address)
 		n = recvfrom(sock_udp, (char *)buffer, BUFFER_LEN, MSG_WAITALL, ( struct sockaddr *) &client_addr, &from_len); 
 		d_assert(n > 0, break, "No longer connected to eNB");
 		
-		dumpMessage(buffer, n);
+		d_print_hex(buffer, n);
 
 		S1AP_handler_response_t response;
 
@@ -111,7 +97,7 @@ void start_listener(char * mme_ip_address)
 		pkbuf_free(responseBuffer);
 
 		d_assert(ret != -1, continue, "Failed to send SCTP message");
-		d_info("Send %d bytes over UDP.\n", ret);
+		d_info("Send %d bytes over UDP", ret);
 	}
 
 	/* Close the socket when done */

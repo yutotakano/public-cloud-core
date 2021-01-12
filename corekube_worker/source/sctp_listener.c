@@ -21,20 +21,6 @@
 #define SOCKET_LISTEN_QUEUE 5 /* Extract from openair-cn (openair-cn/SCTP/sctp_primitives_server.c) */
 #define BUFFER_LEN 1024
 
-
-void dumpMessage(uint8_t * message, int len)
-{
-	int i;
-	printf("(%d)\n", len);
-	for(i = 0; i < len; i++)
-	{
-		if( i % 16 == 0)
-			printf("\n");
-		printf("%.2x ", message[i]);
-	}
-	printf("\n");
-}
-
 int configure_sctp_socket(char * mme_ip_address)
 {
 	d_info("Configuring SCTP socket");
@@ -135,7 +121,7 @@ void start_listener(char * mme_ip_address)
 		d_assert(n > 0, break, "No longer connected to eNB");
 
 		d_info("Received with PPID: %d", ntohl(sinfo.sinfo_ppid));
-		dumpMessage(buffer, n);
+		d_print_hex(buffer, n);
 
 		//////////////////////////////////////////////////////////
 		S1AP_handler_response_t response;

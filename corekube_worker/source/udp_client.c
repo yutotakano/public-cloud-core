@@ -11,23 +11,11 @@
 
 #include "s1ap/asn1c/asn_system.h"
 #include "core/include/core_lib.h"
+#include "core/include/core_debug.h"
 #include "core/include/3gpp_types.h"
 
 #define PORT    5566 
 #define MAXLINE 1024 
-
-void dumpTheMessage(uint8_t * message, int len)
-{
-    int i;
-    printf("(%d)\n", len);
-    for(i = 0; i < len; i++)
-    {
-        if( i % 16 == 0)
-            printf("\n");
-        printf("%.2x ", message[i]);
-    }
-    printf("\n");
-}
   
 // Driver code 
 int send_message(char *mme_ip, char *payload) {
@@ -38,7 +26,7 @@ int send_message(char *mme_ip, char *payload) {
   
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-        perror("socket creation failed"); 
+        d_error("socket creation failed"); 
         exit(EXIT_FAILURE); 
     } 
   
@@ -54,18 +42,18 @@ int send_message(char *mme_ip, char *payload) {
     char hexbuf[MAX_SDU_LEN];
     CORE_HEX(payload, strlen(payload), hexbuf);
 
-    dumpTheMessage(hexbuf, strlen(payload) / 2);
+    d_print_hex(hexbuf, strlen(payload) / 2);
       
     sendto(sockfd, (const char *)hexbuf, strlen(payload) / 2, 
         MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
             sizeof(servaddr)); 
-    printf("Message sent.\n"); 
+    d_info("Message sent"); 
           
     n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
                 MSG_WAITALL, (struct sockaddr *) &servaddr, 
                 &len); 
-    printf("Received message from server.\n"); 
-    dumpTheMessage(buffer, n);
+    d_info("Received message from server"); 
+    d_print_hex(buffer, n);
   
     close(sockfd); 
     return 0; 
