@@ -43,6 +43,10 @@ status_t nas_security_encode(nas_message_t *message, corekube_db_pulls_t *db_pul
             return CORE_ERROR;
     }
 
+    if (new_security_context)
+        // TODO: functionality needed in DB to implement this
+        d_error("New security context - need to reset NAS counts to zero");
+
     if (COREKUBE_ENC_ALGORITHM == NAS_SECURITY_ALGORITHMS_EEA0)
         ciphered = 0;
     if (COREKUBE_INT_ALGORITHM == NAS_SECURITY_ALGORITHMS_EIA0)
