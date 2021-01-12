@@ -7,6 +7,6 @@
 
 status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_response_t *response);
 
-static status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity);
+status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity);
 
 #endif /* __S1AP_HANDLER_S1SETUPREQUEST_H__ */

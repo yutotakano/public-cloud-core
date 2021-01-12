@@ -20,12 +20,12 @@ typedef struct S1AP_handler_response {
 
 status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response);
 
-static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message);
+status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message);
 
-static status_t message_to_bytes(S1AP_handler_response_t *response);
+status_t message_to_bytes(S1AP_handler_response_t *response);
 
-static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response);
+status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response);
 
-static status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response);
+status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response);
 
 #endif /* __S1AP_HANDLER_H__ */

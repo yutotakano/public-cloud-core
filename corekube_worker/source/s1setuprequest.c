@@ -41,7 +41,7 @@ status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_re
     return CORE_OK;
 }
 
-static status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity)
+status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity)
 {
     d_info("Fetching PLMN identity from S1AP S1SetupReqest message");
 

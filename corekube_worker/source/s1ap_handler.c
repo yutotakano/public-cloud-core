@@ -54,7 +54,7 @@ status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_
     return CORE_OK;
 }
 
-static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message)
+status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message)
 {
     d_info("Converting received bytes to S1AP message");
 
@@ -71,7 +71,7 @@ static status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t 
     return CORE_OK;
 }
 
-static status_t message_to_bytes(S1AP_handler_response_t *response)
+status_t message_to_bytes(S1AP_handler_response_t *response)
 {
     d_info("Converting response S1AP message to raw bytes to send");
 
@@ -86,7 +86,7 @@ static status_t message_to_bytes(S1AP_handler_response_t *response)
     return CORE_OK;
 }
 
-static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response) {
+status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP message");
 
     int s1ap_print = asn_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, message);
@@ -108,7 +108,7 @@ static status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_respo
     }
 }
 
-static status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response) {
+status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response) {
     d_info("Handling S1AP message of type InitiatingMessage");
 
     switch (initiatingMessage->choice.initiatingMessage->value.present) {
