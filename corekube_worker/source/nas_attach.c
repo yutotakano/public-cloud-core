@@ -17,6 +17,7 @@
 #include "initialuemessage.h"
 
 status_t get_authentication_vector(nas_mobile_identity_imsi_t *imsi, S1AP_PLMNidentity_t *PLMNidentity, corekube_db_pulls_t *db_pulls, nas_authentication_vector_t *auth_vec) {
+    d_info("Fetching authentication vector");
 
     c_uint8_t raw_imsi[15];
 
@@ -38,6 +39,8 @@ status_t get_authentication_vector(nas_mobile_identity_imsi_t *imsi, S1AP_PLMNid
 }
 
 status_t extract_raw_imsi(nas_mobile_identity_imsi_t *imsi, c_uint8_t *raw_imsi) {
+    d_info("Extracting raw IMSI from NAS message");
+
     d_assert(imsi->type == NAS_MOBILE_IDENTITY_IMSI, return CORE_ERROR, "Not a true IMSI to extract from");
 
     raw_imsi[0] = imsi->digit1;
@@ -64,6 +67,7 @@ status_t extract_raw_imsi(nas_mobile_identity_imsi_t *imsi, c_uint8_t *raw_imsi)
 }
 
 status_t generate_authentication_vector(c_uint8_t *k, c_uint8_t *opc, c_uint8_t *rand, c_uint8_t *sqn, c_uint8_t *plmn_id, nas_authentication_vector_t *auth_vec) {
+    d_info("Generating authentication vector");
     
     c_uint8_t amf[] = { 0x80, 0x00 };
 
@@ -101,6 +105,8 @@ status_t generate_authentication_vector(c_uint8_t *k, c_uint8_t *opc, c_uint8_t 
 }
 
 status_t check_network_capabilities(nas_message_t *nas_message) {
+    d_info("Checking UE network capabilities matched expected");
+
     nas_ue_network_capability_t *network_capability;
 
     network_capability = &nas_message->emm.attach_request.ue_network_capability;
@@ -113,6 +119,7 @@ status_t check_network_capabilities(nas_message_t *nas_message) {
 }
 
 status_t extract_imsi(nas_attach_request_t *attach_request, nas_mobile_identity_imsi_t **imsi) {
+    d_info("Extracting IMSI from NAS message");
 
     *imsi = &attach_request->eps_mobile_identity.imsi;
 
@@ -122,6 +129,8 @@ status_t extract_imsi(nas_attach_request_t *attach_request, nas_mobile_identity_
 }
 
 status_t decode_attach_request(S1AP_InitialUEMessage_t *initialUEMessage, nas_message_t *attach_request) {
+    d_info("Decodeing NAS attach request");
+
     S1AP_NAS_PDU_t *NAS_PDU = NULL;
 
     S1AP_InitialUEMessage_IEs_t *NAS_PDU_IE;

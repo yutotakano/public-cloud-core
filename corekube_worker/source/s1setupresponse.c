@@ -23,6 +23,8 @@
 
 void s1ap_build_setup_resp(s1ap_message_t *response, S1AP_PLMNidentity_t *derivedPLMNidentity)
 {
+    d_info("Building S1AP S1SetupResponse message");
+
     status_t rv;
     int i, j;
 

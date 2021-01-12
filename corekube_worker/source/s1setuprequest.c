@@ -23,6 +23,8 @@
 
 status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_response_t *response)
 {
+    d_info("Handling S1AP S1SetupReqest messge");
+
     S1AP_PLMNidentity_t *PLMNidentity; // TODO: free this
 
     status_t getPLMN = getPLMNidentity(received_message, &PLMNidentity);
@@ -41,6 +43,8 @@ status_t handle_s1setuprequest(s1ap_message_t *received_message, S1AP_handler_re
 
 static status_t getPLMNidentity(s1ap_message_t *received_message, S1AP_PLMNidentity_t **PLMNidentity)
 {
+    d_info("Fetching PLMN identity from S1AP S1SetupReqest message");
+
     S1AP_S1SetupRequest_t *S1SetupRequest = &received_message->choice.initiatingMessage->value.choice.S1SetupRequest;
     int numIEs = S1SetupRequest->protocolIEs.list.count;
     for (int i = 0; i < numIEs; i++) {

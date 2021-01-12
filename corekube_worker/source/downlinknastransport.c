@@ -3,6 +3,7 @@
 // heavily based upon s1ap_build_downlink_nas_transport()
 // from nextepc/src/mme/s1ap_build.c
 status_t generate_downlinknastransport(pkbuf_t *nas_pdu, S1AP_MME_UE_S1AP_ID_t mme_ue_id, S1AP_ENB_UE_S1AP_ID_t enb_ue_id, s1ap_message_t *downlink_nas_transport) {
+    d_info("Generating S1AP DownlinkNASTransport message");
 
     S1AP_InitiatingMessage_t *initiatingMessage = NULL;
     S1AP_DownlinkNASTransport_t *DownlinkNASTransport = NULL;

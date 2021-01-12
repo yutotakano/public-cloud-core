@@ -10,6 +10,7 @@
 // heavily based upon the emm_build_authentication_request()
 // function in nextepc/src/mme/emm_build.c
 status_t generate_nas_authentication_request(c_uint8_t *rand, c_uint8_t *autn, pkbuf_t **pkbuf) {
+    d_info("Generating NAS authentication request");
 
     nas_message_t nas_message;
     nas_authentication_request_t *auth_req = &nas_message.emm.authentication_request;

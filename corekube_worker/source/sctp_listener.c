@@ -37,6 +37,8 @@ void dumpMessage(uint8_t * message, int len)
 
 int configure_sctp_socket(char * mme_ip_address)
 {
+	d_info("Configuring SCTP socket");
+
 	int sock_sctp;
 	struct sockaddr_in listener_addr;
 	struct sctp_event_subscribe events;
@@ -104,6 +106,8 @@ int configure_sctp_socket(char * mme_ip_address)
 
 void start_listener(char * mme_ip_address)
 {
+	d_info("Starting SCTP listener");
+
 	int sock_sctp;
 	int sock_enb;
 	int flags = 0, n;
@@ -115,12 +119,12 @@ void start_listener(char * mme_ip_address)
 
 	sock_sctp = configure_sctp_socket(mme_ip_address);
 	d_assert(sock_sctp >= 0, return, "Error configuring SCTP socket");
-	d_info("SCTP socket configured correctly.\n");
+	d_info("SCTP socket configured correctly");
 
 	/* This prototype only accepts one client (eNB) at the time */
 	sock_enb = accept(sock_sctp, NULL, NULL);
 	d_assert(sock_enb >= 0, return, "MME socket failed to accept");
-	d_info("New eNB connected.\n");
+	d_info("New eNB connected");
 
 	/* Receive S1AP messages and dump the content */
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
@@ -130,7 +134,7 @@ void start_listener(char * mme_ip_address)
 	while ( (n = sctp_recvmsg(sock_enb, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
 		d_assert(n > 0, break, "No longer connected to eNB");
 
-		d_info("Received with PPID: %d\n", ntohl(sinfo.sinfo_ppid));
+		d_info("Received with PPID: %d", ntohl(sinfo.sinfo_ppid));
 		dumpMessage(buffer, n);
 
 		//////////////////////////////////////////////////////////
@@ -148,7 +152,7 @@ void start_listener(char * mme_ip_address)
 
 		d_assert(ret != -1, continue, "Failed to send SCTP message");
 
-		d_info("Sent %d bytes over SCTP.\n", ret);
+		d_info("Sent %d bytes over SCTP", ret);
 
 		/////////////////////////////////////////////////////////
 	}

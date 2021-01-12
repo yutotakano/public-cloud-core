@@ -7,6 +7,7 @@
 #include <libck.h>
 
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
+    d_info("Handling S1AP InitialUEMessage");
 
     S1AP_InitialUEMessage_t *initialUEMessage = &received_message->choice.initiatingMessage->value.choice.InitialUEMessage;
 
@@ -64,6 +65,7 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
 }
 
 status_t extract_PLMNidentity(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_PLMNidentity_t **PLMNidentity) {
+    d_info("Extracting PLMN identity from InitialUEMessage");
 
     S1AP_InitialUEMessage_IEs_t *TAI_IE;
     status_t get_ie = get_InitialUE_IE(initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR_TAI, &TAI_IE);
@@ -75,6 +77,7 @@ status_t extract_PLMNidentity(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_PL
 }
 
 status_t extract_ENB_UE_ID(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_ENB_UE_S1AP_ID_t **ENB_UE_ID) {
+    d_info("Extracting ENB_UE_S1AP_ID identity from InitialUEMessage");
 
     S1AP_InitialUEMessage_IEs_t *ENB_UE_ID_IE;
     status_t get_ie = get_InitialUE_IE(initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR_ENB_UE_S1AP_ID, &ENB_UE_ID_IE);
@@ -86,6 +89,8 @@ status_t extract_ENB_UE_ID(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_ENB_U
 }
 
 status_t get_InitialUE_IE(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR desiredIElabel, S1AP_InitialUEMessage_IEs_t **desiredIE) {
+    d_info("Searching for IE in UplinkNASTransport message");
+
     int numIEs = initialUEMessage->protocolIEs.list.count;
     for (int i = 0; i < numIEs; i++) {
         S1AP_InitialUEMessage_IEs_t *theIE = initialUEMessage->protocolIEs.list.array[i];
@@ -100,6 +105,7 @@ status_t get_InitialUE_IE(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_Initia
 }
 
 status_t get_initialue_prerequisites_from_db(nas_mobile_identity_imsi_t *imsi, c_uint8_t *buffer, corekube_db_pulls_t *db_pulls) {
+    d_info("Fetching InitialUEMessage prerequisites from DB");
 
     c_uint8_t raw_imsi[15];
     status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
@@ -124,6 +130,7 @@ status_t get_initialue_prerequisites_from_db(nas_mobile_identity_imsi_t *imsi, c
 }
 
 status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authentication_vector_t *auth_vec, S1AP_ENB_UE_S1AP_ID_t *enb_ue_id) {
+    d_info("Saving InitialUEMessage values into DB");
 
     c_uint8_t raw_imsi[15];
     status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
