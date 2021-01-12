@@ -76,6 +76,8 @@ status_t generate_authentication_vector(c_uint8_t *k, c_uint8_t *opc, c_uint8_t 
     size_t res_len = MAX_RES_LEN;
     milenage_generate(opc, amf, k, sqn, rand, autn, ik, ck, ak, res, &res_len);
     d_assert(res_len != 0, return CORE_ERROR, "Failed in milenage generation");
+    // CoreKube always expects the RES length to be 8
+    d_assert(res_len == 8, return CORE_ERROR, "RES length not 8");
 
     // generate the kasme
     c_uint8_t kasme[32];
