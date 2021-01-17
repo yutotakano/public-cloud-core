@@ -9,7 +9,7 @@
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response);
 
-status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTransport, nas_message_t *auth_response);
+status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, nas_message_t *auth_response);
 
 status_t UplinkNASTransport_extract_MME_UE_ID(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_MME_UE_S1AP_ID_t **MME_UE_ID);
 

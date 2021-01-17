@@ -4,6 +4,7 @@
 #include "nas_util.h"
 #include "s1ap_conv.h"
 #include "nas_authentication_response.h"
+#include "nas_message_security.h" //TODO - included while testing, make sure it is actually needed when commiting final version
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling UplinkNASTransport");
@@ -13,7 +14,7 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
     UplinkNASTransport_extract_MME_UE_ID(uplinkNASTransport, &mme_ue_id);
 
     nas_message_t nas_message;
-    status_t decode_nas = decode_uplinknastransport_nas(uplinkNASTransport, &nas_message);
+    status_t decode_nas = decode_uplinknastransport_nas(uplinkNASTransport, mme_ue_id, &nas_message);
     d_assert(decode_nas == CORE_OK, return CORE_ERROR, "Failed to decode NAS authentication response");
 
     switch (nas_message.emm.h.message_type) {
@@ -25,7 +26,7 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
     }
 }
 
-status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTransport, nas_message_t *auth_response) {
+status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, nas_message_t *auth_response) {
     d_info("Decoding NAS-PDU in UplinkNASTransport message");
     S1AP_NAS_PDU_t *NAS_PDU = NULL;
 
@@ -34,7 +35,14 @@ status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTrans
     d_assert(get_ie == CORE_OK, return CORE_ERROR, "Failed to get NAS_PDU IE from UplinkNASTransport");
     NAS_PDU = &NAS_PDU_IE->value.choice.NAS_PDU;
 
-    status_t nas_decode = decode_nas_emm(NAS_PDU, auth_response);
+    // TODO: doing a separate fetch from the DB just for decoding the NAS
+    // security message is a very poor use of resources - rework this!
+    c_uint8_t buffer[1024];
+    corekube_db_pulls_t db_pulls;
+    status_t db_fetch = get_NAS_decode_security_prerequisites_from_db(mme_ue_id, buffer, &db_pulls);
+    d_assert(db_fetch == CORE_OK, return CORE_ERROR, "Failed to fetch NAS decode security prerequisites from DB");
+
+    status_t nas_decode = decode_nas_emm(NAS_PDU, &db_pulls, auth_response);
     d_assert(nas_decode == CORE_OK, return CORE_ERROR, "Failed to decode NAS authentication response");
 
     return CORE_OK;
