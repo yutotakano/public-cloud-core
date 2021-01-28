@@ -2,6 +2,7 @@
 #include "enb.h"
 #include "sctp.h"
 #include "s1ap.h"
+#include "ngap.h"
 #include "log.h"
 #include "ue.h"
 #include "message.h"
@@ -678,12 +679,22 @@ int enb_emulator_start(enb_data * data)
     	printError("SCTP Setup error\n");
     	return 1;
     }
+
+    /* Check whether this version is 4G or 5G */
+    #ifdef _5G
+    if(procedure_NG_Setup(enb) == 1)
+    {
+		printError("gNB NG Setup problems\n");
+		return 1;
+    }
+    #else
     /* Connect eNB to MME */
     if(procedure_S1_Setup(enb) == 1)
     {
     	printError("eNB S1 Setup problems\n");
     	return 1;
     }
+    #endif
     printOK("eNB successfully connected\n");
 
     /* Open eNB port. In this port the eNB will receive UEs connections */

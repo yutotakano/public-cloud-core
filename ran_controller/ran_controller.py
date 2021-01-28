@@ -148,6 +148,7 @@ class RANControler:
 		return None
 
 	def analyze_msg(self, msg):
+		print(msg['type'])
 		if msg['type'] == 'init':
 			print('New slave at ' + msg['ip'] + ':' + str(msg['port']))
 
@@ -207,6 +208,9 @@ class RANControler:
 			# eNB slave answers with Error message
 			# Get eNB from data
 			enb = self.get_enb_by_buffer(msg['data'])
+
+			ip_node = (msg['data'][4] << 24) | (msg['data'][5] << 16) | (msg['data'][6] << 8) | msg['data'][7]
+			self.enb_ips.remove(ip_node)
 
 			# Save eNB address
 			enb.set_stopped() # Stopped/Not Running

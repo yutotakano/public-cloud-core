@@ -17,7 +17,8 @@
 #define SCTP_TIMEOUT 1
 #define SOCKET_READ_TIMEOUT_SEC 1
 
-#define MME_OAI_PORT 36412
+#define SCTP_4G_CONTROL_PLANE 36412
+#define SCTP_5G_CONTROL_PLANE 38412
 
 int sctp_get_sock_info (int sock)
 {
@@ -205,7 +206,11 @@ int sctp_connect_enb_to_mme(eNB * enb, uint8_t * mme_ip)
     //}
     memcpy(&mme_addr.sin_addr.s_addr, mme_ip, 4);
     mme_addr.sin_family = AF_INET;
-    mme_addr.sin_port = htons(MME_OAI_PORT);
+    #ifdef _5G
+    mme_addr.sin_port = htons(SCTP_5G_CONTROL_PLANE);
+    #else
+    mme_addr.sin_port = htons(SCTP_4G_CONTROL_PLANE);
+    #endif
 
     /******************************/
     /* Connect to the SCTP server */

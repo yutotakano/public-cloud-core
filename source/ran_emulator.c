@@ -14,7 +14,6 @@
 #include "ue.h"
 #include "enb.h"
 #include "sctp.h"
-#include "s1ap.h"
 #include "log.h"
 #include "data_plane.h"
 #include "enb_emulator.h"
@@ -169,9 +168,9 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         if(offset > len)
         {
             /* Wrong data format */
-            printError("Wrong data format in message");
+            printError("Wrong data format in message\n");
             /*Generate response buffer*/
-            response[0] = (~CODE_OK) & CODE_UE_BEHAVIOUR;
+            response[0] = CODE_UE_BEHAVIOUR;
             ue_copy_id_to_buffer(response + 1);
             *res_len = 5;
             return 1;
@@ -182,14 +181,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
 
         ret = ue_emulator_start(&data);
         if(ret != 0)
-        {
-            printError("Error starting UE functionality");
-            /*Generate response buffer*/
-            response[0] = (~CODE_OK) & CODE_UE_BEHAVIOUR;
-            ue_copy_id_to_buffer(response + 1);
-            *res_len = 5;
-            return ret;
-        }
+            printError("Error starting UE functionality\n");
         /* Generate response buffer */
         response[0] = CODE_UE_BEHAVIOUR;
         ue_copy_id_to_buffer(response + 1);
@@ -233,9 +225,9 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         if(offset > len)
         {
             /* Wrong data format */
-            printError("Wrong data format in message");
+            printError("Wrong data format in message\n");
             /*Generate response buffer*/
-            response[0] = (~CODE_OK) | buffer[0];
+            response[0] = CODE_ENB_BEHAVIOUR;
             enb_copy_id_to_buffer(response + 1);
             *res_len = 5;
             return 1;
@@ -244,19 +236,13 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Once the data has been structured, the eNB functionality is created */
         ret = enb_emulator_start(&data);
         if(ret != 0)
-        {
-            printError("Error starting eNB functionality");
-            /*Generate response buffer*/
-            response[0] = (~CODE_OK) | buffer[0];
-            enb_copy_id_to_buffer(response + 1);
-            *res_len = 5;
-            return 1;
-        }
+            printError("Error starting eNB functionality\n");
 
         /*Generate response buffer*/
         response[0] = CODE_ENB_BEHAVIOUR;
         enb_copy_id_to_buffer(response + 1);
-        *res_len = 5;
+        memcpy(response + 5, ue_ip, 4);
+        *res_len = 9;
         return ret;
     }
     return 0;
@@ -463,6 +449,12 @@ int main(int argc, char const *argv[])
     }
 
     printOK("Starting Nervion emulator...\n");
+
+    #ifdef _5G
+    printOK("Nervion 5G\n");
+    #else
+    printOK("Nervion 4G\n");
+    #endif
 
 
     printf("Nervion parameters: \n\tRAN Controller IP: %s\n\tNODE IP: %s\n", argv[1], argv[2]);

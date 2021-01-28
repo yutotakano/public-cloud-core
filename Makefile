@@ -4,7 +4,7 @@
 CC = gcc
 
 #FLAGS
-CFLAGS = -c -Wall -ansi -g -std=c99 -D_DEBUG
+CFLAGS = -c -Wall -ansi -g -std=c99 -D_5G
 
 #LIB FLAGS
 LIBFLAGS = -lgc -rdynamic -lcrypto -lpthread
