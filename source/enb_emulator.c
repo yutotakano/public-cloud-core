@@ -106,17 +106,28 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
             *response_len = 1;
             return 1;
 		}
-
+		#ifdef _5G
+		/* Attach UE */
+		if(procedure_Registration_Request(enb, ue))
+		{
+			printError("Move to Attached (UERegistrationRequest) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		#else
 		/* Attach UE 1 */
 	    if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
     	{
-    		printf("Attach and Setup default bearer error\n");
+    		printError("Attach and Setup default bearer error\n");
     		free_UE(ue);
     		/* Generate UE Error response */
     		response[0] = buffer[0]; /* Without OK_CODE */
     		*response_len = 1;
     		return 1;
     	}
+    	#endif
 
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
@@ -178,8 +189,18 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
-
-		/* Detach UE */
+		#ifdef _5G
+		/* Attach UE */
+		if(procedure_Registration_Request(enb, ue))
+		{
+			printError("Move to Attached (UERegistrationRequest) error\n");
+			/* Generate UE Error response */
+			response[0] = buffer[0]; /* Without OK_CODE */
+    		*response_len = 1;
+    		return 1;
+		}
+		#else
+		/* Attach UE */
 		if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
 		{
 			printError("Move to Attached (UEAttach) error\n");
@@ -188,6 +209,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
     		*response_len = 1;
     		return 1;
 		}
+		#endif
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
 		*response_len = 1;

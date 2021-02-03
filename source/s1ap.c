@@ -528,7 +528,7 @@ void printChallenge(Auth_Challenge * auth)
 		printf("%.2x ", auth->AK[i]);
 	printf("\n");
 	printf("RES: ");
-	for(i = 0; i < 16; i++)
+	for(i = 0; i < 8; i++)
 		printf("%.2x ", auth->RES[i]);
 	printf("\n");
 }

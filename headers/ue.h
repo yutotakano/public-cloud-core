@@ -26,6 +26,8 @@ typedef struct _Auth_Challenge
 
 UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_key, uint8_t * ue_ip);
 void free_UE(UE * ue);
+uint8_t * get_ue_mcc(UE * ue);
+uint8_t * get_ue_mnc(UE * ue);
 uint8_t * get_ue_plmn(UE * ue);
 uint8_t * get_ue_msin(UE * ue);
 uint8_t * get_ue_capabilities(UE * ue);

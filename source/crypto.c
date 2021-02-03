@@ -492,8 +492,6 @@ void f2345( uint8_t * k, uint8_t * rand, uint8_t * res, uint8_t * ck, uint8_t * 
 	return;
 }
 
-
-
 /***********/
 /* SHA-256 */
 /***********/
@@ -701,6 +699,43 @@ void sha_256(uint8_t digest[32], const uint8_t *message, int message_length, con
     hmac_sha256_initialize(&hmac, key, key_length);
     hmac_sha256_finalize(&hmac, message, message_length);
     for (i = 0; i < 32; ++i) digest[i] = hmac.digest[i];
+}
+
+void generate_res_5g(uint8_t * res5g, uint8_t * ck, uint8_t * ik, uint8_t * rand, uint8_t * res, uint8_t * mcc, uint8_t * mnc)
+{
+	uint8_t input[63];
+	uint8_t key[32];
+	uint8_t out[32];
+
+	char snn[32] = "5G:mnc0XX.mccXXX.3gppnetwork.org";
+
+	/* Generate the SNN */
+	snn[7] = mnc[0];
+	snn[8] = mnc[1];
+	snn[13] = mcc[0];
+	snn[14] = mcc[1];
+	snn[15] = mcc[2];
+
+	input[0] = 0x6B;
+	/* Copy the SNN to the input */
+	memcpy(input+1, snn, 32);
+	input[33] = 0x00;
+	input[34] = 0x20; /* Length of the SNN */
+	/* Copy RAND to input */
+	memcpy(input+35, rand, 16);
+	input[51] = 0x00;
+	input[52] = 0x10; /* Length of the RAND */
+	/* Copy RES to input */
+	memcpy(input+53, res, 8);
+	input[61] = 0x00;
+	input[62] = 0x08; /* Length of the RES */
+	/* Generate the key */
+	memcpy(key, ck, 16);
+	memcpy(key+16, ik, 16);
+	/* SHA256 */
+	sha_256(out, input, sizeof(input), key, sizeof(key));
+
+	memcpy(res5g, out+16, 16);
 }
 
 /* srsLTE implementation */

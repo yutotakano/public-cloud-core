@@ -5,7 +5,6 @@
 #include "ue.h"
 
 int procedure_NG_Setup(eNB * enb);
-
-void test_procedure_NG_Setup(eNB * enb);
+int procedure_Registration_Request(eNB * enb, UE * ue);
 
 #endif

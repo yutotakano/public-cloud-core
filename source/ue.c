@@ -12,6 +12,8 @@
 struct _UE
 {
 	int id;
+	uint8_t mcc[3];
+	uint8_t mnc[2];
 	uint8_t plmn[UE_PLMN_LENGTH];
 	uint8_t msin[UE_MSIN_LENGTH];
 	char msin_string[MSIN_STRING_LEN];
@@ -93,6 +95,13 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	ue->mme_s1ap_id_len = -1;
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
 
+	/* Save MCC and MNC */
+	ue->mcc[0] = mcc[0];
+	ue->mcc[1] = mcc[1];
+	ue->mcc[2] = mcc[2];
+	ue->mnc[0] = mnc[0];
+	ue->mnc[1] = mnc[1];
+
 	/* Initiate NAS Sequence number */
 	ue->nas_sequence_number = 0;
 
@@ -112,6 +121,16 @@ void free_UE(UE * ue)
 uint8_t * get_ue_plmn(UE * ue)
 {
 	return ue->plmn;
+}
+
+uint8_t * get_ue_mcc(UE * ue)
+{
+	return ue->mcc;
+}
+
+uint8_t * get_ue_mnc(UE * ue)
+{
+	return ue->mnc;
 }
 
 uint8_t * get_ue_msin(UE * ue)

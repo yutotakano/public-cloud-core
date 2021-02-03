@@ -235,8 +235,10 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
 
         /* Once the data has been structured, the eNB functionality is created */
         ret = enb_emulator_start(&data);
-        if(ret != 0)
+        if(ret == 1)
+        {
             printError("Error starting eNB functionality\n");
+        }
 
         /*Generate response buffer*/
         response[0] = CODE_ENB_BEHAVIOUR;
@@ -480,8 +482,8 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, ue_ip, 4);
-    bzero(local_ip, 4);
+    memcpy(local_ip, ue_ip, 4);
+    //bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
