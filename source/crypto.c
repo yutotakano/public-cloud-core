@@ -701,6 +701,7 @@ void sha_256(uint8_t digest[32], const uint8_t *message, int message_length, con
     for (i = 0; i < 32; ++i) digest[i] = hmac.digest[i];
 }
 
+/* Generate 5G RES: TS33.501 Annex A.4 */
 void generate_res_5g(uint8_t * res5g, uint8_t * ck, uint8_t * ik, uint8_t * rand, uint8_t * res, uint8_t * mcc, uint8_t * mnc)
 {
 	uint8_t input[63];
@@ -736,6 +737,123 @@ void generate_res_5g(uint8_t * res5g, uint8_t * ck, uint8_t * ik, uint8_t * rand
 	sha_256(out, input, sizeof(input), key, sizeof(key));
 
 	memcpy(res5g, out+16, 16);
+}
+
+/* Generate 5G Kausf: TS33.501 Annex A.2 */
+void generate_kausf(uint8_t * kausf, uint8_t * ck, uint8_t * ik, uint8_t * autn, uint8_t * mcc, uint8_t * mnc)
+{
+	uint8_t input[64];
+	uint8_t key[32];
+
+	char snn[32] = "5G:mnc0XX.mccXXX.3gppnetwork.org";
+
+	/* Generate the SNN */
+	snn[7] = mnc[0];
+	snn[8] = mnc[1];
+	snn[13] = mcc[0];
+	snn[14] = mcc[1];
+	snn[15] = mcc[2];
+
+	/* Generate the key */
+	memcpy(key, ck, 16);
+	memcpy(key+16, ik, 16);
+
+	/* Generate the input */
+	input[0] = 0x6A;
+	/* Copy SNN */
+	memcpy(input+1, snn, 32);
+	input[33] = 0x00;
+	input[34] = 0x20; /* Length of the SNN */
+	/* Copy SQN_XOR_AK: First 6 bytes of the AUTN */
+	memcpy(input+35, autn, 6);
+	input[41] = 0x00;
+	input[42] = 0x06; /* Length of the SQN_XOR_AK */
+
+	/* SHA256 */
+	sha_256(kausf, input, 43, key, sizeof(key));
+}
+
+/* Generate 5G Kseaf: TS33.501 Annex A.6 */
+void generate_kseaf(uint8_t * kseaf, uint8_t * kausf, uint8_t * mcc, uint8_t * mnc)
+{
+	uint8_t input[64];
+
+	char snn[32] = "5G:mnc0XX.mccXXX.3gppnetwork.org";
+	/* Generate the SNN */
+	snn[7] = mnc[0];
+	snn[8] = mnc[1];
+	snn[13] = mcc[0];
+	snn[14] = mcc[1];
+	snn[15] = mcc[2];
+
+	/* Generate the input */
+	input[0] = 0x6C;
+	/* Copy SNN */
+	memcpy(input+1, snn, 32);
+	input[33] = 0x00;
+	input[34] = 0x20; /* Length of the SNN */
+	/* SHA256 */
+	sha_256(kseaf, input, 35, kausf, 32);
+}
+
+/* Generate 5G Kamf: TS33.501 Annex A.7 */
+void generate_kamf(uint8_t * kamf, char * supi, uint8_t * kseaf)
+{
+	uint8_t input[64];
+
+	/* Generate the input */
+	input[0] = 0x6D;
+	memcpy(input+1, supi, 15); /* SUPI */
+	input[16] = 0x00; /* SUPI Length */
+	input[17] = 0x0F; /* SUPI Length */
+	/* ABBA: Default 0x0000 value */
+	input[18] = 0x00;
+	input[19] = 0x00;
+	input[20] = 0x00; /* ABBA Length */
+	input[21] = 0x02; /* ABBA Length */
+
+	/* SHA256 */
+	sha_256(kamf, input, 22, kseaf, 32);
+}
+
+/* Generate 5G ciphering key: TS33.501 Annex A.8 */
+void generate_5g_nas_enc_key(uint8_t * enc_key, uint8_t * kamf, uint8_t alg_identity)
+{
+	uint8_t out[32];
+	uint8_t input[8];
+
+	/* Generate input */
+	input[0] = 0x69;
+	input[1] = NAS_ENC_ALG;
+	input[2] = 0x00; /* Length */
+	input[3] = 0x01; /* Length */
+	input[4] = alg_identity;
+	input[5] = 0x00; /* Length */
+	input[6] = 0x01; /* Length */
+
+	/* SHA256 */
+	sha_256(out, input, 7, kamf, 32);
+	memcpy(enc_key, out+16, 16);
+}
+
+/* Generate 5G integrity key: TS33.501 Annex A.8 */
+void generate_5g_nas_int_key(uint8_t * int_key, uint8_t * kamf, uint8_t alg_identity)
+{
+	uint8_t out[32];
+	uint8_t input[8];
+
+	/* Generate input */
+	input[0] = 0x69;
+	input[1] = NAS_INT_ALG;
+	input[2] = 0x00; /* Length */
+	input[3] = 0x01; /* Length */
+	input[4] = alg_identity;
+	input[5] = 0x00; /* Length */
+	input[6] = 0x01; /* Length */
+
+	/* SHA256 */
+	sha_256(out, input, 7, kamf, 32);
+	memcpy(int_key, out+16, 16);
 }
 
 /* srsLTE implementation */
@@ -808,7 +926,7 @@ void generate_nas_int_keys(uint8_t * k_asme, uint8_t * nas_key_int, uint8_t alg_
 }
 
 /* nas_integrity_eia2 uses SSL HMAC algorithm (128-AES) */
-void nas_integrity_eia2(uint8_t * key, uint8_t * message, uint8_t message_length, uint32_t count, uint8_t out[4])
+void nas_integrity_eia2(uint8_t * key, uint8_t * message, uint8_t message_length, uint32_t count, uint8_t bearer, uint8_t out[4])
 {
 	uint8_t * msg = NULL;
 	uint32_t local_count;
@@ -821,6 +939,8 @@ void nas_integrity_eia2(uint8_t * key, uint8_t * message, uint8_t message_length
 	msg = calloc(message_length + 8, sizeof(uint8_t));
 	local_count = hton_int32(count);
 	memcpy(msg, &local_count, 4);
+	/* Bearer (We dont care about direction because EIA2 is only used in uplink direction)*/
+	msg[4] = bearer << 3;
 	memcpy(msg + 8, message, message_length);
 
 	cmac_ctx = CMAC_CTX_new();

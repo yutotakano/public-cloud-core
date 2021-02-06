@@ -68,6 +68,13 @@
 #define ID_AMF_UE_NGAP_ID 0x0a
 #define MESSAGE_TYPE_AUTHENTICATION_RESPONSE 0x57
 
+/* Security Mode Command */
+#define SECURITY_MODE_COMMAND 0x5D
+
+/* Security Mode Complete */
+#define REGISTRATION_REQUEST 0x41
+#define SECURITY_MODE_COMPLETE 0x5e
+
 void memory_dump(uint8_t * mem, int len)
 {
 	int i;
@@ -147,6 +154,19 @@ void dumpChallenge(Auth_Challenge * auth)
 	printf("\n");
 }
 
+void dumpChallengeDerivatedKeys(Auth_Challenge * auth)
+{
+	int i;
+	printf("NAS ENC: ");
+	for(i = 0; i < 16; i++)
+		printf("%.2x ", auth->NAS_KEY_ENC[i]);
+	printf("\n");
+	printf("NAS INT: ");
+	for(i = 0; i < 16; i++)
+		printf("%.2x ", auth->NAS_KEY_INT[i]);
+	printf("\n");
+}
+
 void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 {
 	uint16_t num_items;
@@ -189,21 +209,44 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 				offset += 3 + buffer[offset + 2];
 				break;
 			case ID_NAS_PDU:
-				printf("\tAuthentication Request\n");
-				if(buffer[offset+6] == AUTHENTICATION_REQUEST)
+				if(buffer[offset+5] == 0x02) /* NAS PDU Integrity protected and ciphered */
 				{
-					printf("\tAuthentication Parameter RAND\n");
-					printf("\t\t");
-					for(j = 0; j < 16; j++)
-						printf("%.2x ", buffer[offset+12+j]);
-					printf("\n");
-					memcpy(get_auth_challenge(ue)->RAND, buffer+offset+12, 16);
-					printf("\tAuthentication Parameter AUTN\n");
-					printf("\t\t");
-					for(j = 0; j < 16; j++)
-						printf("%.2x ", buffer[offset+30+j]);
-					printf("\n");
-					memcpy(get_auth_challenge(ue)->AUTN, buffer+offset+30, 16);
+					printf("\tNAS PDU Integrity protected and ciphered\n");
+				}
+				if(buffer[offset+5] == 0x03) /*NAS PDU Integrity protected*/
+				{
+					printf("\tNAS PDU Integrity protected\n");
+					printf("\tMessage Authentication Code: 0x%.2x%.2x%.2x%.2x\n", buffer[offset+6], buffer[offset+7], buffer[offset+8], buffer[offset+9]);
+					printf("\tSequence Number: %d\n", buffer[offset+10]);
+					if(buffer[offset+13] == SECURITY_MODE_COMMAND)
+					{
+						printf("\tSecurity Mode Command\n");
+						printf("\tNAS Security Algorithms:\n");
+						printf("\t\tCiphering: %d\n", (buffer[offset+14] & 0xF0) >> 4);
+						printf("\t\tIntegrity: %d\n", buffer[offset+14] & 0x0F);
+						set_nas_session_security_algorithms(ue, buffer[offset+14]);
+					}
+				}
+				if(buffer[offset+5] == 0) /* NAS PDU Plain message */
+				{
+					printf("\tNAS PDU Plain message\n");
+					printf("\tAuthentication Request\n");
+					if(buffer[offset+6] == AUTHENTICATION_REQUEST)
+					{
+						printf("\tAuthentication Request\n");
+						printf("\tAuthentication Parameter RAND\n");
+						printf("\t\t");
+						for(j = 0; j < 16; j++)
+							printf("%.2x ", buffer[offset+12+j]);
+						printf("\n");
+						memcpy(get_auth_challenge(ue)->RAND, buffer+offset+12, 16);
+						printf("\tAuthentication Parameter AUTN\n");
+						printf("\t\t");
+						for(j = 0; j < 16; j++)
+							printf("%.2x ", buffer[offset+30+j]);
+						printf("\n");
+						memcpy(get_auth_challenge(ue)->AUTN, buffer+offset+30, 16);
+					}
 				}
 				offset += 3 + buffer[offset + 2];
 				break;
@@ -233,6 +276,23 @@ int analyze_NG_SetupResponse(eNB * enb, uint8_t * buffer, int len)
 int analyze_NG_AuthenticationRequest(UE * ue, eNB * enb, uint8_t * buffer, int len)
 {
 	printInfo("Analyzing Authentication Request...\n");
+	if(buffer[0] != 0x00 || buffer[1] != ID_DOWNLINK_NAS_TRANSPORT) {
+		printError("Invalid NG Downlink Nas Transport\n");
+		return ERROR;
+	}
+	/* Check criticality */
+	if(buffer[2] != CRITICALITY_IGNORE) {
+		printError("Wrong Criticality\n");
+		return ERROR;
+	}
+	analyze_message_items(enb, ue, buffer+4, buffer[3]);
+
+	return OK;
+}
+
+int analyze_NG_SecurityModeCommand(UE * ue, eNB * enb, uint8_t * buffer, int len)
+{
+	printInfo("Analyzing Security Mode Command...\n");
 	if(buffer[0] != 0x00 || buffer[1] != ID_DOWNLINK_NAS_TRANSPORT) {
 		printError("Invalid NG Downlink Nas Transport\n");
 		return ERROR;
@@ -375,7 +435,7 @@ int add_NG_Registration_Request_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_INITIAL_UE_MESSAGE;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x41; /* Content Length */
+	buffer[3] = 0x47; /* Content Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 5; /* protocolIEs: 5 items */
@@ -399,28 +459,34 @@ int add_protocolIE_NAS_PDU_Registration_Request(UE * ue, eNB * enb, uint8_t * bu
 	buffer[0] = 0;
 	buffer[1] = ID_NAS_PDU;
 	buffer[2] = CRITICALITY_REJECT;
-	buffer[3] = 0x17; /* Length */
-	buffer[4] = 0x16; /* Length - 1 */
+	buffer[3] = 0x1D; /* Length */
+	buffer[4] = 0x1C; /* Length - 1 */
 	buffer[5] = EPD_5G_Mobility_Management_Messages;
 	buffer[6] = 0; /* Security header type */
 	buffer[7] = MESSAGE_TYPE_REGISTRATION_REQUEST;
 	buffer[8] = ID_5GS_REGISTRATION_TYPE | NAS_KEY_SET_IDENTIFIER;
 	/* 5GS mobile identity */
 	buffer[9] = 0;
-	buffer[10] = 0x0C; /* Length */
+	buffer[10] = 0x0d; /* Length */
 	buffer[11] = 0x01; /* SUPI format and Type of Identity */
 	memcpy(buffer+12, get_plmn(enb), PLMN_LENGTH);
-	buffer[15] = 0xF0; /* Routing indicator */
-	buffer[16] = 0xFF; /* Routing indicator */
+	buffer[15] = 0x00; /* Routing indicator */
+	buffer[16] = 0x00; /* Routing indicator */
 	buffer[17] = 0; /* Protection scheme */
 	buffer[18] = 0; /* Home network public key identifier */
-	memcpy(buffer+19, get_ue_msin(ue)+1, 4); /* Scheme output */
+	memcpy(buffer+19, get_ue_msin(ue), 5); /* Scheme output */
+	/* 5GMM Capabilities */
+	buffer[24] = 0x10; /* Element ID */
+	buffer[25] = 0x01; /* Length */
+	buffer[26] = 0x00;
 	/* UE Security capabilities */
-	buffer[23] = 0x2e; /* Element ID */
-	buffer[24] = 0x02; /* Sec. Cap. Length */
-	buffer[25] = 0x80; /* Encryption */
-	buffer[26] = 0x20; /* Integrity */
-	return 27;
+	buffer[27] = 0x2e; /* Element ID */
+	buffer[28] = 0x04; /* Sec. Cap. Length */
+	buffer[29] = 0x80; /* 5G Encryption */
+	buffer[30] = 0xa0; /* 5G Integrity */
+	buffer[31] = 0x80; /* 4G Encryption */
+	buffer[32] = 0xa0; /* 4G Integrity */
+	return 33;
 }
 
 int add_protocolIE_User_Location_Information(eNB * enb, uint8_t * buffer)
@@ -539,6 +605,111 @@ int generate_NG_Authentication_Response(eNB * enb, UE * ue, uint8_t * buffer)
 	return offset;
 }
 
+int add_NG_Security_Mode_Complete_Header(uint8_t * buffer)
+{
+	buffer[0] = 0;
+	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
+	buffer[2] = CRITICALITY_IGNORE;
+	buffer[3] = 0x66; /* Length */
+	buffer[4] = 0;
+	buffer[5] = 0;
+	buffer[6] = 4; /* protocolIEs: 5 items */
+	return 7;
+}
+
+int add_protocolIE_NAS_PDU_Security_Mode_Complete(UE * ue, eNB * enb, uint8_t * buffer)
+{
+	buffer[0] = 0;
+	buffer[1] = ID_NAS_PDU;
+	buffer[2] = CRITICALITY_REJECT;
+	buffer[3] = 0x40; /* Length */
+	buffer[4] = 0x3F; /* Length - 1 */
+	buffer[5] = EPD_5G_Mobility_Management_Messages;
+	buffer[6] = 0x04; /* Integrity protected and ciphered with new 5GS security context */
+
+	buffer[11] = get_nas_sequence_number(ue);
+	/* Plain NAS message */
+	buffer[12] = EPD_5G_Mobility_Management_Messages;
+	buffer[13] = 0; /* Security Header Type: Plain Message */
+	buffer[14] = SECURITY_MODE_COMPLETE;
+	/* 5GS Mobile Identity */
+	buffer[15] = 0x77; /* Element ID */
+	buffer[16] = 0; /* Length */
+	buffer[17] = 0x09; /* Length */
+	buffer[18] = 0x45; /* Type of identity: IMEISV */
+	buffer[19] = 0x73;
+	buffer[20] = 0x80; 
+	buffer[21] = 0x61;
+	buffer[22] = 0x21;
+	buffer[23] = 0x85;
+	buffer[24] = 0x61;
+	buffer[25] = 0x51;
+	buffer[26] = 0xf1;
+	/* NAS Message container */
+	buffer[27] = 0x71; /* Element ID */
+	buffer[28] = 0x00; /* Length */
+	buffer[29] = 0x26; /* Length */
+	/* Plain NAS message */
+	buffer[30] = EPD_5G_Mobility_Management_Messages;
+	buffer[31] = 0x00; /* Plain message */
+	buffer[32] = REGISTRATION_REQUEST;
+	buffer[33] = 0x79; /* 5GS registration type and NAS key set identifier */
+	/* Mobile Identity */
+	buffer[34] = 0x00; /* Length */
+	buffer[35] = 0x0D; /* Length */
+	buffer[36] = 0x01; /* SUPI format: IMSI */
+	memcpy(buffer+37, get_plmn(enb), PLMN_LENGTH); /* PLMN */
+	buffer[40] = 0x00; /* Routing Indicator */
+	buffer[41] = 0x00; /* Routing Indicator */
+	buffer[42] = 0x00; /* Protection scheme ID */
+	buffer[43] = 0x00; /* Home network public key identifier */
+	memcpy(buffer+44, get_ue_msin(ue), UE_MSIN_LENGTH);
+	/* 5GMM capability */
+	buffer[49] = 0x10; /* Element ID */
+	buffer[50] = 0x01; /* Length */
+	buffer[51] = 0x00;
+	/* UE security capability */
+	buffer[52] = 0x2e; /* Element ID */
+	buffer[53] = 0x04; /* Length */
+	buffer[54] = 0x80; /* 5G Ciphering */
+	buffer[55] = 0xa0; /* 5G Integrity */
+	buffer[56] = 0x80; /* 4G Ciphering */
+	buffer[57] = 0xa0; /* 4G Integrity */
+	/* NSSAI */
+	buffer[58] = 0x2f; /* Element ID */
+	buffer[59] = 0x05; /* Length */
+	buffer[60] = 0x04; /* Length */
+	buffer[61] = 0x01; /* S-NSSAI */
+	buffer[62] = 0x01; /* S-NSSAI */
+	buffer[63] = 0x02; /* S-NSSAI */
+	buffer[64] = 0x03; /* S-NSSAI */
+	/* 5GS update type */
+	buffer[65] = 0x53; /* Element ID */
+	buffer[66] = 0x01; /* Length */
+	buffer[67] = 0x00;
+
+	/* Calculate Message Authentication Code (bearer 1 and count 0)*/
+	nas_integrity_eia2(get_auth_challenge(ue)->NAS_KEY_INT, buffer+11, 57, 0, 1, buffer+7);
+
+	return 68;
+}
+
+int generate_NG_Security_Mode_Complete(eNB * enb, UE * ue, uint8_t * buffer)
+{
+	int offset = 0;
+
+	/* Clean the buffer */
+	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
+
+	offset = add_NG_Security_Mode_Complete_Header(buffer);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_NAS_PDU_Security_Mode_Complete(ue, enb, buffer+offset);
+	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
+
+	return offset;
+}
+
 int procedure_Registration_Request(eNB * enb, UE * ue)
 {
 	uint8_t buffer[BUFFER_LEN];
@@ -548,6 +719,10 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	struct sockaddr_in addr;
 	struct sctp_sndrcvinfo sndrcvinfo;
 	socklen_t from_len;
+	uint8_t kausf[32];
+    uint8_t kseaf[32];
+    uint8_t kamf[32];
+    char supi[15];
 
 	int socket = get_mme_socket(enb);
 	from_len = (socklen_t)sizeof(struct sockaddr_in);
@@ -574,36 +749,49 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 		return ERROR;
 	}
 
-	//uint8_t key[16] = {0x51, 0x22, 0x25, 0x02, 0x14, 0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5, 0x23, 0xfc, 0x14, 0x5f, 0xc0};
-	//uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c, 0x7c, 0x52, 0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
-	//uint8_t rand[16] = {0x37, 0x98, 0x50, 0x22, 0x34, 0x07, 0x4f, 0xe7, 0x0a, 0xaa, 0x5a, 0xf5, 0xca, 0x78, 0x59, 0xa3};
-	//uint8_t ck[16];
-	//uint8_t ik[16];
-	//uint8_t ak[6];
-	//uint8_t res[8];
-	//uint8_t out[16];
-	//uint8_t autn[16] = {0x98, 0x77, 0x44, 0x1d, 0x6a, 0x3b, 0x80, 0x00, 0x39, 0xa3, 0x14, 0x56, 0x7e, 0x90, 0x7e, 0xf7};
-	//key: 5122250214c33e723a5dd523fc145fc0
-	//opc: 981d464c7c52eb6e5036234984ad0bcf
-	//rand: 3798502234074fe70aaa5af5ca7859a3
-	//autn: 9877441d6a3b800039a314567e907ef7
-	//res: da3de98d4e7c010d863cb52bf1f9fc33
-
 	f2345(get_ue_key(ue), get_auth_challenge(ue)->RAND, get_auth_challenge(ue)->RES, get_auth_challenge(ue)->CK, get_auth_challenge(ue)->IK, get_auth_challenge(ue)->AK, get_ue_op_key(ue));
 	dumpChallenge(get_auth_challenge(ue));
-
-	//f2345(key, rand, res, ck, ik, ak, opc);
-	//generate_res_5g(out, ck, ik, rand, res);
-	//int i;
-	//printf("RES 5G: ");
-	//for(i = 0; i < 16; i++)
-	//	printf("%.2x ", out[i]);
-	//printf("\n");
 
 	/* Registration Response */
 	len = generate_NG_Authentication_Response(enb, ue, buffer);
 
 	/* Sending request */
+	/* MUST BE ON STREAM 60 */
+	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
+
+	/* Kausf, Kseaf, Kamf, NAS_ENC and NAS_INT are generated while UE is waiting for Security mode command */
+	/* Only integrity is implemented in this emulator to minimize the CPU load */
+	generate_kausf(kausf, get_auth_challenge(ue)->CK, get_auth_challenge(ue)->IK, get_auth_challenge(ue)->AUTN, get_ue_mcc(ue), get_ue_mnc(ue));
+	generate_kseaf(kseaf, kausf, get_ue_mcc(ue), get_ue_mnc(ue));
+	/* Generate SUPI */
+	memcpy(supi, get_ue_mcc(ue), 3);
+	memcpy(supi+3, get_ue_mnc(ue), 2);
+	memcpy(supi+5, get_msin_string(ue), 10);
+	generate_kamf(kamf, supi, kseaf);
+
+	/* Receiving MME answer */
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+	if(recv_len < 0)
+	{
+		printError("No data received from AMF\n");
+		return ERROR;
+	}
+	if(analyze_NG_SecurityModeCommand(ue, enb, buffer, recv_len) == 1)
+	{
+		printError("Wrong NG Security Mode Command\n");
+		return ERROR;
+	}
+
+	/* Generate Integrity key and Encryption key */
+	generate_5g_nas_enc_key(get_auth_challenge(ue)->NAS_KEY_ENC, kamf, get_nas_session_enc_alg(ue));
+    generate_5g_nas_int_key(get_auth_challenge(ue)->NAS_KEY_INT, kamf, get_nas_session_int_alg(ue));
+	dumpChallengeDerivatedKeys(get_auth_challenge(ue));
+
+	/* Security Mode Complete */
+	len = generate_NG_Security_Mode_Complete(enb, ue, buffer);
+
+	/* Sending Security Mode Complete */
 	/* MUST BE ON STREAM 60 */
 	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
 
@@ -615,11 +803,6 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 		printError("No data received from AMF\n");
 		return ERROR;
 	}
-	//if(analyze_NG_AuthenticationRequest(ue, enb, buffer, recv_len) == 1)
-	//{
-	//	printError("Wrong NG Authentication Request\n");
-	//	return ERROR;
-	//}
 
 
 	return ERROR;

@@ -2033,7 +2033,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_security_command_complete(UE * ue, Auth
 	nas_pdu.security_header_type_protocol_discriminator_second = NAS_SECURITY_HEADER_TYPE | NAS_PROTOCOL_DISCRIMINATOR;
 	nas_pdu.nas_eps_mmm_type = NAS_EPS_MMM_TYPE_SECURITY_COMMAND_COMPLETE;
 	/* Generate NAS integrity check*/
-	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 3, 0, nas_pdu.message_authentication_code);
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 3, 0, 0, nas_pdu.message_authentication_code);
 	
 
 
@@ -2068,7 +2068,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_attach_complete(UE * ue, Auth_Challenge
 	nas_pdu.esm_container[4] = 0xc2; /* Activate default EPS bearer context accept */
 
 	/* Generate NAS integrity check*/
-	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 8, 1, nas_pdu.message_authentication_code);
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 8, 1, 0, nas_pdu.message_authentication_code);
 	
 
 
@@ -2111,7 +2111,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_detach(UE * ue, Auth_Challenge * auth_c
 	memcpy(nas_pdu.eps_mobile_identity+3, get_guti(ue), GUTI_LEN); /* Copy GUTI */
 
 	/* Generate NAS integrity check*/
-	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 16, 1, nas_pdu.message_authentication_code);
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, &nas_pdu.sequence_number, 16, 1, 0, nas_pdu.message_authentication_code);
 	
 
 
@@ -2141,7 +2141,7 @@ ProtocolIE * generate_ProtocolIE_nas_pdu_service_request(UE * ue, Auth_Challenge
 
 	/* Generate NAS integrity check Short MAC*/
 	/* count argument has to be 2 (No idea why) */
-	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, (uint8_t *)&nas_pdu, 2, 2, mac);
+	nas_integrity_eia2(auth_challenge->NAS_KEY_INT, (uint8_t *)&nas_pdu, 2, 2, 0,mac);
 
 	/* Short MAC */
 	nas_pdu.short_mac[0] = mac[2];
@@ -3162,7 +3162,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	GC_free(authentication_res_buffer);
 
 	/* KASME, NAS_ENC and NAS_INT are generated while UE is waiting for Security mode command */
-	/* Only integrity is implemented in this simulator to minimize the CPU load */
+	/* Only integrity is implemented in this emulator to minimize the CPU load */
 	generate_kasme(auth_challenge->CK, auth_challenge->IK, auth_challenge->AK, auth_challenge->AUTN, get_plmn(enb), PLMN_LENGTH, auth_challenge->KASME);
 
 

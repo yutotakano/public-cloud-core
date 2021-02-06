@@ -18,6 +18,7 @@
 #include "data_plane.h"
 #include "enb_emulator.h"
 #include "ue_emulator.h"
+#include "crypto.h"
 
 
 #define CONTROLLER_PORT 1234
@@ -438,11 +439,64 @@ void receive_controller()
     }
 }
 
+void dumpM(char * text, uint8_t * mem, uint8_t len)
+{
+    int i;
+    printf("%s: ", text);
+    for(i = 0; i < len; i++)
+        printf("%.2x", mem[i]);
+    printf("\n");
+}
+
 int main(int argc, char const *argv[])
 {
     uint32_t ue_address;
 
     setvbuf(stdout, NULL, _IONBF, 0); 
+
+    /* TESTING */
+    /*
+    uint8_t  key[32] = {0x8b, 0xaf, 0x47, 0x3f, 0x2f, 0x8f, 0xd0, 0x94, 0x87, 0xcc, 0xcb, 0xd7, 0x09, 0x7c, 0x68, 0x62};
+    uint8_t  opc[32] = {0x8e, 0x27, 0xb6, 0xaf, 0x0e, 0x69, 0x2e, 0x75, 0x0f, 0x32, 0x66, 0x7a, 0x3b, 0x14, 0x60, 0x5d};
+    uint8_t rand[32] = {0x98, 0xf8, 0x81, 0xd5, 0x47, 0x4e, 0xc8, 0xa6, 0x40, 0x60, 0x6e, 0x0f, 0x50, 0x51, 0xfa, 0x86};
+    uint8_t autn[32] = {0xea, 0x2d, 0xe7, 0x5e, 0xd2, 0x01, 0x80, 0x00, 0x4f, 0x82, 0x6a, 0x18, 0xc2, 0xc1, 0x78, 0xe5};
+    uint8_t res[8];
+    uint8_t ck[16];
+    uint8_t ik[16];
+    uint8_t ak[6];
+    uint8_t res_asterisk[16];
+    char supi[15] = "208930000000003";
+    uint8_t kausf[32];
+    uint8_t kseaf[32];
+    uint8_t kamf[32];
+    uint8_t enc_key[16];
+    uint8_t int_key[16];
+
+    f2345(key, rand, res, ck, ik, ak, opc);
+    dumpM("Key", key, 32);
+    dumpM("OPC", opc, 32);
+    dumpM("Rand", rand, 32);
+    dumpM("Autn", autn, 32);
+    dumpM("RES", res, 8);
+    dumpM("CK", ck, 16);
+    dumpM("IK", ik, 16);
+    dumpM("ak", ak, 6);
+    generate_res_5g(res_asterisk, ck, ik, rand, res, (uint8_t *)supi, (uint8_t *)supi+3);
+    dumpM("RES*", res_asterisk, 16);
+    generate_kausf(kausf, ck, ik, autn, (uint8_t *)supi, (uint8_t *)supi+3);
+    dumpM("Kausf", kausf, 32);
+    generate_kseaf(kseaf, kausf, (uint8_t *)supi, (uint8_t *)supi+3);
+    dumpM("Kseaf", kseaf, 32);
+    generate_kamf(kamf, supi, kseaf);
+    dumpM("Kamf", kamf, 32);
+    generate_5g_nas_enc_key(enc_key, kamf, 0x00);
+    generate_5g_nas_int_key(int_key, kamf, 0x02);
+    dumpM("EncKey", enc_key, 16);
+    dumpM("IntKey", int_key, 16);
+
+
+    return 0;
+    */
 
     if(argc != 3)
     {
