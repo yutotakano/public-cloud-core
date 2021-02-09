@@ -11,7 +11,7 @@ import struct
 from kubernetes import config, client
 
 # Debug variable to use in local testbed
-k8s = False
+k8s = True
 
 
 

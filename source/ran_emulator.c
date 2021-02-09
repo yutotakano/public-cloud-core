@@ -454,7 +454,7 @@ int main(int argc, char const *argv[])
 
     setvbuf(stdout, NULL, _IONBF, 0); 
 
-    /* TESTING */
+    /* CRYPTO TESTING */
     /*
     uint8_t  key[32] = {0x8b, 0xaf, 0x47, 0x3f, 0x2f, 0x8f, 0xd0, 0x94, 0x87, 0xcc, 0xcb, 0xd7, 0x09, 0x7c, 0x68, 0x62};
     uint8_t  opc[32] = {0x8e, 0x27, 0xb6, 0xaf, 0x0e, 0x69, 0x2e, 0x75, 0x0f, 0x32, 0x66, 0x7a, 0x3b, 0x14, 0x60, 0x5d};
@@ -536,8 +536,8 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    memcpy(local_ip, ue_ip, 4);
-    //bzero(local_ip, 4);
+    //memcpy(local_ip, ue_ip, 4);
+    bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
