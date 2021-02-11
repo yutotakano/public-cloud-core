@@ -3052,7 +3052,7 @@ s1ap_initiatingMessage * generate_Path_Switch_Request(eNB * enb, UE * ue)
 /* Main Procedures */
 /*******************/
 
-int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
+int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 {
 	s1ap_initiatingMessage * s1ap_attach_request;
 	s1ap_initiatingMessage * s1ap_auth_response;
@@ -3259,7 +3259,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue, uint8_t * ue_ip)
 	/**********************************/
 	/* Initial Context Setup Response */
 	/**********************************/
-	init_context_setup_response = generate_S1AP_initial_context_setup_response(enb, ue, ue_ip);
+	init_context_setup_response = generate_S1AP_initial_context_setup_response(enb, ue, get_ue_ip(ue));
 	init_context_setup_response_buffer = s1ap_initiatingMessage_to_buffer(init_context_setup_response, &len);
 	/* Special case with successful outcome flag */
 	init_context_setup_response_buffer[0] = SUCCESSFUL_OUTCOME;

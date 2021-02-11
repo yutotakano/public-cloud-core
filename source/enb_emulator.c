@@ -118,7 +118,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		}
 		#else
 		/* Attach UE 1 */
-	    if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
+	    if(procedure_Attach_Default_EPS_Bearer(enb, ue))
     	{
     		printError("Attach and Setup default bearer error\n");
     		free_UE(ue);
@@ -201,7 +201,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		}
 		#else
 		/* Attach UE */
-		if(procedure_Attach_Default_EPS_Bearer(enb, ue, get_ue_ip(ue)))
+		if(procedure_Attach_Default_EPS_Bearer(enb, ue))
 		{
 			printError("Move to Attached (UEAttach) error\n");
 			/* Generate UE Error response */
