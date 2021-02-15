@@ -102,3 +102,21 @@ void kdf_nas(c_uint8_t algorithm_type_distinguishers,
     hmac_sha256(kasme, 32, s, 7, out, 32);
     memcpy(knas, out+16, 16);
 }
+
+// taken from mme_kdf_enb in nextepc/src/mme/mme_kdf.c
+void kdf_enb(c_uint8_t *kasme, c_uint32_t ul_count, c_uint8_t *kenb)
+{
+    d_info("Generating ENB KDF");
+
+    c_uint8_t s[7];
+
+    s[0] = 0x11; /* FC Value */
+
+    ul_count = htonl(ul_count);
+    memcpy(s+1, &ul_count, 4);
+
+    s[5] = 0x00;
+    s[6] = 0x04;
+
+    hmac_sha256(kasme, 32, s, 7, kenb, 32);
+}
