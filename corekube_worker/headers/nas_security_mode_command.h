@@ -18,4 +18,6 @@ status_t generate_nas_keys(c_uint8_t *kasme, c_uint8_t *knas_int, c_uint8_t *kna
 void kdf_nas(c_uint8_t algorithm_type_distinguishers,
     c_uint8_t algorithm_identity, c_uint8_t *kasme, c_uint8_t *knas);
 
+void kdf_enb(c_uint8_t *kasme, c_uint32_t ul_count, c_uint8_t *kenb);
+
 #endif /* __S1AP_HANDLER_NAS_SECURITY_MODE_COMMAND_H__ */
