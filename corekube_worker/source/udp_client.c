@@ -90,6 +90,13 @@ int main(int argc, char const *argv[]) {
         "000800048006692d001a000c0b075308"
         "5206154f10536d29006440080002f839"
         "00e00000004340060002f8390001";
+    
+    char *SecurityModeComplete =
+        "0f0a0c0e"
+        "000d4034000005000000020001000800"
+        "048006692d001a000908475ab132f300"
+        "075e006440080002f83900e000000043"
+        "40060002f8390001";
 
     switch (message_number) {
         case 1:
@@ -100,6 +107,9 @@ int main(int argc, char const *argv[]) {
             break;
         case 3:
             send_message((char *)argv[1], UplinkNASTransport);
+            break;
+        case 4:
+            send_message((char *)argv[1], SecurityModeComplete);
             break;
         default:
             send_message((char *)argv[1], S1SetupRequest);
