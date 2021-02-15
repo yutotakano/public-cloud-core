@@ -60,7 +60,10 @@ status_t nas_security_encode(nas_message_t *message, corekube_db_pulls_t *db_pul
         h.security_header_type = message->h.security_header_type;
         h.protocol_discriminator = message->h.protocol_discriminator;
         c_uint32_t nas_dl_count;
-        nas_dl_count = array_to_int(db_pulls->epc_nas_sequence_number);
+        // a poor hack: the sequence number is a 6-byte number, but in
+        // practice it will never get higher than 4-bytes, so in this
+        // context we can treat it like a 4-byte number
+        nas_dl_count = array_to_int(db_pulls->epc_nas_sequence_number+2);
         h.sequence_number = (nas_dl_count & 0xff);
 
         status_t plain_encode = nas_plain_encode(&new, message);
@@ -124,7 +127,10 @@ status_t nas_security_decode(S1AP_NAS_PDU_t *nasPdu, corekube_db_pulls_t *db_pul
     d_assert(pkbuf->payload, return CORE_ERROR, "Null param");
 
     c_uint32_t nas_ul_count;
-    nas_ul_count = array_to_int(db_pulls->ue_nas_sequence_number);
+    // a poor hack: the sequence number is a 6-byte number, but in
+    // practice it will never get higher than 4-bytes, so in this
+    // context we can treat it like a 4-byte number
+    nas_ul_count = array_to_int(db_pulls->ue_nas_sequence_number+2);
 
     if (security_header_type.service_request)
     {
