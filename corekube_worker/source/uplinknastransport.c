@@ -4,6 +4,7 @@
 #include "nas_util.h"
 #include "s1ap_conv.h"
 #include "nas_authentication_response.h"
+#include "initialcontextsetuprequest.h"
 #include "nas_message_security.h" //TODO - included while testing, make sure it is actually needed when commiting final version
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
@@ -20,6 +21,9 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
     switch (nas_message.emm.h.message_type) {
         case NAS_AUTHENTICATION_RESPONSE:
             return nas_handle_authentication_response(&nas_message, mme_ue_id, response);
+        case NAS_SECURITY_MODE_COMPLETE:
+            // TODO: only for testing purposes - send back a sample attach accept
+            return nas_send_attach_accept(mme_ue_id, response);
         default:
             d_error("Unknown NAS message type");
             return CORE_ERROR;
