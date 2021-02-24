@@ -6,6 +6,9 @@
 
 #include <libck.h>
 
+// external reference to variable in the listener
+extern char* db_ip_address;
+
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP InitialUEMessage");
 
@@ -111,7 +114,7 @@ status_t get_initialue_prerequisites_from_db(nas_mobile_identity_imsi_t *imsi, c
     status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
     d_assert(get_raw_imsi == CORE_OK, return CORE_ERROR, "Could not get raw IMSI");
 
-    int sock = db_connect("127.0.0.1", 0);
+    int sock = db_connect(db_ip_address, 0);
     int n;
 
     const int NUM_PULL_ITEMS = 5;
@@ -139,7 +142,7 @@ status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authen
     OCTET_STRING_t raw_enb_ue_id;
     s1ap_uint32_to_OCTET_STRING(*enb_ue_id, &raw_enb_ue_id);
 
-    int sock = db_connect("127.0.0.1", 0);
+    int sock = db_connect(db_ip_address, 0);
     uint8_t buf[1024];
     int n;
 

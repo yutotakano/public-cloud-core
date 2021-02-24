@@ -14,6 +14,8 @@
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
 
+char *db_ip_address;
+
 int configure_udp_socket(char * mme_ip_address)
 {
 	int sock_udp;
@@ -108,11 +110,15 @@ void start_listener(char * mme_ip_address)
 
 int main(int argc, char const *argv[])
 {
-	if(argc != 2) {
-		printf("RUN: ./listener <MME_IP_ADDRESS>\n");
+	if(argc != 3) {
+		printf("RUN: ./corekube_udp_listener <MME_IP_ADDRESS> <DB_IP_ADDRESS>\n");
 		return 1;
 	}
 	core_initialize();
+
+	// setup the DB IP address
+	db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));
+	memcpy(db_ip_address, (char *)argv[2], strlen((char *)argv[2]));
 
 	start_listener((char *)argv[1]);
 

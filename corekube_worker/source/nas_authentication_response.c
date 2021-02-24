@@ -12,6 +12,9 @@
 
 #include <libck.h>
 
+// external reference to variable in the listener
+extern char* db_ip_address;
+
 status_t nas_handle_authentication_response(nas_message_t *nas_message, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, S1AP_handler_response_t *response) {
     d_info("Handling NAS Authentication Message");
 
@@ -49,7 +52,7 @@ status_t get_nas_authentication_response_prerequisites_from_db(S1AP_MME_UE_S1AP_
     OCTET_STRING_t raw_mme_ue_id;
     s1ap_uint32_to_OCTET_STRING(*mme_ue_id, &raw_mme_ue_id);
 
-    int sock = db_connect("127.0.0.1", 0);
+    int sock = db_connect(db_ip_address, 0);
     int n;
 
     const int NUM_PULL_ITEMS = 5;

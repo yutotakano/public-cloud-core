@@ -14,6 +14,9 @@
 #include <arpa/inet.h>
 #include "core/include/core_lib.h"
 
+// external reference to variable in the listener
+extern char* db_ip_address;
+
 // the following function is adapted from 
 // nas_send_attach_accept() in the file 
 // nextepc/src/mme/nas_path.c
@@ -54,7 +57,7 @@ status_t attach_accept_fetch_state(S1AP_MME_UE_S1AP_ID_t *mme_ue_id, c_uint8_t *
     OCTET_STRING_t raw_mme_ue_id;
     s1ap_uint32_to_OCTET_STRING(*mme_ue_id, &raw_mme_ue_id);
 
-    int sock = db_connect("127.0.0.1", 0);
+    int sock = db_connect(db_ip_address, 0);
     int n;
 
     // required items from DB:

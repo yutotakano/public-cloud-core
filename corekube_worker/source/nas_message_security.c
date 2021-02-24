@@ -10,6 +10,9 @@
 #include "s1ap_conv.h"
 #include "core_aes_cmac.h"
 
+// external reference to variable in the listener
+extern char* db_ip_address;
+
 // the following function was adapted from
 // nas_security_encode() in nextepc/src/mme/nas_security.h
 status_t nas_security_encode(nas_message_t *message, corekube_db_pulls_t *db_pulls, pkbuf_t **pkbuf) {
@@ -317,7 +320,7 @@ status_t get_NAS_decode_security_prerequisites_from_db(S1AP_MME_UE_S1AP_ID_t *mm
     OCTET_STRING_t raw_mme_ue_id;
     s1ap_uint32_to_OCTET_STRING(*mme_ue_id, &raw_mme_ue_id);
 
-    int sock = db_connect("127.0.0.1", 0);
+    int sock = db_connect(db_ip_address, 0);
     int n;
 
     const int NUM_PULL_ITEMS = 3;
