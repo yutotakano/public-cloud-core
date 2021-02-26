@@ -26,4 +26,4 @@ WORKDIR ran_emulator/
 RUN make
 
 # Install tools to generate traffic
-RUN apt-get -y install iperf net-tools iputils-ping d-itg
+RUN apt-get -y install iperf iperf3 net-tools iputils-ping d-itg
