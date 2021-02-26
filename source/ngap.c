@@ -92,6 +92,9 @@
 #define ID_UE_AGGREGATE_MAXIMUM_BIT_RATE 0x6e
 #define ID_PDU_SESSION_RESOURCE_SETUP_LIST_SU_REQ 0x4a
 
+/* Configuration update command */
+#define CONFIGURATION_UPDATE_COMMAND 0x54
+
 /* Registration Complete */
 #define REGISTRATION_COMPLETE 0x43
 
@@ -192,7 +195,6 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 	uint16_t num_items;
 	int i, j;
 	int offset = 3;
-	uint8_t aux_offset;
 
 	num_items = (buffer[1] << 8) | buffer[2];
 
@@ -263,8 +265,9 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 				break;
 			case ID_PDU_SESSION_RESOURCE_SETUP_LIST_SU_REQ:
 				printf("\tPDU Session Resource Setup List SU Req\n");
+				if(buffer[offset+2] == 0x80) /* Special case where there is an extra byte */
+					offset ++;
 				printf("\tPDU Session ID: %d\n", buffer[offset + 5]);
-				aux_offset = buffer[offset + 6] + 5 + 7; /* Header length + NAS PDU length + NSSAI length */
 				printf("\tNAS 5GS PDU:\n");
 				if(buffer[offset + 7] == 0x7e)
 				{
@@ -273,15 +276,24 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 					printf("\t\tMessage Authentication Code: 0x%.2x%.2x%.2x%.2x\n", buffer[offset+9], buffer[offset+10], buffer[offset+11], buffer[offset+12]);
 					printf("\t\tSequence Number: %d\n", buffer[offset+13]);
 					printf("\t\tDecoded as 5G-EA0 ciphered message!\n");
-					printf("\t\tPDU Address: %d.%d.%d.%d\n", buffer[offset + 48], buffer[offset + 49], buffer[offset + 50], buffer[offset + 51]);
-					set_pdn_ip(ue, buffer+offset+48);
+
+					/* Look for the PDU Address ID (0x29) */
+					for(j = 7; j < buffer[offset + 2] - 5; j++)
+						if(buffer[offset + j] == 0x29)
+							break;
+					printf("\t\tPDU Address: %d.%d.%d.%d\n", buffer[offset + j + 3], buffer[offset + j + 4], buffer[offset + j + 5], buffer[offset + j + 6]);
+					set_pdn_ip(ue, buffer+offset+j+3);
+					/* Look for the GTP ID (0x8B) */
+					for(j = j; j < buffer[offset + 2] - 5; j++)
+						if(buffer[offset + j] == 0x8b && buffer[offset + j - 1] == 0x00)
+							break;
 					/* Transport Layer Address */
-					printf("\t\tTransport Layer Address: %d.%d.%d.%d\n", buffer[offset + aux_offset + 10], buffer[offset + aux_offset + 11], buffer[offset + aux_offset + 12], buffer[offset + aux_offset + 13]);
-					set_spgw_ip(ue, buffer+offset+aux_offset+10);
+					printf("\t\tTransport Layer Address: %d.%d.%d.%d\n", buffer[offset + j + 5], buffer[offset + j + 6], buffer[offset + j + 7], buffer[offset + j + 8]);
+					set_spgw_ip(ue, buffer+offset+j+5);
 					/* Safe TEID */
 					uint32_t teid;
-					printf("\t\tTEID: 0x%.2x%.2x%.2x%.2x\n", buffer[offset + aux_offset + 14], buffer[offset + aux_offset + 15], buffer[offset + aux_offset + 16], buffer[offset + aux_offset + 17]);
-					teid = (buffer[offset + aux_offset + 14] << 24) | buffer[offset + aux_offset + 15] << 16 | buffer[offset + aux_offset + 16] << 8 | buffer[offset + aux_offset + 17];
+					printf("\t\tTEID: 0x%.2x%.2x%.2x%.2x\n", buffer[offset + j + 9], buffer[offset + j + 10], buffer[offset + j + 11], buffer[offset + j + 12]);
+					teid = (buffer[offset + j + 9] << 24) | buffer[offset + j + 10] << 16 | buffer[offset + j + 11] << 8 | buffer[offset + j + 12];
 					set_gtp_teid(ue, teid);
 				}
 
@@ -298,6 +310,11 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 						printf("\t5G-TMSI: 0x%.2x%.2x%.2x%.2x\n", buffer[offset+26], buffer[offset+27], buffer[offset+28], buffer[offset+29]);
 						/* Saving 5G-GUTI */
 						set_guti(ue, buffer+offset+20);
+					}
+					if(buffer[offset+13] == CONFIGURATION_UPDATE_COMMAND)
+					{
+						/* Special case where a configuration update command is detected */
+						printf("Configuration Update Command\n");
 					}
 				}
 				if(buffer[offset+5] == 0x03) /*NAS PDU Integrity protected*/
@@ -426,6 +443,21 @@ int analyze_NG_PDUSessionEstablishmentAccept(UE * ue, eNB * enb, uint8_t * buffe
 		return ERROR;
 	}
 	analyze_message_items(enb, ue, buffer+5, buffer[4]);
+
+	return OK;
+}
+
+int analyze_NG_ConfigurationUpdateCommand(UE * ue, eNB * enb, uint8_t * buffer, int len)
+{
+	if(buffer[0] != 0x00 || buffer[1] != ID_DOWNLINK_NAS_TRANSPORT) {
+		return ERROR;
+	}
+	/* Check criticality */
+	if(buffer[2] != CRITICALITY_IGNORE) {
+		return ERROR;
+	}
+
+	/* Any downlink nas transport message at this point is interpreted as Configuration Update Command */
 
 	return OK;
 }
@@ -1184,18 +1216,28 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
 	printOK("PDU Session Request sent.\n");
 
-	/* Receiving MME answer */
-	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
-	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-	if(recv_len < 0)
+	while(1)
 	{
-		printError("No data received from AMF\n");
-		return ERROR;
-	}
-	if(analyze_NG_PDUSessionEstablishmentAccept(ue, enb, buffer, recv_len) == 1)
-	{
-		printError("Wrong NG PDU Session Establishment Accept\n");
-		return ERROR;
+		/* Receiving MME answer */
+		bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			printError("No data received from AMF\n");
+			return ERROR;
+		}
+		if(analyze_NG_ConfigurationUpdateCommand(ue, enb, buffer, recv_len) == OK)
+		{
+			printInfo("Configuration Update Command message detected!\n");
+			continue;
+		}
+		if(analyze_NG_PDUSessionEstablishmentAccept(ue, enb, buffer, recv_len) == 1)
+		{
+			printError("Wrong NG PDU Session Establishment Accept\n");
+			return ERROR;
+		}
+		break;
 	}
 
 	printInfo("Generating PDU Session Setup Response...\n");
