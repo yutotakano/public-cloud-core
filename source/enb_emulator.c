@@ -148,6 +148,9 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
+		#ifdef _5G
+		printWarning("5G MOVE_TO_IDLE event not implemented.\n");
+		#else
 		/* Move UE to idle */
 		if(procedure_UE_Context_Release(enb, ue))
 		{
@@ -157,6 +160,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
     		*response_len = 1;
     		return 1;
 		}
+		#endif
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
 		*response_len = 1;
@@ -169,7 +173,16 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
-
+		#ifdef _5G
+		if(!switch_off)
+		{
+			printWarning("5G UE_SWITCH_OFF_DETACH events not implemented.\n");
+		}
+		else
+		{
+			printWarning("5G UE_DETACH event not implemented.\n");
+		}
+		#else
 		/* Detach UE */
 		if(procedure_UE_Detach(enb, ue, switch_off))
 		{
@@ -179,6 +192,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
     		*response_len = 1;
     		return 1;
 		}
+		#endif
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];
 		*response_len = 1;
@@ -234,6 +248,9 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 
+		#ifdef _5G
+		printWarning("5G MOVE_TO_CONNECTED event not implemented.\n");
+		#else
 		/* Detach UE */
 		if(procedure_UE_Service_Request(enb, ue, get_ue_ip(ue)))
 		{
@@ -243,8 +260,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 	    		*response_len = 1;
     			return 1;
 		}
-		/* Setting up Response */
-		response[0] = OK_CODE | buffer[0];
+		#endif
 
 		/* Setting up Response */
 		response[0] = OK_CODE | buffer[0];

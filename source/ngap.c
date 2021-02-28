@@ -599,13 +599,13 @@ int add_NG_Registration_Request_Header(uint8_t * buffer)
 
 int add_protocolIE_RAN_UE_NGAP_ID(UE * ue, uint8_t * buffer)
 {
-	uint32_t ngap_id = get_ue_s1ap_id(ue);
+	uint32_t ngap_id = get_ue_id(ue);
 	buffer[0] = 0;
 	buffer[1] = ID_RAN_UE_NGAP_ID;
 	buffer[2] = CRITICALITY_REJECT;
 	buffer[3] = 2; /* ID Length */
-	buffer[4] = reverse_byte((ngap_id >> 8) & 0xFF);
-	buffer[5] = reverse_byte(ngap_id & 0xFF);
+	buffer[4] = (ngap_id >> 8) & 0xFF;//reverse_byte((ngap_id >> 8) & 0xFF);
+	buffer[5] = ngap_id & 0xFF;//reverse_byte(ngap_id & 0xFF);
 	return 6;
 }
 

@@ -106,7 +106,6 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	ue->nas_sequence_number = 0;
 
 	/* UE_S1AP_ID is a random number dedicated to the UE connection */
-	/* Because of that can be generated randomly */
 	/* To avoid random number generation collision, these numbers are extracted from the msin value (less significant 24 bits)*/
 	ue->ue_s1ap_id = 0x80000000 | (ue->msin[2] << 16) | (ue->msin[3] << 8) | ue->msin[4];
 	return ue;
