@@ -114,6 +114,14 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			buffer[0] = INT_KEY;
 			memcpy(buffer+1, value, KEY_LEN);
 			break;
+		case KASME_1:
+			buffer[0] = KASME_1;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
+		case KASME_2:
+			buffer[0] = KASME_2;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
 		default:
 			/* Undefined Item */
 			return buffer;
@@ -240,6 +248,12 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 				break;
 			case INT_KEY:
 				db_pulls->int_key = buffer+i+1;
+				break;
+			case KASME_1:
+				db_pulls->kasme1 = buffer+i+1;
+				break;
+			case KASME_2:
+				db_pulls->kasme2 = buffer+i+1;
 				break;
 			default:
 				printError("Unre] item\n");

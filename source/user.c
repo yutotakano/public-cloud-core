@@ -38,6 +38,9 @@ struct _UserInfo
 	uint8_t enc_key[KEY_LEN]; /* Key used in the NAS encryption */
 	uint8_t int_key[KEY_LEN]; /* Key used in the NAS integrity */
 
+	uint8_t kasme1[KEY_LEN]; /* Kasme[0:16]  */
+	uint8_t kasme2[KEY_LEN]; /* Kasme[16:32] */
+
 	uint8_t epc_nas_sequence_number;
 	uint8_t ue_nas_sequence_number;
 };
@@ -157,6 +160,16 @@ uint8_t * get_user_enc_key(UserInfo * user)
 uint8_t * get_user_int_key(UserInfo * user)
 {
 	return user->int_key;
+}
+
+uint8_t * get_user_kasme1_key(UserInfo * user)
+{
+	return user->kasme1;
+}
+
+uint8_t * get_user_kasme2_key(UserInfo * user)
+{
+	return user->kasme2;
 }
 
 void generate_rand(UserInfo * user)

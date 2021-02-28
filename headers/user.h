@@ -37,6 +37,8 @@ void set_user_ue_nas_sequence_number(UserInfo * user, uint8_t value);
 uint8_t * get_user_auth_res(UserInfo * user);
 uint8_t * get_user_enc_key(UserInfo * user);
 uint8_t * get_user_int_key(UserInfo * user);
+uint8_t * get_user_kasme1_key(UserInfo * user);
+uint8_t * get_user_kasme2_key(UserInfo * user);
 void generate_rand(UserInfo * user);
 void complete_user_info(UserInfo * user);
 void show_user_info(UserInfo * user);

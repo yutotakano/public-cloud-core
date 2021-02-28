@@ -37,7 +37,9 @@ enum ITEM_TYPE
 	EPC_TEID,
 	AUTH_RES,
 	ENC_KEY,
-	INT_KEY
+	INT_KEY,
+	KASME_1,
+	KASME_2
 };
 typedef uint8_t ITEM_TYPE;
 
@@ -61,6 +63,8 @@ typedef struct corekubedb_pulls {
 	uint8_t *auth_res;
 	uint8_t *enc_key;
 	uint8_t *int_key;
+	uint8_t *kasme1;
+	uint8_t *kasme2;
 } corekube_db_pulls_t;
 
 void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls);

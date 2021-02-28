@@ -357,6 +357,12 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			case INT_KEY:
 				memcpy(get_user_int_key(user), request+offset+1, KEY_LEN);
 				break;
+			case KASME_1:
+				memcpy(get_user_kasme1_key(user), request+offset+1, KEY_LEN);
+				break;
+			case KASME_2:
+				memcpy(get_user_kasme2_key(user), request+offset+1, KEY_LEN);
+				break;
 			default:
 				/* Undefined Item */
 				break;
@@ -454,6 +460,14 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			case INT_KEY:
 				response[res_offset] = INT_KEY;
 				memcpy(response+res_offset+1, get_user_int_key(user), KEY_LEN);
+				break;
+			case KASME_1:
+				response[res_offset] = KASME_1;
+				memcpy(response+res_offset+1, get_user_kasme1_key(user), KEY_LEN);
+				break;
+			case KASME_2:
+				response[res_offset] = KASME_2;
+				memcpy(response+res_offset+1, get_user_kasme2_key(user), KEY_LEN);
 				break;
 		}
 		res_offset += 17;
