@@ -98,6 +98,19 @@ int main(int argc, char const *argv[]) {
         "075e006440080002f83900e000000043"
         "40060002f8390001";
 
+    char *InitialContextSetupResponse = 
+        "0f0a0c0e"
+        "20090024000003000040020001000840"
+        "048006692d0033400f000032400a0a1f"
+        "c0a83866ca6fe0dd";
+    
+    char *AttachComplete = 
+        "0f0a0c0e"
+        "000d4039000005000000020001000800"
+        "048006692d001a000e0d276a60cd5501"
+        "074300035200c2006440080002f83900"
+        "e00000004340060002f8390001";
+
     switch (message_number) {
         case 1:
             send_message((char *)argv[1], S1SetupRequest);
@@ -110,6 +123,12 @@ int main(int argc, char const *argv[]) {
             break;
         case 4:
             send_message((char *)argv[1], SecurityModeComplete);
+            break;
+        case 5:
+            send_message((char *)argv[1], InitialContextSetupResponse);
+            break;
+        case 6:
+            send_message((char *)argv[1], AttachComplete);
             break;
         default:
             send_message((char *)argv[1], S1SetupRequest);
