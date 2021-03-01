@@ -84,8 +84,10 @@ void start_listener(char * mme_ip_address)
 
 		pkbuf_t *responseBuffer = response.response;
 
-		if (response.outcome == NO_RESPONSE)
+		if (response.outcome == NO_RESPONSE) {
+			d_info("Finished handling NO_RESPONSE message");
 			continue;
+		}
 
 		uint8_t response_out[responseBuffer->len + 5];
 		memcpy(response_out, buffer, 4);
@@ -101,6 +103,8 @@ void start_listener(char * mme_ip_address)
 		d_assert(ret != -1, continue, "Failed to send SCTP message");
 		d_info("Send %d bytes over UDP", ret);
 	}
+
+	d_assert(n != -1,, "An SCTP error occured");
 
 	/* Close the socket when done */
 	close(sock_udp);

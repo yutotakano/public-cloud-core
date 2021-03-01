@@ -131,8 +131,10 @@ void start_listener(char * mme_ip_address)
 		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");
 
 		pkbuf_t *setupResponsePkBuf = response.response;
-		if (response.outcome == NO_RESPONSE)
+		if (response.outcome == NO_RESPONSE) {
+			d_info("Finished handling NO_RESPONSE message");
 			continue;
+		}
 
 		int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, (uint16_t) response.sctpStreamID, 0, 0 );
 
@@ -144,6 +146,8 @@ void start_listener(char * mme_ip_address)
 
 		/////////////////////////////////////////////////////////
 	}
+
+	d_assert(n != -1,, "An SCTP error occured");
 
 	close(sock_enb);
 	close(sock_sctp);
