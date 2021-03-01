@@ -14,6 +14,7 @@ typedef struct nas_authentication_vector {
     c_uint8_t res[MAX_RES_LEN];
     c_uint8_t knas_int[SHA256_DIGEST_SIZE/2];
     c_uint8_t knas_enc[SHA256_DIGEST_SIZE/2];
+    c_uint8_t kasme[SHA256_DIGEST_SIZE];
 } nas_authentication_vector_t;
 
 status_t get_authentication_vector(nas_mobile_identity_imsi_t *imsi, S1AP_PLMNidentity_t *PLMNidentity, corekube_db_pulls_t *db_pulls, nas_authentication_vector_t *auth_vec);

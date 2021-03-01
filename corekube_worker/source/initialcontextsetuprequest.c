@@ -13,6 +13,7 @@
 #include "s1ap_conv.h"
 #include <arpa/inet.h>
 #include "core/include/core_lib.h"
+#include "nas_security_mode_command.h"
 
 // external reference to variable in the listener
 extern char* db_ip_address;
@@ -68,10 +69,10 @@ status_t attach_accept_fetch_state(S1AP_MME_UE_S1AP_ID_t *mme_ue_id, c_uint8_t *
     //     s1ap_build_initial_context_setup_request():
     //          mme_ue_s1ap_id, enb_ue_s1ap_id
 
-    const int NUM_PULL_ITEMS = 5;
+    const int NUM_PULL_ITEMS = 7;
     n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 0);
     n = pull_items(buffer, n, NUM_PULL_ITEMS,
-        MME_UE_S1AP_ID, ENB_UE_S1AP_ID, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER);
+        MME_UE_S1AP_ID, ENB_UE_S1AP_ID, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER, KASME_1, KASME_2);
     send_request(sock, buffer, n);
     n = recv_response(sock, buffer, 1024);
     db_disconnect(sock);
@@ -261,11 +262,20 @@ status_t s1ap_build_initial_context_setup_request(
     SecurityKey->buf = 
         core_calloc(SecurityKey->size, sizeof(c_uint8_t));
     SecurityKey->bits_unused = 0;
+
     c_uint8_t kenb[SHA256_DIGEST_SIZE];
-    c_int8_t kenb_string[] = "08bc5d728d82659591de3b672a3aa2df6ed3168ff195dcdf6b04755b432e6cbc";
-    CORE_HEX(kenb_string, strlen(kenb_string), kenb);
-    d_print_hex(kenb, SHA256_DIGEST_SIZE);
-    //memset(kenb, 0, SHA256_DIGEST_SIZE);
+    c_uint8_t kasme[SHA256_DIGEST_SIZE];
+
+    // kasme is stored in the DB as two 16-byte values, kasme1 and kasme2
+    memcpy(kasme, db_pulls->kasme1, SHA256_DIGEST_SIZE/2);
+    memcpy(kasme+SHA256_DIGEST_SIZE/2, db_pulls->kasme2, SHA256_DIGEST_SIZE/2);
+
+    // the ul_count is stored in the DB as 6-bytes, we only care about 4-bytes
+    c_uint32_t nas_ul_count = array_to_int(db_pulls->ue_nas_sequence_number+2);
+
+    // calculate the Kenb from Kasme
+    kdf_enb(kasme, nas_ul_count, kenb);
+
     memcpy(SecurityKey->buf, kenb, SecurityKey->size);
     d_print_hex(SecurityKey->buf, SecurityKey->size);
 

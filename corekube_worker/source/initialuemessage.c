@@ -146,11 +146,13 @@ status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authen
     uint8_t buf[1024];
     int n;
 
-    n = push_items(buf, IMSI, (uint8_t *)raw_imsi, 4,
+    n = push_items(buf, IMSI, (uint8_t *)raw_imsi, 6,
         AUTH_RES, auth_vec->res,
         ENC_KEY, auth_vec->knas_enc,
         INT_KEY, auth_vec->knas_int,
-        ENB_UE_S1AP_ID, raw_enb_ue_id.buf);
+        ENB_UE_S1AP_ID, raw_enb_ue_id.buf,
+        KASME_1, auth_vec->kasme,
+        KASME_2, (auth_vec->kasme)+16);
     n = pull_items(buf, n, 0);
     send_request(sock, buf, n);
 

@@ -100,6 +100,7 @@ status_t generate_authentication_vector(c_uint8_t *k, c_uint8_t *opc, c_uint8_t 
     memcpy(auth_vec->res, res, res_len);
     memcpy(auth_vec->knas_int, knas_int, SHA256_DIGEST_SIZE/2);
     memcpy(auth_vec->knas_enc, knas_enc, SHA256_DIGEST_SIZE/2);
+    memcpy(auth_vec->kasme, kasme, SHA256_DIGEST_SIZE);
 
     return CORE_OK;
 }
