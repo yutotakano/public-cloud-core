@@ -94,7 +94,7 @@ void start_listener(char * mme_ip_address)
 		response_out[4] = response.sctpStreamID;
 		memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
 		
-		int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 4,
+		int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 5,
 			MSG_CONFIRM, (const struct sockaddr *) &client_addr,
 			from_len);
 
