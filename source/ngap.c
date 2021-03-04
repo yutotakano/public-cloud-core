@@ -520,9 +520,9 @@ int add_protocolIE_TA_List(eNB * enb, uint8_t * buffer)
 	buffer[14] = 0; /* tAI Slice Support List */
 	buffer[15] = 0x10; /* s-NSSAI */
 	buffer[16] = 0x08; /* s-NSSAI */
-	buffer[17] = 0x01; /* s-NSSAI */
-	buffer[18] = 0x02; /* s-NSSAI */
-	buffer[19] = 0x03; /* s-NSSAI */
+	buffer[17] = 0x00; /* s-NSSAI */
+	buffer[18] = 0x00; /* s-NSSAI */
+	buffer[19] = 0x01; /* s-NSSAI */
 	return 20;
 }
 
@@ -590,7 +590,7 @@ int add_NG_Registration_Request_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_INITIAL_UE_MESSAGE;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x47; /* Content Length */
+	buffer[3] = 0x52; /* Content Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 5; /* protocolIEs: 5 items */
@@ -603,10 +603,11 @@ int add_protocolIE_RAN_UE_NGAP_ID(UE * ue, uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_RAN_UE_NGAP_ID;
 	buffer[2] = CRITICALITY_REJECT;
-	buffer[3] = 2; /* ID Length */
-	buffer[4] = (ngap_id >> 8) & 0xFF;//reverse_byte((ngap_id >> 8) & 0xFF);
-	buffer[5] = ngap_id & 0xFF;//reverse_byte(ngap_id & 0xFF);
-	return 6;
+	buffer[3] = 3; /* ID Length */
+	buffer[4] = 0x40;
+	buffer[5] = (ngap_id >> 8) & 0xFF;
+	buffer[6] = ngap_id & 0xFF;
+	return 7;
 }
 
 int add_protocolIE_NAS_PDU_Registration_Request(UE * ue, eNB * enb, uint8_t * buffer)
@@ -614,8 +615,8 @@ int add_protocolIE_NAS_PDU_Registration_Request(UE * ue, eNB * enb, uint8_t * bu
 	buffer[0] = 0;
 	buffer[1] = ID_NAS_PDU;
 	buffer[2] = CRITICALITY_REJECT;
-	buffer[3] = 0x1D; /* Length */
-	buffer[4] = 0x1C; /* Length - 1 */
+	buffer[3] = 0x27; /* Length */
+	buffer[4] = 0x26; /* Length - 1 */
 	buffer[5] = EPD_5G_Mobility_Management_Messages;
 	buffer[6] = 0; /* Security header type */
 	buffer[7] = MESSAGE_TYPE_REGISTRATION_REQUEST;
@@ -641,7 +642,19 @@ int add_protocolIE_NAS_PDU_Registration_Request(UE * ue, eNB * enb, uint8_t * bu
 	buffer[30] = 0xa0; /* 5G Integrity */
 	buffer[31] = 0x80; /* 4G Encryption */
 	buffer[32] = 0xa0; /* 4G Integrity */
-	return 33;
+	/* NSSAI */
+	buffer[33] = 0x2f; /* Element ID */
+	buffer[34] = 0x05; /* Length */
+	buffer[35] = 0x04; /* Length */
+	buffer[36] = 0x01; /* SST */
+	buffer[37] = 0x00; /* SD */
+	buffer[38] = 0x00; /* SD */
+	buffer[39] = 0x01; /* SD */
+	/* 5GS Update type */
+	buffer[40] = 0x53; /* Element ID */
+	buffer[41] = 0x01; /* Length */
+	buffer[42] = 0x00; /* 5GS Update type value */
+	return 43;
 }
 
 int add_protocolIE_User_Location_Information(eNB * enb, uint8_t * buffer)
@@ -694,7 +707,7 @@ int generate_NG_Registration_Request(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_Registration_Request_Header(buffer);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_Registration_Request(ue, enb, buffer+offset);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 	offset += add_protocolIE_RRC_Establishment_Cause(CAUSE_MT_ACCESS, buffer+offset);
@@ -708,14 +721,14 @@ int add_NG_Registration_Response_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x3C; /* Content Length */
+	buffer[3] = 0x3B; /* Content Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 4; /* protocolIEs: 4 items */
 	return 7;
 }
 
-int add_protocolIE_AMF_UE_NGAP_ID(UE * ue, uint8_t * buffer)
+int add_protocolIE_AMF_UE_NGAP_ID(UE * ue, uint8_t * buffer, uint8_t * header)
 {
 	uint8_t len;
 	uint8_t * amf_id;
@@ -725,6 +738,8 @@ int add_protocolIE_AMF_UE_NGAP_ID(UE * ue, uint8_t * buffer)
 	buffer[2] = CRITICALITY_REJECT;
 	buffer[3] = len; /* ID Length */
 	memcpy(buffer+4, amf_id, len);
+	/* Update header */
+	header[3] += len;
 	return 4+len;
 }
 
@@ -752,8 +767,8 @@ int generate_NG_Authentication_Response(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_Registration_Response_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_Registration_Response(ue, enb, buffer+offset);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 
@@ -765,7 +780,7 @@ int add_NG_Security_Mode_Complete_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x66; /* Length */
+	buffer[3] = 0x65; /* Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 4; /* protocolIEs: 5 items */
@@ -835,9 +850,9 @@ int add_protocolIE_NAS_PDU_Security_Mode_Complete(UE * ue, eNB * enb, uint8_t * 
 	buffer[59] = 0x05; /* Length */
 	buffer[60] = 0x04; /* Length */
 	buffer[61] = 0x01; /* S-NSSAI */
-	buffer[62] = 0x01; /* S-NSSAI */
-	buffer[63] = 0x02; /* S-NSSAI */
-	buffer[64] = 0x03; /* S-NSSAI */
+	buffer[62] = 0x00; /* S-NSSAI */
+	buffer[63] = 0x00; /* S-NSSAI */
+	buffer[64] = 0x01; /* S-NSSAI */
 	/* 5GS update type */
 	buffer[65] = 0x53; /* Element ID */
 	buffer[66] = 0x01; /* Length */
@@ -857,8 +872,8 @@ int generate_NG_Security_Mode_Complete(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_Security_Mode_Complete_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_Security_Mode_Complete(ue, enb, buffer+offset);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 
@@ -870,7 +885,7 @@ int add_NG_Initial_Context_Setup_Response_Header(uint8_t * buffer)
 	buffer[0] = SUCCESFUL_OUTCOME;
 	buffer[1] = ID_INITIAL_CONTEXT_SETUP;
 	buffer[2] = CRITICALITY_REJECT;
-	buffer[3] = 0x0F; /* Length */
+	buffer[3] = 0x0e; /* Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 2; /* protocolIEs: 2 items */
@@ -885,8 +900,8 @@ int generate_NG_InitialContextSetupResponse(eNB * enb, UE * ue, uint8_t * buffer
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_Initial_Context_Setup_Response_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 
 	return offset;
 }
@@ -896,7 +911,7 @@ int add_NG_Registration_Complete_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x31; /* Length */
+	buffer[3] = 0x30; /* Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 4; /* protocolIEs: 4 items */
@@ -932,8 +947,8 @@ int generate_NG_RegistrationComplete(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_Registration_Complete_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_Registration_Complete(ue, enb, buffer+offset);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 
@@ -945,7 +960,7 @@ int add_NG_PDU_Session_Request_Header(uint8_t * buffer)
 	buffer[0] = 0;
 	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
 	buffer[2] = CRITICALITY_IGNORE;
-	buffer[3] = 0x5a; /* Length */
+	buffer[3] = 0x59; /* Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 4; /* protocolIEs: 4 items */
@@ -1020,8 +1035,8 @@ int generate_NG_PDUSessionRequest(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_PDU_Session_Request_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_PDU_Session_Request(ue, enb, buffer+offset);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 
@@ -1035,7 +1050,7 @@ int add_NG_PDU_Session_Response_Header(uint8_t * buffer)
 	buffer[0] = SUCCESFUL_OUTCOME;
 	buffer[1] = ID_PDU_SESSION_RESOURCE_SETUP;
 	buffer[2] = CRITICALITY_REJECT;
-	buffer[3] = 0x24; /* Length */
+	buffer[3] = 0x23; /* Length */
 	buffer[4] = 0;
 	buffer[5] = 0;
 	buffer[6] = 3; /* protocolIEs: 3 items */
@@ -1079,8 +1094,8 @@ int generate_NG_PDUSessionResponse(eNB * enb, UE * ue, uint8_t * buffer)
 	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
 
 	offset = add_NG_PDU_Session_Response_Header(buffer);
-	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset); //
 	offset += add_protocolIE_NAS_PDU_PDU_Session_Response(ue, buffer+offset);
 
 	return offset;

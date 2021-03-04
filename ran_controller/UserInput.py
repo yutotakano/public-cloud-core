@@ -147,13 +147,16 @@ class UserInput():
 		else:
 			return False
 
+		i = 1
 		for enb in data['enbs']:
-			new_enb = eNB(enb['enb_num'], enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
+			new_enb = eNB(i, enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
 			# Add it to the final eNB list
 			self.controller_data['eNBs'].add(new_enb)
+			i = i + 1
 
+		i = 1
 		for ue in data['ues']:
-			new_ue = UE(ue['ue_id'], ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'], ue['control_plane'])
+			new_ue = UE(i, ue['ue_mcc'], ue['ue_mnc'], ue['ue_msin'], ue['ue_key'], ue['ue_op_key'], ue['traffic_command'], ue['enb'], ue['control_plane'])
 			# Get eNB
 			enb = self.getENB(self.controller_data['eNBs'], ue['enb'])
 			if enb and self.validate_control_plane_actions(new_ue.get_control_plane()):
@@ -161,6 +164,7 @@ class UserInput():
 				new_ue.set_serialized_control_plane(self.serialize_control_plane(new_ue.get_control_plane()))
 				# Add UE to the final UE list
 				self.controller_data['UEs'].add(new_ue)
+				i = i + 1
 
 		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted)
 
@@ -209,7 +213,7 @@ class UserInput():
 			data = '<h4> Number of UEs running: ' + str(self.controller_data['running_ues']) + ' </h4>'
 			data += '<h3>UEs</h3>'
 			data += self.ues_to_html()
-			data += '<h3>eNBs</h3>'
+			data += '<h3>eNBs/gNBs</h3>'
 			data += self.enbs_to_html()
 
 			self.socketio.emit('newdata', {'data': data}, namespace='/update')
@@ -244,7 +248,7 @@ class UserInput():
 			html += '<th>Control plane</th>'
 			html += '<th>Command</th>'
 			html += '<th>Address</th>'
-			html += '<th>eNB</th>'
+			html += '<th>eNB/gNB</th>'
 			html += '<th>Status</th>'
 			html += '</tr>'
 

@@ -1109,7 +1109,7 @@ int ue_emulator_start(ue_data * data)
 		return 1;
 	}
 
-    /* Create data plane thread */
+    /* Create control plane thread */
     if (pthread_create(&control_plane_thread, NULL, control_plane, 0) != 0)
     {
         perror("pthread_create control_plane_thread");
