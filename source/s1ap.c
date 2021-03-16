@@ -972,12 +972,15 @@ ProtocolIE * generate_ProtocolIE_enb_ue_s1ap_id(UE * ue)
 	protocolIE->id = ID_ENB_UE_S1AP_ID;
 	protocolIE->criticality = CRITICALITY_REJECT;
 
-	enb_ue_s1ap_id enb_ue_id;
-	enb_ue_id.id = htonl(get_ue_s1ap_id(ue));
-	uint8_t * value = generate_s1ap_value((uint8_t *)&enb_ue_id, sizeof(enb_ue_s1ap_id));
-	protocolIE->value = (uint8_t *) GC_malloc(sizeof(enb_ue_s1ap_id) + 1);
-	memcpy(protocolIE->value, (void *) value, sizeof(enb_ue_s1ap_id) + 1);
-	protocolIE->value_len = sizeof(enb_ue_s1ap_id) + 1;
+	uint32_t s1ap_id = get_ue_id(ue);
+	uint8_t buf[3];
+	buf[0] = 0x40;
+	buf[1] = (s1ap_id >> 8) & 0xFF;
+	buf[2] = s1ap_id & 0xFF;
+	uint8_t * value = generate_s1ap_value(buf, 3);
+	protocolIE->value = (uint8_t *) GC_malloc(4);
+	memcpy(protocolIE->value, (uint8_t *) value, 4);
+	protocolIE->value_len = 4;
 	GC_free(value);
 	return protocolIE;
 }
