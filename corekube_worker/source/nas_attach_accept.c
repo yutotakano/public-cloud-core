@@ -49,6 +49,12 @@ status_t emm_build_attach_accept(pkbuf_t **emmbuf, pkbuf_t *esmbuf, corekube_db_
     // regardless of it's actual value
     nas_tai_list_build(&attach_accept->tai_list, &list0, &list2);
 
+    // TODO: temporary fix to the above issue
+    memset(&attach_accept->tai_list, 0, sizeof(nas_tracking_area_identity_list_t));
+    attach_accept->tai_list.length = 6;
+    char tai_list[] = "2002f8390001";
+    CORE_HEX(tai_list, strlen(tai_list), &attach_accept->tai_list.buffer);
+
     attach_accept->esm_message_container.buffer = esmbuf->payload;
     attach_accept->esm_message_container.length = esmbuf->len;
 
