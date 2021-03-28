@@ -52,10 +52,7 @@ status_t nas_handle_attach_request(nas_message_t *nas_attach_message, S1AP_ENB_U
 
     // the DB returns the MME_UE_ID as a 2-byte array, however the S1AP expects
     // it as a S1AP_MME_UE_S1AP_ID_t (unsigned long) - this conversion should work
-    *mme_ue_id += db_pulls.mme_ue_s1ap_id[0] << 24;
-    *mme_ue_id += db_pulls.mme_ue_s1ap_id[1] << 16;
-    *mme_ue_id += db_pulls.mme_ue_s1ap_id[2] << 8;
-    *mme_ue_id += db_pulls.mme_ue_s1ap_id[3];
+    *mme_ue_id = array_to_int(db_pulls.mme_ue_s1ap_id);
 
     return CORE_OK;
 }
