@@ -1,7 +1,9 @@
 #include "initialuemessage.h"
+
 #include "s1ap_handler.h"
 #include "downlinknastransport.h"
 #include "nas_util.h"
+#include "nas_detach_request.h"
 
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP InitialUEMessage");
@@ -15,7 +17,7 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
     // TODO: still haven't figured out what to do about the MME_UE_ID
     // for non attach request (and indeed, for attach request as well,
     // since at this stage it is not possible to know what the message is)
-    S1AP_MME_UE_S1AP_ID_t mme_ue_id;
+    S1AP_MME_UE_S1AP_ID_t mme_ue_id = 1;
 
     nas_message_t nas_message;
     status_t decode_nas = decode_initialue_nas(initialUEMessage, &mme_ue_id, &nas_message);
@@ -35,7 +37,14 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
             d_assert(nas_handle_attach == CORE_OK, return CORE_ERROR, "Failed to handle NAS attach");
 
             break;
+        case NAS_DETACH_REQUEST:
+            ; // necessary to stop C complaining about labels and declarations
+
+            // nas_handle_detach_request() also fetches the MME_UE_ID from the DB
+            status_t nas_handle_detach = nas_handle_detach_request(&nas_message, &mme_ue_id, &nas_pkbuf);
+            d_assert(nas_handle_detach == CORE_OK, return CORE_ERROR, "Failed to handle NAS detach");
             
+            break;
         default:
             d_error("Unknown NAS message type: %d", nas_message.emm.h.message_type);
             return CORE_ERROR;
@@ -102,7 +111,7 @@ status_t decode_initialue_nas(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_MM
 
     memset(nas_message, 0, sizeof (nas_message_t));
 
-    status_t decode_emm =  decode_nas_emm(NAS_PDU, NULL, nas_message);
+    status_t decode_emm =  decode_nas_emm(NAS_PDU, mme_ue_id, nas_message);
     d_assert(decode_emm == CORE_OK, return CORE_ERROR, "Failed to decode InitialUE NAS EMM");
 
     return CORE_OK;
