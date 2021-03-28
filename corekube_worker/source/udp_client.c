@@ -111,6 +111,16 @@ int main(int argc, char const *argv[]) {
         "074300035200c2006440080002f83900"
         "e00000004340060002f8390001";
 
+    char *DetachRequest =
+        "0f0a0c0e"
+        "000c"
+        "403e000005000800020004001a001615"
+        "1705a3e7ac0a0745010bf600f16004d0"
+        "47c0000004004300060000f160000a00"
+        "6440080000f160070801500086400130"
+        "0000";
+
+
     switch (message_number) {
         case 1:
             send_message((char *)argv[1], S1SetupRequest);
@@ -129,6 +139,9 @@ int main(int argc, char const *argv[]) {
             break;
         case 6:
             send_message((char *)argv[1], AttachComplete);
+            break;
+        case 7:
+            send_message((char *)argv[1], DetachRequest);
             break;
         default:
             send_message((char *)argv[1], S1SetupRequest);
