@@ -39,14 +39,7 @@ status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTrans
     d_assert(get_ie == CORE_OK, return CORE_ERROR, "Failed to get NAS_PDU IE from UplinkNASTransport");
     NAS_PDU = &NAS_PDU_IE->value.choice.NAS_PDU;
 
-    // TODO: doing a separate fetch from the DB just for decoding the NAS
-    // security message is a very poor use of resources - rework this!
-    c_uint8_t buffer[1024];
-    corekube_db_pulls_t db_pulls;
-    status_t db_fetch = get_NAS_decode_security_prerequisites_from_db(mme_ue_id, buffer, &db_pulls);
-    d_assert(db_fetch == CORE_OK, return CORE_ERROR, "Failed to fetch NAS decode security prerequisites from DB");
-
-    status_t nas_decode = decode_nas_emm(NAS_PDU, &db_pulls, auth_response);
+    status_t nas_decode = decode_nas_emm(NAS_PDU, mme_ue_id, auth_response);
     d_assert(nas_decode == CORE_OK, return CORE_ERROR, "Failed to decode NAS authentication response");
 
     return CORE_OK;
