@@ -80,28 +80,50 @@ void start_listener(char * mme_ip_address)
 		S1AP_handler_response_t response;
 
 		status_t outcome = s1ap_handler_entrypoint(buffer+4, n-4, &response);
-		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");
-
-		pkbuf_t *responseBuffer = response.response;
+		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");		
 
 		if (response.outcome == NO_RESPONSE) {
 			d_info("Finished handling NO_RESPONSE message");
 			continue;
 		}
 
-		uint8_t response_out[responseBuffer->len + 5];
-		memcpy(response_out, buffer, 4);
-		response_out[4] = response.sctpStreamID;
-		memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
-		
-		int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 5,
-			MSG_CONFIRM, (const struct sockaddr *) &client_addr,
-			from_len);
+		// handle the first response, if there is one
+		if (response.outcome == HAS_RESPONSE || response.outcome == DUAL_RESPONSE) {
+			pkbuf_t *responseBuffer = response.response;
 
-		pkbuf_free(responseBuffer);
+			uint8_t response_out[responseBuffer->len + 5];
+			memcpy(response_out, buffer, 4);
+			response_out[4] = response.sctpStreamID;
+			memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
+			
+			int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 5,
+				MSG_CONFIRM, (const struct sockaddr *) &client_addr,
+				from_len);
 
-		d_assert(ret != -1, continue, "Failed to send SCTP message");
-		d_info("Send %d bytes over UDP", ret);
+			pkbuf_free(responseBuffer);
+
+			d_assert(ret != -1, continue, "Failed to send SCTP message");
+			d_info("Send %d bytes over UDP", ret);
+		}
+
+		// handle the (optional) second response
+		if (response.outcome == DUAL_RESPONSE) {
+			pkbuf_t *responseBuffer = response.response2;
+
+			uint8_t response_out[responseBuffer->len + 5];
+			memcpy(response_out, buffer, 4);
+			response_out[4] = response.sctpStreamID;
+			memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
+			
+			int ret = sendto(sock_udp, (void *)response_out, responseBuffer->len + 5,
+				MSG_CONFIRM, (const struct sockaddr *) &client_addr,
+				from_len);
+
+			pkbuf_free(responseBuffer);
+
+			d_assert(ret != -1, continue, "Failed to send SCTP message");
+			d_info("Send %d bytes over UDP", ret);
+		}
 	}
 
 	d_assert(n != -1,, "An SCTP error occured");

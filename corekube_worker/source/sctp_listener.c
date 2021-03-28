@@ -130,19 +130,32 @@ void start_listener(char * mme_ip_address)
 		status_t outcome = s1ap_handler_entrypoint(buffer, n, &response);
 		d_assert(outcome == CORE_OK, continue, "Failed to handle S1AP message");
 
-		pkbuf_t *setupResponsePkBuf = response.response;
 		if (response.outcome == NO_RESPONSE) {
 			d_info("Finished handling NO_RESPONSE message");
 			continue;
 		}
 
-		int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, (uint16_t) response.sctpStreamID, 0, 0 );
+		// handle the first response, if there is one
+		if (response.outcome == HAS_RESPONSE || response.outcome == DUAL_RESPONSE) {
+			d_info("Handling a message with a response");
+			pkbuf_t *setupResponsePkBuf = response.response;
+			int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, (uint16_t) response.sctpStreamID, 0, 0 );
+			pkbuf_free(setupResponsePkBuf);
+			d_assert(ret != -1, continue, "Failed to send SCTP message");
+			d_info("Sent %d bytes over SCTP", ret);
+		}
 
-		pkbuf_free(setupResponsePkBuf);
+		// handle the (optional) second response
+		if (response.outcome == DUAL_RESPONSE) {
+			d_info("Handling the second response");
+			pkbuf_t *setupResponsePkBuf = response.response2;
+			int ret = sctp_sendmsg(sock_enb, (void *) setupResponsePkBuf->payload, setupResponsePkBuf->len, NULL, 0, htonl(18), 0, (uint16_t) response.sctpStreamID, 0, 0 );
+			pkbuf_free(setupResponsePkBuf);
+			d_assert(ret != -1, continue, "Failed to send SCTP message");
+			d_info("Sent %d bytes over SCTP", ret);
+		}
 
-		d_assert(ret != -1, continue, "Failed to send SCTP message");
-
-		d_info("Sent %d bytes over SCTP", ret);
+		
 
 		/////////////////////////////////////////////////////////
 	}

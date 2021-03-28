@@ -5,7 +5,7 @@
 #include "s1ap/s1ap_message.h"
 #include "core/include/core_pkbuf.h"
 
-typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE} S1AP_handle_outcome_t;
+typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE, DUAL_RESPONSE} S1AP_handle_outcome_t;
 
 typedef struct S1AP_handler_response {
     S1AP_handle_outcome_t outcome;
@@ -16,13 +16,16 @@ typedef struct S1AP_handler_response {
     // or a pointer to a pkbuf_t, so use void* to allow it to
     // take on both types
     void * response;
+    // an (optional) second response, for cases where a single
+    // incoming messages must be responded with two outgoing messages
+    void * response2;
 } S1AP_handler_response_t;
 
 status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response);
 
 status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *message);
 
-status_t message_to_bytes(S1AP_handler_response_t *response);
+status_t message_to_bytes(s1ap_message_t *message, pkbuf_t **out);
 
 status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *response);
 

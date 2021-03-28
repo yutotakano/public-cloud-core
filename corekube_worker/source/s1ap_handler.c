@@ -41,9 +41,15 @@ status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_
     d_assert(message_handle == CORE_OK, return CORE_ERROR, "Failed to handle S1AP message");
     
     // Encode the outgoing message, if one exists
-    if (response->outcome == HAS_RESPONSE) {
-        status_t m_to_b = message_to_bytes(response);
+    if (response->outcome == HAS_RESPONSE || response->outcome == DUAL_RESPONSE) {
+        status_t m_to_b = message_to_bytes(response->response, (pkbuf_t **) &response->response);
         d_assert(m_to_b == CORE_OK, return CORE_ERROR, "Failed to encode outgoing S1AP message");
+    }
+
+    // Encode the second (optional) outgoing message, if one exists
+    if (response->outcome == DUAL_RESPONSE) {
+        status_t m_to_b = message_to_bytes(response->response2, (pkbuf_t **) &response->response2);
+        d_assert(m_to_b == CORE_OK, return CORE_ERROR, "Failed to encode second outgoing S1AP message");
     }
 
     // Free up memory
@@ -71,17 +77,17 @@ status_t bytes_to_message(void *payload, int payload_len, s1ap_message_t *messag
     return CORE_OK;
 }
 
-status_t message_to_bytes(S1AP_handler_response_t *response)
+status_t message_to_bytes(s1ap_message_t *message, pkbuf_t **out)
 {
     d_info("Converting response S1AP message to raw bytes to send");
 
     pkbuf_t *pkbuf;
-    status_t encode_result = s1ap_encode_pdu(&pkbuf, response->response);
+    status_t encode_result = s1ap_encode_pdu(&pkbuf, message);
     d_assert(encode_result == CORE_OK, return CORE_ERROR, "Failed to encode bytes");
 
-    status_t free_pdu = s1ap_free_pdu(response->response);
+    status_t free_pdu = s1ap_free_pdu(message);
     d_assert(free_pdu == CORE_OK, return CORE_ERROR, "Failed to free S1AP message");
-    response->response = pkbuf;
+    *out = pkbuf;
 
     return CORE_OK;
 }
