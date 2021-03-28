@@ -1,13 +1,7 @@
 #include "initialuemessage.h"
 #include "s1ap_handler.h"
-#include "nas_authentication_request.h"
 #include "downlinknastransport.h"
-#include "s1ap_conv.h"
-
-#include <libck.h>
-
-// external reference to variable in the listener
-extern char* db_ip_address;
+#include "nas_util.h"
 
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP InitialUEMessage");
@@ -18,49 +12,37 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
     status_t get_enb_eu_id = extract_ENB_UE_ID(initialUEMessage, &enb_ue_id);
     d_assert(get_enb_eu_id == CORE_OK, return CORE_ERROR, "Failed to extract ENB_UE_ID");
 
-    nas_message_t nas_attach_message;
-    status_t decode_attach = decode_attach_request(initialUEMessage, &nas_attach_message);
-    d_assert(decode_attach == CORE_OK, return CORE_ERROR, "Error decoding NAS attach request");
+    // TODO: still haven't figured out what to do about the MME_UE_ID
+    // for non attach request (and indeed, for attach request as well,
+    // since at this stage it is not possible to know what the message is)
+    S1AP_MME_UE_S1AP_ID_t mme_ue_id;
 
-    status_t net_capabilities = check_network_capabilities(&nas_attach_message);
-    d_assert(net_capabilities == CORE_OK, return CORE_ERROR, "UE does not support MME network capabilities");
-
-    nas_attach_request_t *attach_request = &nas_attach_message.emm.attach_request;
-
-    nas_mobile_identity_imsi_t * imsi;
-    status_t get_imsi = extract_imsi(attach_request, &imsi);
-    d_assert(get_imsi == CORE_OK, return CORE_ERROR, "Failed to extract IMSI");
-
-    S1AP_PLMNidentity_t *PLMNidentity;
-    status_t get_PLMN = extract_PLMNidentity(initialUEMessage, &PLMNidentity);
-    d_assert(get_PLMN == CORE_OK, return CORE_ERROR, "Failed to extract PLMN identity");
-
-    corekube_db_pulls_t db_pulls;
-    c_uint8_t buffer[1024];
-    status_t db_prerequisites = get_initialue_prerequisites_from_db(imsi, buffer, &db_pulls);
-    d_assert(db_prerequisites == CORE_OK, return CORE_ERROR, "Failed to get InitialUE prerequisite values from DB");
-
-    nas_authentication_vector_t auth_vec;
-    status_t get_auth_vec = get_authentication_vector(imsi, PLMNidentity, &db_pulls, &auth_vec);
-    d_assert(get_auth_vec == CORE_OK, return CORE_ERROR, "Failed to derive authentication vector");
+    nas_message_t nas_message;
+    status_t decode_nas = decode_initialue_nas(initialUEMessage, &mme_ue_id, &nas_message);
+    d_assert(decode_nas == CORE_OK, return CORE_ERROR, "Error decoding InitialUE NAS message");
 
     pkbuf_t *nas_pkbuf;
-    status_t get_nas_auth_req = generate_nas_authentication_request(auth_vec.rand, auth_vec.autn, &nas_pkbuf);
-    d_assert(get_nas_auth_req == CORE_OK, return CORE_ERROR, "Failed to generate NAS authentication request");
 
-    // the DB returns the MME_UE_ID as a 2-byte array, however the S1AP expects
-    // it as a S1AP_MME_UE_S1AP_ID_t (unsigned long) - this conversion should work
-    S1AP_MME_UE_S1AP_ID_t mme_ue_id = 0;
-    mme_ue_id += db_pulls.mme_ue_s1ap_id[0] << 24;
-    mme_ue_id += db_pulls.mme_ue_s1ap_id[1] << 16;
-    mme_ue_id += db_pulls.mme_ue_s1ap_id[2] << 8;
-    mme_ue_id += db_pulls.mme_ue_s1ap_id[3];
+    switch (nas_message.emm.h.message_type) {
+        case NAS_ATTACH_REQUEST:
+            ; // necessary to stop C complaining about labels and declarations
+            S1AP_PLMNidentity_t *PLMNidentity = NULL;
+            status_t get_PLMN = extract_PLMNidentity(initialUEMessage, &PLMNidentity);
+            d_assert(get_PLMN == CORE_OK, return CORE_ERROR, "Failed to extract PLMN identity");
+
+            // nas_handle_attach_request() also fetches the MME_UE_ID from the DB
+            status_t nas_handle_attach = nas_handle_attach_request(&nas_message, enb_ue_id, PLMNidentity, &mme_ue_id, &nas_pkbuf);
+            d_assert(nas_handle_attach == CORE_OK, return CORE_ERROR, "Failed to handle NAS attach");
+
+            break;
+            
+        default:
+            d_error("Unknown NAS message type: %d", nas_message.emm.h.message_type);
+            return CORE_ERROR;
+    }
 
     status_t get_downlink = generate_downlinknastransport(nas_pkbuf, mme_ue_id, *enb_ue_id, response->response);
     d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
-
-    status_t save_to_db = save_initialue_info_in_db(imsi, &auth_vec, enb_ue_id);
-    d_assert(save_to_db == CORE_OK, return CORE_ERROR, "Failed to save InitialUE values into DB");
 
     response->outcome = HAS_RESPONSE;
 
@@ -92,7 +74,7 @@ status_t extract_ENB_UE_ID(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_ENB_U
 }
 
 status_t get_InitialUE_IE(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR desiredIElabel, S1AP_InitialUEMessage_IEs_t **desiredIE) {
-    d_info("Searching for IE in UplinkNASTransport message");
+    d_info("Searching for IE in InitialUE message");
 
     int numIEs = initialUEMessage->protocolIEs.list.count;
     for (int i = 0; i < numIEs; i++) {
@@ -107,56 +89,21 @@ status_t get_InitialUE_IE(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_Initia
     return CORE_ERROR;
 }
 
-status_t get_initialue_prerequisites_from_db(nas_mobile_identity_imsi_t *imsi, c_uint8_t *buffer, corekube_db_pulls_t *db_pulls) {
-    d_info("Fetching InitialUEMessage prerequisites from DB");
+status_t decode_initialue_nas(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, nas_message_t *nas_message) {
+    d_info("Decoding InitialUE NAS message");
 
-    c_uint8_t raw_imsi[15];
-    status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
-    d_assert(get_raw_imsi == CORE_OK, return CORE_ERROR, "Could not get raw IMSI");
+    S1AP_NAS_PDU_t *NAS_PDU = NULL;
 
-    int sock = db_connect(db_ip_address, 0);
-    int n;
+    S1AP_InitialUEMessage_IEs_t *NAS_PDU_IE;
+    status_t get_ie = get_InitialUE_IE(initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR_NAS_PDU, &NAS_PDU_IE);
+    d_assert(get_ie == CORE_OK, return CORE_ERROR, "Failed to get NAS_PDU IE from InitialUEMessage");
 
-    const int NUM_PULL_ITEMS = 5;
-    n = push_items(buffer, IMSI, (uint8_t *)raw_imsi, 0);
-    n = pull_items(buffer, n, NUM_PULL_ITEMS,
-        KEY, OPC, RAND, EPC_NAS_SEQUENCE_NUMBER, MME_UE_S1AP_ID);
-    send_request(sock, buffer, n);
-    n = recv_response(sock, buffer, 1024);
-    db_disconnect(sock);
+    NAS_PDU = &NAS_PDU_IE->value.choice.NAS_PDU;
 
-    d_assert(n == 17 * NUM_PULL_ITEMS, return CORE_ERROR, "Failed to extract values from DB");
+    memset(nas_message, 0, sizeof (nas_message_t));
 
-    extract_db_values(buffer, n, db_pulls);
-
-    return CORE_OK;
-}
-
-status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authentication_vector_t *auth_vec, S1AP_ENB_UE_S1AP_ID_t *enb_ue_id) {
-    d_info("Saving InitialUEMessage values into DB");
-
-    c_uint8_t raw_imsi[15];
-    status_t get_raw_imsi = extract_raw_imsi(imsi, raw_imsi);
-    d_assert(get_raw_imsi == CORE_OK, return CORE_ERROR, "Could not get raw IMSI");
-
-    OCTET_STRING_t raw_enb_ue_id;
-    s1ap_uint32_to_OCTET_STRING(*enb_ue_id, &raw_enb_ue_id);
-
-    int sock = db_connect(db_ip_address, 0);
-    uint8_t buf[1024];
-    int n;
-
-    n = push_items(buf, IMSI, (uint8_t *)raw_imsi, 6,
-        AUTH_RES, auth_vec->res,
-        ENC_KEY, auth_vec->knas_enc,
-        INT_KEY, auth_vec->knas_int,
-        ENB_UE_S1AP_ID, raw_enb_ue_id.buf,
-        KASME_1, auth_vec->kasme,
-        KASME_2, (auth_vec->kasme)+16);
-    n = pull_items(buf, n, 0);
-    send_request(sock, buf, n);
-
-    db_disconnect(sock);
+    status_t decode_emm =  decode_nas_emm(NAS_PDU, NULL, nas_message);
+    d_assert(decode_emm == CORE_OK, return CORE_ERROR, "Failed to decode InitialUE NAS EMM");
 
     return CORE_OK;
 }

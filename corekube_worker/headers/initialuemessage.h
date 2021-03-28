@@ -9,9 +9,6 @@
 
 #include "nas/nas_message.h"
 
-// Forward declaration
-c_int32_t nas_decode_attach_request(nas_message_t *message, pkbuf_t *pkbuf);
-
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response);
 
 status_t extract_PLMNidentity(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_PLMNidentity_t **PLMNidentity);
@@ -20,8 +17,6 @@ status_t extract_ENB_UE_ID(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_ENB_U
 
 status_t get_InitialUE_IE(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_InitialUEMessage_IEs__value_PR desiredIElabel, S1AP_InitialUEMessage_IEs_t **desiredIE);
 
-status_t get_initialue_prerequisites_from_db(nas_mobile_identity_imsi_t *imsi, c_uint8_t *buffer, corekube_db_pulls_t *db_pulls);
-
-status_t save_initialue_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_authentication_vector_t *auth_vec, S1AP_ENB_UE_S1AP_ID_t *enb_ue_id);
+status_t decode_initialue_nas(S1AP_InitialUEMessage_t *initialUEMessage, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, nas_message_t *nas_message);
 
 #endif /* __S1AP_HANDLER_INITIALUEMESSAGE_H__ */
