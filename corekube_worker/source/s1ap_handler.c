@@ -30,6 +30,7 @@ status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_
 
     s1ap_message_t incoming_s1ap;
     s1ap_message_t outgoing_s1ap;
+    s1ap_message_t outgoing_s1ap_2;
 
     // Decode the incoming message
     status_t b_to_m = bytes_to_message(incoming, incoming_len, &incoming_s1ap);
@@ -37,6 +38,7 @@ status_t s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_
 
     // Handle the decoded message
     response->response = &outgoing_s1ap;
+    response->response = &outgoing_s1ap_2;
     status_t message_handle = s1ap_message_handler(&incoming_s1ap, response);
     d_assert(message_handle == CORE_OK, return CORE_ERROR, "Failed to handle S1AP message");
     

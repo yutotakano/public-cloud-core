@@ -4,6 +4,7 @@
 #include "downlinknastransport.h"
 #include "nas_util.h"
 #include "nas_detach_request.h"
+#include "ue_initial_context_release_command.h"
 
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP InitialUEMessage");
@@ -36,6 +37,9 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
             status_t nas_handle_attach = nas_handle_attach_request(&nas_message, enb_ue_id, PLMNidentity, &mme_ue_id, &nas_pkbuf);
             d_assert(nas_handle_attach == CORE_OK, return CORE_ERROR, "Failed to handle NAS attach");
 
+            // mark this message as having a response
+            response->outcome = HAS_RESPONSE;
+
             break;
         case NAS_DETACH_REQUEST:
             ; // necessary to stop C complaining about labels and declarations
@@ -43,17 +47,24 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
             // nas_handle_detach_request() also fetches the MME_UE_ID from the DB
             status_t nas_handle_detach = nas_handle_detach_request(&nas_message, &mme_ue_id, &nas_pkbuf);
             d_assert(nas_handle_detach == CORE_OK, return CORE_ERROR, "Failed to handle NAS detach");
+
+            // also return an additional message - UEInitialContextReleaseCommand
+            status_t additional_msg = s1ap_build_ue_context_release_command(mme_ue_id, *enb_ue_id, response->response2);
+            d_assert(additional_msg == CORE_OK, return CORE_ERROR, "Failed to build UEInitialContextReleaseCommand");
+
+            // mark this message as being a special case with two replies
+            response->outcome = DUAL_RESPONSE;
             
             break;
         default:
             d_error("Unknown NAS message type: %d", nas_message.emm.h.message_type);
+            response->outcome = NO_RESPONSE;
             return CORE_ERROR;
     }
 
     status_t get_downlink = generate_downlinknastransport(nas_pkbuf, mme_ue_id, *enb_ue_id, response->response);
     d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
 
-    response->outcome = HAS_RESPONSE;
 
     return CORE_OK;
 }
