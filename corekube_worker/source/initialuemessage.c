@@ -3,8 +3,6 @@
 #include "s1ap_handler.h"
 #include "downlinknastransport.h"
 #include "nas_util.h"
-#include "nas_detach_request.h"
-#include "ue_initial_context_release_command.h"
 
 status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
     d_info("Handling S1AP InitialUEMessage");
@@ -15,13 +13,14 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
     status_t get_enb_eu_id = extract_ENB_UE_ID(initialUEMessage, &enb_ue_id);
     d_assert(get_enb_eu_id == CORE_OK, return CORE_ERROR, "Failed to extract ENB_UE_ID");
 
-    // TODO: still haven't figured out what to do about the MME_UE_ID
-    // for non attach request (and indeed, for attach request as well,
-    // since at this stage it is not possible to know what the message is)
-    S1AP_MME_UE_S1AP_ID_t mme_ue_id = 1;
+    S1AP_MME_UE_S1AP_ID_t mme_ue_id;
 
     nas_message_t nas_message;
-    status_t decode_nas = decode_initialue_nas(initialUEMessage, &mme_ue_id, &nas_message);
+    // note that the mme_ue_id parameter has been set to null because the InitialUEMessage
+    // will never contain an mme_ue_id. It is defined above so that it can be determined
+    // later. Passing NULL through is OK in this case because the Attach Request is plain
+    // with no protection, so will not require DB calls to get security keys
+    status_t decode_nas = decode_initialue_nas(initialUEMessage, NULL, &nas_message);
     d_assert(decode_nas == CORE_OK, return CORE_ERROR, "Error decoding InitialUE NAS message");
 
     pkbuf_t *nas_pkbuf;
@@ -41,24 +40,8 @@ status_t handle_initialuemessage(s1ap_message_t *received_message, S1AP_handler_
             response->outcome = HAS_RESPONSE;
 
             break;
-        case NAS_DETACH_REQUEST:
-            ; // necessary to stop C complaining about labels and declarations
-
-            // nas_handle_detach_request() also fetches the MME_UE_ID from the DB
-            status_t nas_handle_detach = nas_handle_detach_request(&nas_message, &mme_ue_id, &nas_pkbuf);
-            d_assert(nas_handle_detach == CORE_OK, return CORE_ERROR, "Failed to handle NAS detach");
-
-            // also return an additional message - UEInitialContextReleaseCommand
-            status_t additional_msg = s1ap_build_ue_context_release_command(mme_ue_id, *enb_ue_id, response->response2);
-            d_assert(additional_msg == CORE_OK, return CORE_ERROR, "Failed to build UEInitialContextReleaseCommand");
-
-            // mark this message as being a special case with two replies
-            response->outcome = DUAL_RESPONSE;
-            
-            break;
         default:
             d_error("Unknown NAS message type: %d", nas_message.emm.h.message_type);
-            response->outcome = NO_RESPONSE;
             return CORE_ERROR;
     }
 

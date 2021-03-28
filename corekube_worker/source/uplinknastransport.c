@@ -6,6 +6,8 @@
 #include "nas_authentication_response.h"
 #include "initialcontextsetuprequest.h"
 #include "downlinknastransport.h"
+#include "nas_detach_request.h"
+#include "ue_initial_context_release_command.h"
 #include "nas_message_security.h" //TODO - included while testing, make sure it is actually needed when commiting final version
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
@@ -33,6 +35,8 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
             status_t handle_auth_resp = nas_handle_authentication_response(&nas_message, mme_ue_id, &nas_pkbuf);
             d_assert(handle_auth_resp == CORE_OK, return CORE_ERROR, "Failed to handle NAS Authentication Response");
 
+            response->outcome = HAS_RESPONSE;
+
             break;
 
         case NAS_SECURITY_MODE_COMPLETE:
@@ -42,6 +46,23 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
             // UplinkNASTransport), instead sending back a InitialContextSetupRequest,
             // hence why it returns directly
             return nas_send_attach_accept(mme_ue_id, response);
+
+        case NAS_DETACH_REQUEST:
+            ; // necessary to stop C complaining about labels and declarations
+
+            // handle the detach request
+            status_t nas_handle_detach = nas_handle_detach_request(&nas_message, NULL, &nas_pkbuf);
+            d_assert(nas_handle_detach == CORE_OK, return CORE_ERROR, "Failed to handle NAS detach");
+
+            // also return an additional message - UEInitialContextReleaseCommand
+            status_t additional_msg = s1ap_build_ue_context_release_command(*mme_ue_id, *enb_ue_id, response->response2);
+            d_assert(additional_msg == CORE_OK, return CORE_ERROR, "Failed to build UEInitialContextReleaseCommand");
+
+            // mark this message as being a special case with two replies
+            response->outcome = DUAL_RESPONSE;
+            
+            break;
+
         default:
             d_error("Unknown NAS message type");
             return CORE_ERROR;
@@ -49,8 +70,6 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
 
     status_t get_downlink = generate_downlinknastransport(nas_pkbuf, *mme_ue_id, *enb_ue_id, response->response);
     d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
-
-    response->outcome = HAS_RESPONSE;
 
     return CORE_OK;
 }

@@ -54,6 +54,12 @@ int send_message(char *mme_ip, char *payload) {
                 &len); 
     d_info("Received message from server"); 
     d_print_hex(buffer, n);
+
+    n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
+                MSG_WAITALL, (struct sockaddr *) &servaddr, 
+                &len); 
+    d_info("Received message from server"); 
+    d_print_hex(buffer, n);
   
     close(sockfd); 
     return 0; 
@@ -112,15 +118,31 @@ int main(int argc, char const *argv[]) {
         "e00000004340060002f8390001";
 
     char *DetachRequest =
+        // the follow detach request is encapsulated
+        // within a UplinkNASTransport message, and is
+        // taken from oai.pcap (Jon's RAN emulator)
         "0f0a0c0e"
-        "000c"
+        "000d"
+        "40410000050000000200010008000480"
+        "000010001a00161527bfb377f7020745"
+        "010bf602f839000401"
+        "00000001" // this is the TMSI
+        "006440"
+        "080002f83900e00000004300060002f8"
+        "390001";
+        // an (unsupported) alternative detach request,
+        // encapsulated within an InitialUEMessage
+        // (which does not contain the MME_UE_ID, so
+        // struggles with accessing the DB to deprotect
+        // the NAS-PDU)
+        /*"000c"
         "403e000005000800020004001a001615"
         "1705a3e7ac0a0745010bf600f16004d0"
         "47"
         "00000001" // this is the TMSI
         "004300060000f160000a00"
         "6440080000f160070801500086400130"
-        "0000";
+        "0000";*/
 
 
     switch (message_number) {

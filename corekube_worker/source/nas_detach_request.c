@@ -38,7 +38,8 @@ status_t nas_handle_detach_request(nas_message_t *nas_detach_message, S1AP_MME_U
     d_assert(fetch_state == CORE_OK, return CORE_ERROR, "Failed to fetch detach request state from DB");
 
     // save the MME_UE_ID so it can be accessed by the callee
-    *mme_ue_id = array_to_int(db_pulls.mme_ue_s1ap_id);
+    if (mme_ue_id != NULL)
+        *mme_ue_id = array_to_int(db_pulls.mme_ue_s1ap_id);
 
     // build the detach accept
     status_t build_accept = nas_build_detach_accept(mobile_identity, &db_pulls, nas_pkbuf);
