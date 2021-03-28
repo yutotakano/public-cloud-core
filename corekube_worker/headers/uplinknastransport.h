@@ -13,6 +13,8 @@ status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTrans
 
 status_t UplinkNASTransport_extract_MME_UE_ID(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_MME_UE_S1AP_ID_t **MME_UE_ID);
 
+status_t UplinkNASTransport_extract_ENB_UE_ID(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_ENB_UE_S1AP_ID_t **ENB_UE_ID);
+
 status_t get_uplinkNASTransport_IE(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_UplinkNASTransport_IEs__value_PR desiredIElabel, S1AP_UplinkNASTransport_IEs_t **desiredIE);
 
 #endif /* __S1AP_HANDLER_UPLINKNASTRANSPORT_H__ */

@@ -5,6 +5,7 @@
 #include "s1ap_conv.h"
 #include "nas_authentication_response.h"
 #include "initialcontextsetuprequest.h"
+#include "downlinknastransport.h"
 #include "nas_message_security.h" //TODO - included while testing, make sure it is actually needed when commiting final version
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
@@ -14,20 +15,44 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
     S1AP_MME_UE_S1AP_ID_t *mme_ue_id;
     UplinkNASTransport_extract_MME_UE_ID(uplinkNASTransport, &mme_ue_id);
 
+    S1AP_ENB_UE_S1AP_ID_t *enb_ue_id;
+    UplinkNASTransport_extract_ENB_UE_ID(uplinkNASTransport, &enb_ue_id);
+
     nas_message_t nas_message;
     status_t decode_nas = decode_uplinknastransport_nas(uplinkNASTransport, mme_ue_id, &nas_message);
     d_assert(decode_nas == CORE_OK, return CORE_ERROR, "Failed to decode NAS authentication response");
 
+    pkbuf_t *nas_pkbuf;
+
     switch (nas_message.emm.h.message_type) {
         case NAS_AUTHENTICATION_RESPONSE:
-            return nas_handle_authentication_response(&nas_message, mme_ue_id, response);
+            ; // necessary to stop C complaining about labels and declarations
+
+            // handle the NAS authentication response
+            // saving the reply as an encoded NAS message in nas_pkbuf
+            status_t handle_auth_resp = nas_handle_authentication_response(&nas_message, mme_ue_id, &nas_pkbuf);
+            d_assert(handle_auth_resp == CORE_OK, return CORE_ERROR, "Failed to handle NAS Authentication Response");
+
+            break;
+
         case NAS_SECURITY_MODE_COMPLETE:
             // TODO: only for testing purposes - send back a sample attach accept
+            // note that this function is special in that it does not send back
+            // a DownlinkNASTransport message (like the other messages of type
+            // UplinkNASTransport), instead sending back a InitialContextSetupRequest,
+            // hence why it returns directly
             return nas_send_attach_accept(mme_ue_id, response);
         default:
             d_error("Unknown NAS message type");
             return CORE_ERROR;
     }
+
+    status_t get_downlink = generate_downlinknastransport(nas_pkbuf, *mme_ue_id, *enb_ue_id, response->response);
+    d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
+
+    response->outcome = HAS_RESPONSE;
+
+    return CORE_OK;
 }
 
 status_t decode_uplinknastransport_nas(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, nas_message_t *auth_response) {
@@ -53,6 +78,18 @@ status_t UplinkNASTransport_extract_MME_UE_ID(S1AP_UplinkNASTransport_t *uplinkN
     d_assert(get_ie == CORE_OK, return CORE_ERROR, "Failed to get MME_UE_ID IE from UplinkNASTransport");
 
     *MME_UE_ID = &MME_UE_ID_IE->value.choice.MME_UE_S1AP_ID;
+
+    return CORE_OK;
+}
+
+status_t UplinkNASTransport_extract_ENB_UE_ID(S1AP_UplinkNASTransport_t *uplinkNASTransport, S1AP_ENB_UE_S1AP_ID_t **ENB_UE_ID) {
+    d_info("Extracting ENB_UE_S1AP_ID from UplinkNASTransport message");
+
+    S1AP_UplinkNASTransport_IEs_t *ENB_UE_ID_IE;
+    status_t get_ie = get_uplinkNASTransport_IE(uplinkNASTransport, S1AP_UplinkNASTransport_IEs__value_PR_ENB_UE_S1AP_ID, &ENB_UE_ID_IE);
+    d_assert(get_ie == CORE_OK, return CORE_ERROR, "Failed to get ENB_UE_ID IE from UplinkNASTransport");
+
+    *ENB_UE_ID = &ENB_UE_ID_IE->value.choice.ENB_UE_S1AP_ID;
 
     return CORE_OK;
 }

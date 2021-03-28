@@ -15,7 +15,7 @@
 // external reference to variable in the listener
 extern char* db_ip_address;
 
-status_t nas_handle_authentication_response(nas_message_t *nas_message, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, S1AP_handler_response_t *response) {
+status_t nas_handle_authentication_response(nas_message_t *nas_message, S1AP_MME_UE_S1AP_ID_t *mme_ue_id, pkbuf_t **nas_pkbuf) {
     d_info("Handling NAS Authentication Message");
 
     d_assert(nas_message->emm.h.message_type == NAS_AUTHENTICATION_RESPONSE, return CORE_ERROR, "Decoded NAS message is not authentication response");
@@ -31,17 +31,8 @@ status_t nas_handle_authentication_response(nas_message_t *nas_message, S1AP_MME
     // in the long-term: we need to return an authentication failure message
     d_assert(auth_res_check == CORE_OK, return CORE_ERROR, "MME XRES and UE RES do not match");
 
-    pkbuf_t *nas_pkbuf;
-    status_t security_mode_cmd = nas_build_security_mode_command(&db_pulls, &nas_pkbuf);
+    status_t security_mode_cmd = nas_build_security_mode_command(&db_pulls, nas_pkbuf);
     d_assert(security_mode_cmd == CORE_OK, return CORE_ERROR, "Failed to build NAS Security Mode Command");
-
-    S1AP_ENB_UE_S1AP_ID_t enb_ue_id;
-    enb_ue_id = array_to_int(db_pulls.enb_ue_s1ap_id);
-
-    status_t get_downlink = generate_downlinknastransport(nas_pkbuf, *mme_ue_id, enb_ue_id, response->response);
-    d_assert(get_downlink == CORE_OK, return CORE_ERROR, "Failed to generate DownlinkNASTransport message");
-
-    response->outcome = HAS_RESPONSE;
 
     return CORE_OK;
 }
@@ -55,10 +46,10 @@ status_t get_nas_authentication_response_prerequisites_from_db(S1AP_MME_UE_S1AP_
     int sock = db_connect(db_ip_address, 0);
     int n;
 
-    const int NUM_PULL_ITEMS = 5;
+    const int NUM_PULL_ITEMS = 4;
     n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 0);
     n = pull_items(buffer, n, NUM_PULL_ITEMS,
-        AUTH_RES, INT_KEY, ENC_KEY, ENB_UE_S1AP_ID, EPC_NAS_SEQUENCE_NUMBER);
+        AUTH_RES, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER);
     send_request(sock, buffer, n);
     n = recv_response(sock, buffer, 1024);
     db_disconnect(sock);
