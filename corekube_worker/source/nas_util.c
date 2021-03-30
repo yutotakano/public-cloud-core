@@ -24,6 +24,7 @@ status_t decode_nas_emm(S1AP_NAS_PDU_t *NAS_PDU, S1AP_MME_UE_S1AP_ID_t *mme_ue_i
     d_assert(pkbuf_header(pkbuf2, -size) == CORE_OK, 
             return CORE_ERROR, "pkbuf_header error");
     memcpy(&header, pkbuf2->payload - size, size);
+    pkbuf_free(pkbuf2);
 
     d_info("NAS EMM header type is: %d", header.security_header_type);
     d_info("Checking equality to NAS_SECURITY_HEADER_PLAIN_NAS_MESSAGE: %d", header.security_header_type == NAS_SECURITY_HEADER_PLAIN_NAS_MESSAGE);
