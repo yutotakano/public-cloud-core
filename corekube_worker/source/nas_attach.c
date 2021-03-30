@@ -106,6 +106,9 @@ status_t save_attach_request_info_in_db(nas_mobile_identity_imsi_t * imsi, nas_a
     n = pull_items(buf, n, 0);
     send_request(sock, buf, n);
 
+    // don't forget to free the raw_enb_ue_id
+    core_free(raw_enb_ue_id.buf);
+
     db_disconnect(sock);
 
     return CORE_OK;
