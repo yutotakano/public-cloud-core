@@ -228,7 +228,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 int main(int argc, char const *argv[])
 {
 	if(argc != 3) {
-		printf("RUN: ./listener <FRONTEND_IP_ADDRESS> <K8S_LOADBALANCER_IP_ADDRESS>\n");
+		printf("RUN: ./corekube_frontend <FRONTEND_IP_ADDRESS> <K8S_LOADBALANCER_IP_ADDRESS>\n");
 		return 1;
 	}
 
