@@ -325,6 +325,7 @@ status_t get_NAS_decode_security_prerequisites_from_db(S1AP_MME_UE_S1AP_ID_t *mm
 
     const int NUM_PULL_ITEMS = 3;
     n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 0);
+    core_free(raw_mme_ue_id.buf);
     n = pull_items(buffer, n, NUM_PULL_ITEMS,
         INT_KEY, ENC_KEY, UE_NAS_SEQUENCE_NUMBER);
     send_request(sock, buffer, n);

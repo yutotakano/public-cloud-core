@@ -65,6 +65,7 @@ status_t detach_request_fetch_state(nas_eps_mobile_identity_t *mobile_identity, 
             OCTET_STRING_t raw_tmsi;
             s1ap_uint32_to_OCTET_STRING(tmsi, &raw_tmsi);
             n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_tmsi.buf, 0);
+            core_free(raw_tmsi.buf);
             break;
         default:
             d_error("Unknown EPS mobile identity type %d", identity_type);
