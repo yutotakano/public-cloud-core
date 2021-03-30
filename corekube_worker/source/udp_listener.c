@@ -148,5 +148,7 @@ int main(int argc, char const *argv[])
 
 	start_listener((char *)argv[1]);
 
+	core_free(db_ip_address);
+
 	return 0;
 }
