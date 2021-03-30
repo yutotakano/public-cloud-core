@@ -171,7 +171,7 @@ void start_listener(char * mme_ip_address)
 int main(int argc, char const *argv[])
 {
 	if(argc != 3) {
-		printf("RUN: ./corekube_sctp_listener <MME_IP_ADDRESS> <DB_IP_ADDRESS>\n");
+		printf("RUN: ./corekube_sctp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS>\n");
 		return 1;
 	}
 	core_initialize();
