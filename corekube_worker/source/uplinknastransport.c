@@ -8,6 +8,7 @@
 #include "downlinknastransport.h"
 #include "nas_detach_request.h"
 #include "ue_initial_context_release_command.h"
+#include "nas_attach_complete.h"
 #include "nas_message_security.h" //TODO - included while testing, make sure it is actually needed when commiting final version
 
 status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handler_response_t *response) {
@@ -46,6 +47,20 @@ status_t handle_uplinknastransport(s1ap_message_t *received_message, S1AP_handle
             // UplinkNASTransport), instead sending back a InitialContextSetupRequest,
             // hence why it returns directly
             return nas_send_attach_accept(mme_ue_id, response);
+
+        case NAS_ATTACH_COMPLETE:
+            ; // necessary to stop C complaining about labels and declarations
+
+            // handle the attach complete message
+            status_t handle_attach_complete = nas_handle_attach_complete(&nas_message, mme_ue_id);
+            d_assert(handle_attach_complete == CORE_OK, return CORE_ERROR, "Failed to handle NAS attach complete message");
+
+            // there should be no response for an attach complete message
+            response->outcome = NO_RESPONSE;
+
+            // return to avoid attempting to generate the DownlinkNASTransport
+            // response, since attach complete does not have a response
+            return CORE_OK;
 
         case NAS_DETACH_REQUEST:
             ; // necessary to stop C complaining about labels and declarations
