@@ -31,4 +31,6 @@ status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *
 
 status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_handler_response_t *response);
 
+status_t s1ap_successfulOutcome_handler(s1ap_message_t *s1ap_message, S1AP_handler_response_t *response);
+
 #endif /* __S1AP_HANDLER_H__ */

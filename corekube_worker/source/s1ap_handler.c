@@ -108,6 +108,7 @@ status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *
         case S1AP_S1AP_PDU_PR_initiatingMessage:
             return s1ap_initiatingMessage_handler(message, response);
         case S1AP_S1AP_PDU_PR_successfulOutcome:
+            return s1ap_successfulOutcome_handler(message, response);
         case S1AP_S1AP_PDU_PR_unsuccessfulOutcome:
         case S1AP_S1AP_PDU_PR_NOTHING:
         default:
@@ -128,6 +129,29 @@ status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_
             return handle_uplinknastransport(initiatingMessage, response);
         default:
             response->outcome = NO_RESPONSE;
+            return CORE_OK;
+    }
+}
+
+status_t s1ap_successfulOutcome_handler(s1ap_message_t *s1ap_message, S1AP_handler_response_t *response) {
+    d_info("Handling S1AP message of type InitiatingMessage");
+
+    S1AP_SuccessfulOutcome_t *successfulOutcome = s1ap_message->choice.successfulOutcome;
+
+    // all successful outcomes have no response
+    response->outcome = NO_RESPONSE;
+
+    switch (successfulOutcome->value.present) {
+        case S1AP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:
+            d_info("Received InitialContextSetupResponse");
+            d_info("Nothing to handle, no response to return");
+            return CORE_OK;
+        case S1AP_SuccessfulOutcome__value_PR_UEContextReleaseComplete:
+            d_info("Received UEContextReleaseComplete");
+            d_info("Nothing to handle, no response to return");
+            return CORE_OK;
+        default:
+            d_error("Unknown S1AP SuccessfulOutcome type: %d", successfulOutcome->value.present);
             return CORE_OK;
     }
 }
