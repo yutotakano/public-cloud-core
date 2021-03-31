@@ -127,6 +127,11 @@ status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_
             return handle_initialuemessage(initiatingMessage, response);
         case S1AP_InitiatingMessage__value_PR_UplinkNASTransport:
             return handle_uplinknastransport(initiatingMessage, response);
+        case S1AP_InitiatingMessage__value_PR_UECapabilityInfoIndication:
+            d_info("Received UECapabilityInfoIndication message");
+            d_info("Nothing to handle, no response to return");
+            response->outcome = NO_RESPONSE;
+            return CORE_OK;
         default:
             response->outcome = NO_RESPONSE;
             return CORE_OK;
