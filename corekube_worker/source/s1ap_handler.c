@@ -113,7 +113,7 @@ status_t s1ap_message_handler(s1ap_message_t *message, S1AP_handler_response_t *
         case S1AP_S1AP_PDU_PR_NOTHING:
         default:
             response->outcome = NO_RESPONSE;
-            return CORE_OK;
+            return CORE_ERROR;
     }
 }
 
@@ -134,7 +134,7 @@ status_t s1ap_initiatingMessage_handler(s1ap_message_t *initiatingMessage, S1AP_
             return CORE_OK;
         default:
             response->outcome = NO_RESPONSE;
-            return CORE_OK;
+            return CORE_ERROR;
     }
 }
 
@@ -157,6 +157,6 @@ status_t s1ap_successfulOutcome_handler(s1ap_message_t *s1ap_message, S1AP_handl
             return CORE_OK;
         default:
             d_error("Unknown S1AP SuccessfulOutcome type: %d", successfulOutcome->value.present);
-            return CORE_OK;
+            return CORE_ERROR;
     }
 }
