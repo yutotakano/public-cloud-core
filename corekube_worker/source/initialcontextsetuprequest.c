@@ -64,15 +64,16 @@ status_t attach_accept_fetch_state(S1AP_MME_UE_S1AP_ID_t *mme_ue_id, c_uint8_t *
     // required items from DB:
     //     esm_build_activate_default_bearer_context_request():
     //     emm_build_attach_accept(): 
+    //          TMSI
     //          nas_security_encode():
     //              epc_nas_sequence_number, enc_key, int_key
     //     s1ap_build_initial_context_setup_request():
     //          mme_ue_s1ap_id, enb_ue_s1ap_id, kasme1, kasme2, ue_nas_sequence_number
 
-    const int NUM_PULL_ITEMS = 8;
+    const int NUM_PULL_ITEMS = 9;
     n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 0);
     n = pull_items(buffer, n, NUM_PULL_ITEMS,
-        MME_UE_S1AP_ID, ENB_UE_S1AP_ID, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER, UE_NAS_SEQUENCE_NUMBER, KASME_1, KASME_2);
+        MME_UE_S1AP_ID, ENB_UE_S1AP_ID, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER, UE_NAS_SEQUENCE_NUMBER, KASME_1, KASME_2, TMSI);
     send_request(sock, buffer, n);
     n = recv_response(sock, buffer, 1024);
     db_disconnect(sock);
@@ -230,7 +231,12 @@ status_t s1ap_build_initial_context_setup_request(
 
     int sgw_s1u_ip = ntohl(inet_addr("192.168.56.106"));
     s1ap_uint32_to_OCTET_STRING(sgw_s1u_ip, (OCTET_STRING_t *) &e_rab->transportLayerAddress);
-    s1ap_uint32_to_OCTET_STRING(1, &e_rab->gTP_TEID); // TODO: fixed value may need to be derived
+
+    // the following is a bodge, but since the data plane isn't implemented, it is acceptable
+    // set the TEID to the TMSI of the UE
+    d_assert(db_pulls->tmsi != NULL, return CORE_ERROR, "DB TMSI is NULL");
+    c_uint32_t tmsi = array_to_int(db_pulls->tmsi);
+    s1ap_uint32_to_OCTET_STRING(tmsi, &e_rab->gTP_TEID);
 
 
     if (emmbuf && emmbuf->len)

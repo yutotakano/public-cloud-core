@@ -6,8 +6,10 @@
 #include <time.h>
 
 #include "nas_attach_accept.h"
+
 #include "core/include/core_lib.h"
 #include "nas_message_security.h"
+#include "s1ap_conv.h"
 
 // the following function is heavily adapted from 
 // s1ap_build_initial_context_setup_request() in
@@ -65,7 +67,9 @@ status_t emm_build_attach_accept(pkbuf_t **emmbuf, pkbuf_t *esmbuf, corekube_db_
     CORE_HEX("02f839", 6, &guti->guti.plmn_id); // TODO: fixed values may need to be derived
     guti->guti.mme_gid = 0x04; // TODO: fixed values may need to be derived
     guti->guti.mme_code = 0x01; // TODO: fixed values may need to be derived
-    guti->guti.m_tmsi = 0x01; // TODO: fixed values may need to be derived
+
+    d_assert(db_pulls->tmsi != NULL, return CORE_ERROR, "DB TMSI is NULL");
+    guti->guti.m_tmsi = array_to_int(db_pulls->tmsi);
 
     status_t securtiy_encode = nas_security_encode(&message, db_pulls, emmbuf);
     d_assert(securtiy_encode == CORE_OK && *emmbuf, return CORE_ERROR, "nas_security_encode error");
