@@ -214,9 +214,8 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 			case EPC_NAS_SEQUENCE_NUMBER:
 				// the sequence number is 6-byte
 				// but the DB only returns a single byte
-				// and that one byte starts at one, which should be zero-indexed
 				db_pulls->epc_nas_sequence_number = (uint8_t *) calloc(sizeof(uint8_t), 6);
-				db_pulls->epc_nas_sequence_number[5] = *(buffer+i+1) - 1;
+				db_pulls->epc_nas_sequence_number[5] = *(buffer+i+1);
 				break;
 			case KEY:
 				db_pulls->key = buffer+i+1;
