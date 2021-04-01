@@ -46,9 +46,14 @@ status_t get_nas_authentication_response_prerequisites_from_db(S1AP_MME_UE_S1AP_
     int sock = db_connect(db_ip_address, 0);
     int n;
 
-    const int NUM_PULL_ITEMS = 4;
-    n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 0);
+    // reset the NAS sequence numbers to zero, because the Security Mode Command
+    // (sent as a response) requires a new security context
+    c_uint8_t reset_sqn = 0;
+    n = push_items(buffer, MME_UE_S1AP_ID, (uint8_t *)raw_mme_ue_id.buf, 2,
+        UE_NAS_SEQUENCE_NUMBER, &reset_sqn, EPC_NAS_SEQUENCE_NUMBER, &reset_sqn);
     core_free(raw_mme_ue_id.buf);
+
+    const int NUM_PULL_ITEMS = 4;
     n = pull_items(buffer, n, NUM_PULL_ITEMS,
         AUTH_RES, INT_KEY, ENC_KEY, EPC_NAS_SEQUENCE_NUMBER);
     send_request(sock, buffer, n);
