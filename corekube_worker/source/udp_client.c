@@ -54,12 +54,6 @@ int send_message(char *mme_ip, char *payload) {
                 &len); 
     d_info("Received message from server"); 
     d_print_hex(buffer, n);
-
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
-                MSG_WAITALL, (struct sockaddr *) &servaddr, 
-                &len); 
-    d_info("Received message from server"); 
-    d_print_hex(buffer, n);
   
     close(sockfd); 
     return 0; 
