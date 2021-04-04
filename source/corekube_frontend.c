@@ -22,7 +22,7 @@
 #define SCTP_TIMEOUT 1
 #define SOCKET_READ_TIMEOUT_SEC 1
 #define SOCKET_LISTEN_QUEUE 5 /* Extract from openair-cn (openair-cn/SCTP/sctp_primitives_server.c) */
-#define UDP_PORT 5566
+#define UDP_PORT 32566
 
 int configure_sctp_socket(char * mme_ip_address)
 {
