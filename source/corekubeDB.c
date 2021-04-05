@@ -578,6 +578,13 @@ int main(int argc, char const *argv[])
 		config_destroy(&cfg);
 		return ERROR;
 	}
+	/* Hack to load IP from args if specififed */
+	if (argc == 2) {
+		free((void *) db_ip_address);
+		size_t ip_size = strlen(argv[1]);
+		db_ip_address = calloc(ip_size, sizeof(char));
+		memcpy((void *) db_ip_address, argv[1], ip_size);
+	}
 	/* Get db_port */
 	if (!config_lookup_int(&cfg, "network.db_port", &db_port)) {
 		printError("Config file error: network.db_port not defined.\n");
