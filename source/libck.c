@@ -29,13 +29,13 @@ int db_connect(char * ip_addr, int port)
 	/* Create socket */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock == -1)
-		return ERROR;
+		exit(-1);
 
 	/* Connect with DB */
 	if(connect(sock, (struct sockaddr *)&db_addr, sizeof(struct sockaddr)) == -1) {
 		printError("Unable to connect with %s:%d.\n", ip_addr, port);
 		close(sock);
-		return ERROR;
+		exit(-1);
 	}
 	return sock;
 }
@@ -256,10 +256,15 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 
 void send_request(int sock, uint8_t * buffer, int buffer_len)
 {
-	send(sock, buffer, buffer_len, 0);
+	int rsp = send(sock, buffer, buffer_len, 0);
+	if (rsp <= 0)
+		exit(-1);
 }
 
 int recv_response(int sock, uint8_t * buffer, int buffer_len)
 {
-	return recv(sock, buffer, buffer_len, 0);
+	int rsp = recv(sock, buffer, buffer_len, 0);
+	if (rsp <= 0)
+		exit(-1);
+	return rsp;
 }
