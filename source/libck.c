@@ -206,16 +206,10 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 				db_pulls->pdn_ip = buffer+i+1;
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
-				// the sequence number is 6-byte
-				// but the DB only returns a single byte
-				db_pulls->ue_nas_sequence_number = (uint8_t *) calloc(sizeof(uint8_t), 6);
-				db_pulls->ue_nas_sequence_number[5] = *(buffer+i+1);
+				db_pulls->ue_nas_sequence_number = buffer+i+1;
 				break;
 			case EPC_NAS_SEQUENCE_NUMBER:
-				// the sequence number is 6-byte
-				// but the DB only returns a single byte
-				db_pulls->epc_nas_sequence_number = (uint8_t *) calloc(sizeof(uint8_t), 6);
-				db_pulls->epc_nas_sequence_number[5] = *(buffer+i+1);
+				db_pulls->epc_nas_sequence_number = buffer+i+1;
 				break;
 			case KEY:
 				db_pulls->key = buffer+i+1;
