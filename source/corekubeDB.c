@@ -343,10 +343,10 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 				memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
 				break;
 			case EPC_NAS_SEQUENCE_NUMBER:
-				set_user_epc_nas_sequence_number(user, request[offset+1]);
+				set_user_epc_nas_sequence_number(user, request[offset+6]);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
-				set_user_ue_nas_sequence_number(user, request[offset+1]);
+				set_user_ue_nas_sequence_number(user, request[offset+6]);
 				break;
 			case AUTH_RES:
 				memcpy(get_user_auth_res(user), request+offset+1, AUTH_RES_LEN);
@@ -413,14 +413,14 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 				/* Copy and increase EPC NAS Sequence number */
 				response[res_offset] = EPC_NAS_SEQUENCE_NUMBER;
 				tmp_nas = get_user_epc_nas_sequence_number(user);
-				response[res_offset+1] = tmp_nas;
+				response[res_offset+6] = tmp_nas;
 				set_user_epc_nas_sequence_number(user, tmp_nas+1);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
 				/* Copy and increase UE NAS Sequence number */
 				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
 				tmp_nas = get_user_ue_nas_sequence_number(user);
-				response[res_offset+1] = tmp_nas;
+				response[res_offset+6] = tmp_nas;
 				set_user_ue_nas_sequence_number(user, tmp_nas+1);
 				break;
 			case KEY:
