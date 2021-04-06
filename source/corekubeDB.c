@@ -425,6 +425,12 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 				response[res_offset+6] = tmp_nas;
 				set_user_ue_nas_sequence_number(user, tmp_nas+1);
 				break;
+			case UE_NAS_SEQUENCE_NUMBER_NO_INC:
+				/* Copy the UE NAS Sequence number without incrementing it */
+				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
+				memset(response+res_offset+1, 0, 16);
+				response[res_offset+6] = get_user_ue_nas_sequence_number(user);
+				break;
 			case KEY:
 				response[res_offset] = KEY;
 				memcpy(response+res_offset+1, get_user_key(user), KEY_LEN);
