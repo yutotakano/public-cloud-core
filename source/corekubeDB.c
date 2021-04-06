@@ -413,6 +413,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 				/* Copy and increase EPC NAS Sequence number */
 				response[res_offset] = EPC_NAS_SEQUENCE_NUMBER;
 				tmp_nas = get_user_epc_nas_sequence_number(user);
+				memset(response+res_offset+1, 0, 16);
 				response[res_offset+6] = tmp_nas;
 				set_user_epc_nas_sequence_number(user, tmp_nas+1);
 				break;
@@ -420,6 +421,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 				/* Copy and increase UE NAS Sequence number */
 				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
 				tmp_nas = get_user_ue_nas_sequence_number(user);
+				memset(response+res_offset+1, 0, 16);
 				response[res_offset+6] = tmp_nas;
 				set_user_ue_nas_sequence_number(user, tmp_nas+1);
 				break;
