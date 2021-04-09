@@ -175,9 +175,9 @@ uint8_t * get_user_kasme2_key(UserInfo * user)
 void generate_rand(UserInfo * user)
 {
 	/* TODO: only for testing, remove this */
-	uint8_t nonrand[] = "abcdefghijklmnop";
-	memcpy(user->rand, nonrand, 16);
-	return;
+	//uint8_t nonrand[] = "abcdefghijklmnop";
+	//memcpy(user->rand, nonrand, 16);
+	//return;
 
 	uint32_t num;
 
