@@ -106,8 +106,8 @@ int hashmap_add(HashMap * hm, uint8_t * data, int size)
 				free(new_node);
 				return ERROR;
 			}
+			iter->next = new_node;
 		}
-		iter->next = new_node;
 	}
 
 	return OK;
