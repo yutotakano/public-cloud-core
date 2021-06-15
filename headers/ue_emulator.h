@@ -20,7 +20,6 @@ typedef struct _ue_data
 	uint8_t * control_plane;
 } ue_data;
 
-int ue_emulator_start(ue_data * data);
-void ue_copy_id_to_buffer(uint8_t * buffer);
+int ue_emulator_start(ue_data * data, int cp_mode);
 
 #endif

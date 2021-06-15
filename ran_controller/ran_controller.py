@@ -7,6 +7,7 @@ from queue import Queue
 import Status
 import time
 import struct
+import math
 
 from kubernetes import config, client
 
@@ -30,6 +31,7 @@ CODE_UE_GET_ENB = 0x07
 CODE_UE_X2_HANDOVER_COMPLETED = 0x08
 CODE_UE_ATTACH_TO_ENB = 0x09
 CODE_UE_S1_HANDOVER_COMPLETED = 0x0A
+CODE_CP_MODE_ONLY = 0x0B
 
 '''
     Bit 0 (Status)
@@ -96,11 +98,14 @@ class RANControler:
 
 		
 
-	def start_controller(self, controller_data, docker_image, epc, multiplexer, restart):
+	def start_controller(self, controller_data, docker_image, epc, multiplexer, restart, cp_mode, num_threads):
 		self.controller_data = controller_data
 		self.docker_image = docker_image
 		self.epc = epc
 		self.multiplexer = multiplexer
+		self.cp_mode = cp_mode
+		self.num_threads = num_threads
+		self.num_ues = len(self.controller_data['UEs'])
 		self.enb_ips = []
 		if restart == False:
 			self.execute()
@@ -149,9 +154,8 @@ class RANControler:
 
 	def analyze_msg(self, msg):
 		print(msg['type'])
-		if msg['type'] == 'init':
+		if msg['type'] == 'init' or msg['type'] == 'cp_mode':
 			print('New slave at ' + msg['ip'] + ':' + str(msg['port']))
-
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				enb.acquire_assign()
@@ -165,6 +169,32 @@ class RANControler:
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
 					return
 				enb.release_assign()
+
+			# Control Plane Only mode enabled
+			if self.cp_mode == True and msg['type'] == 'init':
+				print('New UE in Control-Plane Only mode')
+				if self.num_ues == -1:
+					# Send error message to the slave
+					print('ERROR: (Control-Plane Only Mode) No role available for the slave at ' + msg['ip'] + ':' + str(msg['port']))
+					buf = bytearray()
+					buf.append(CODE_ERROR)
+					self.sock.sendto(buf, (msg['ip'], msg['port']))
+					return
+				if self.num_ues < self.num_threads:
+					num_ues = self.num_ues
+					self.num_ues = -1
+				else:
+					num_ues = self.num_threads
+					self.num_ues = self.num_ues - self.num_threads
+
+				buf = bytearray()
+				buf.append(CODE_OK | CODE_CP_MODE_ONLY)
+				buf.append((num_ues >> 24) & 0xFF)
+				buf.append((num_ues >> 16) & 0xFF)
+				buf.append((num_ues >> 8) & 0xFF)
+				buf.append(num_ues & 0xFF)
+				self.sock.sendto(buf, (msg['ip'], msg['port']))
+				return
 
 			# Get the first not assigned UE
 			for ue in self.controller_data['UEs']:
@@ -353,6 +383,11 @@ class RANControler:
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
 			msg['ip_node'] = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
+		elif data[0] == CODE_CP_MODE_ONLY:
+			msg['type'] = 'cp_mode'
+			msg['ip'] = address[0]
+			msg['port'] = address[1]
+			msg['data'] = data[1:]
 		elif data[0] == CODE_OK | CODE_ENB_BEHAVIOUR:
 			msg['type'] = 'enb_run'
 			msg['ip'] = address[0]
@@ -443,7 +478,11 @@ class RANControler:
 	def kubernetes_thread(self):
 		# Wait 2 seconds to the rest of the threads
 		time.sleep(2)
-		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
+
+		if self.cp_mode == True:
+			tot_len = len(self.controller_data['eNBs']) + math.ceil(len(self.controller_data['UEs']) / self.num_threads)
+		else:
+			tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		# Init Kubernetes API connection
 		if k8s == True:
@@ -464,7 +503,10 @@ class RANControler:
 	def kubernetes_restart(self):
 		# Remove all eNB IPs
 		self.enb_ips = []
-		tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
+		if self.cp_mode == True:
+			tot_len = len(self.controller_data['eNBs']) + math.ceil(len(self.controller_data['UEs']) / self.num_threads)
+		else:
+			tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
 
 		if k8s == True:
 			core_v1 = client.CoreV1Api()

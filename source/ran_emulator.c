@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <libgc.h>
 #include <time.h>
+#include <pthread.h>
 
 #include "ue.h"
 #include "enb.h"
@@ -37,6 +38,7 @@
 #define CODE_X2_HANDOVER_COMPLETED 0x08
 #define CODE_ATTACHED_TO_ENB 0x09
 #define CODE_S1_HANDOVER_COMPLETED 0x0A
+#define CODE_CP_MODE_ONLY 0x0B
 
 
 uint8_t local_ip[4];
@@ -44,6 +46,9 @@ uint8_t ue_ip[4];
 
 int sockfd_controller;
 struct sockaddr_in serv_addr;
+
+/* Control-Plane Only mode */
+pthread_t * cp_mode_threads;
 
 /*
     Bit 0 (Status)
@@ -57,6 +62,8 @@ struct sockaddr_in serv_addr;
     Bit 6 (UE)
     Bit 7 (eNB)
 */
+
+void receive_controller(int sock_controller, int cp_mode);
 
 void dMem(uint8_t * pointer, int len)
 {
@@ -72,17 +79,74 @@ void dMem(uint8_t * pointer, int len)
     printf("\n");
 }
 
+void send_init_controller()
+{
+    uint8_t code_send[5];
+    code_send[0] = INIT_MSG;
+    memcpy(code_send+1, ue_ip, 4);
+    if(sendto(sockfd_controller, code_send, 5, 0, (const struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
+    {
+        perror("send_init_code_controller");
+    }
+}
+
+void * control_plane_only_mode(void * args)
+{
+    uint8_t code_send[5];
+    int thread_sock_controller;
+    /* Create a controller socket for this thread */
+    if ( (thread_sock_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+        perror("socket creation failed"); 
+        exit(1);
+    }
+
+    /* Send the CP Only Init message to the controller */
+    code_send[0] = CODE_CP_MODE_ONLY;
+    memcpy(code_send+1, ue_ip, 4);
+    if(sendto(thread_sock_controller, code_send, 5, 0, (const struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
+    {
+        perror("send_init_code_controller");
+    }
+
+    while(1)
+    {
+        /* Receive Controller instructions */
+        receive_controller(thread_sock_controller, 1);
+    }
+}
+
+void start_cp_mode_only(int num_threads)
+{
+    int i;
+    /* Allocate memory for the threads*/
+    cp_mode_threads = (pthread_t *) malloc(num_threads*sizeof(pthread_t));
+    if(cp_mode_threads == NULL){
+        printError("Error allocating memory for threads in Control-Plane Only mode\n");
+        /* TODO: Send error to controller */
+        return;
+    }
+    /* Create num_threads */
+    for(i = 0; i < (num_threads); i++)
+    {
+        printInfo("Creating Control-Plane thread %d\n", i);
+        if (pthread_create(cp_mode_threads+i, NULL, control_plane_only_mode, 0) != 0)
+        {
+            perror("pthread_create Control-Plane Only mode\n");
+        }
+    }
+}
+
 /*
 -1: Controller error
  0: Ok
  1: Slave error 
 */
-int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * res_len)
+int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * res_len, int cp_mode)
 {
     int i, ret;
     if(len <= 0)
         return 0;
-    if( (buffer[0] & CODE_OK) == 0 || buffer[0] == CODE_ERROR)
+    if(buffer[0] == CODE_ERROR)
     {
         printError("Controller error: abort\n");
         return -1;
@@ -90,7 +154,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
     /* Message has been verified */
 
     /* Run as UE */
-    if(buffer[0] & CODE_UE_BEHAVIOUR)
+    if(buffer[0] == (CODE_OK | CODE_UE_BEHAVIOUR))
     {
         uint16_t command_len = 0;
         uint8_t temp_ip[4];
@@ -168,30 +232,30 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Error control */
         if(offset > len)
         {
+            //TODO: remove this
             /* Wrong data format */
             printError("Wrong data format in message\n");
             /*Generate response buffer*/
             response[0] = CODE_UE_BEHAVIOUR;
-            ue_copy_id_to_buffer(response + 1);
+            //ue_copy_id_to_buffer(response + 1);
             *res_len = 5;
             return 1;
         }
 
         /* Copy Local IP to ue_data structure */
         memcpy(data.local_ip, local_ip, 4);
-
-        ret = ue_emulator_start(&data);
+        
+        ret = ue_emulator_start(&data, cp_mode);
+        
         if(ret != 0)
+        {
             printError("Error starting UE functionality\n");
-        /* Generate response buffer */
-        response[0] = CODE_UE_BEHAVIOUR;
-        ue_copy_id_to_buffer(response + 1);
-        *res_len = 5;
+        }
 
         return ret;
     }
     /* Run as eNB */
-    else if(buffer[0] & CODE_ENB_BEHAVIOUR)
+    else if(buffer[0] == (CODE_OK | CODE_ENB_BEHAVIOUR))
     {
         enb_data data;
         bzero(&data, sizeof(data));
@@ -225,11 +289,12 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Error control */
         if(offset > len)
         {
+            //TODO: Remove this
             /* Wrong data format */
             printError("Wrong data format in message\n");
             /*Generate response buffer*/
             response[0] = CODE_ENB_BEHAVIOUR;
-            enb_copy_id_to_buffer(response + 1);
+            //enb_copy_id_to_buffer(response + 1);
             *res_len = 5;
             return 1;
         }
@@ -241,12 +306,15 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
             printError("Error starting eNB functionality\n");
         }
 
-        /*Generate response buffer*/
-        response[0] = CODE_ENB_BEHAVIOUR;
-        enb_copy_id_to_buffer(response + 1);
-        memcpy(response + 5, ue_ip, 4);
-        *res_len = 9;
         return ret;
+    }
+    if(buffer[0] == (CODE_OK | CODE_CP_MODE_ONLY))
+    {
+        uint32_t num_threads;
+        printInfo("Control-Plane Only Mode enabled!\n");
+        num_threads = (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
+        printf("This nUE has to run %d threads.\n", num_threads);
+        start_cp_mode_only((int)num_threads);
     }
     return 0;
 }
@@ -290,6 +358,52 @@ void send_ue_attach_controller(uint32_t ue_id)
     buffer[3] = (ue_id >> 8) & 0xFF;
     buffer[4] = ue_id & 0xFF;
     send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_ue_behaviour(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_OK | CODE_UE_BEHAVIOUR;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_ue_behaviour_error(uint32_t ue_id)
+{
+    uint8_t buffer[5];
+    buffer[0] = CODE_UE_BEHAVIOUR;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 5);
+}
+
+void send_enb_behaviour(uint32_t ue_id)
+{
+    uint8_t buffer[9];
+    buffer[0] = CODE_OK | CODE_ENB_BEHAVIOUR;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    memcpy(buffer + 5, ue_ip, 4);
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
+}
+
+void send_enb_behaviour_error(uint32_t ue_id)
+{
+    uint8_t buffer[9];
+    buffer[0] = CODE_ENB_BEHAVIOUR;
+    buffer[1] = (ue_id >> 24) & 0xFF;
+    buffer[2] = (ue_id >> 16) & 0xFF;
+    buffer[3] = (ue_id >> 8) & 0xFF;
+    buffer[4] = ue_id & 0xFF;
+    memcpy(buffer + 5, ue_ip, 4);
+    send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
 }
 
 void send_ue_moved_to_connected_controller(uint32_t ue_id)
@@ -394,58 +508,33 @@ void send_s1_handover_complete(uint32_t ue_id, uint32_t enb_id)
     send_buffer(sockfd_controller, &serv_addr, sizeof(serv_addr), buffer, 9);
 }
 
-void send_init_controller()
-{
-    uint8_t code_send[5];
-    code_send[0] = INIT_MSG;
-    memcpy(code_send+1, ue_ip, 4);
-    if(sendto(sockfd_controller, code_send, 5, 0, (const struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
-    {
-        perror("send_init_code_controller");
-    }
-}
-
-void receive_controller()
+void receive_controller(int sock_controller, int cp_mode)
 {
     uint8_t buffer[1024];
     uint8_t response[1024];
-    int len, n, res, res_len, sockfd;
+    int len, n, res, res_len;
     struct sockaddr_in serv_addr_aux;
 
-    sockfd = sockfd_controller;
     memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
 
-    n = recvfrom(sockfd, (char *)buffer, 1024, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
-    res = analyze_controller_msg(buffer, n, response, &res_len);
+    n = recvfrom(sock_controller, (char *)buffer, 1024, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
+    res = analyze_controller_msg(buffer, n, response, &res_len, cp_mode);
     if(res < 0)
     {
-        close(sockfd);
+        close(sock_controller);
         exit(1);
     }
     else if(res == 1)
     {
         printError("Slave error: Sending error to controller\n");
-        /* Send slave error code to controller */
-        send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
-        close(sockfd);
+        close(sock_controller);
         exit(1);
     }
     else
     {
         /* Send OK */
         printOK("Slave running\n");
-        response[0] |= CODE_OK;
-        send_buffer(sockfd, &serv_addr_aux, sizeof(serv_addr_aux), response, res_len);
     }
-}
-
-void dumpM(char * text, uint8_t * mem, uint8_t len)
-{
-    int i;
-    printf("%s: ", text);
-    for(i = 0; i < len; i++)
-        printf("%.2x", mem[i]);
-    printf("\n");
 }
 
 int main(int argc, char const *argv[])
@@ -454,53 +543,9 @@ int main(int argc, char const *argv[])
 
     setvbuf(stdout, NULL, _IONBF, 0); 
 
-    /* CRYPTO TESTING */
-    /*
-    uint8_t  key[32] = {0x8b, 0xaf, 0x47, 0x3f, 0x2f, 0x8f, 0xd0, 0x94, 0x87, 0xcc, 0xcb, 0xd7, 0x09, 0x7c, 0x68, 0x62};
-    uint8_t  opc[32] = {0x8e, 0x27, 0xb6, 0xaf, 0x0e, 0x69, 0x2e, 0x75, 0x0f, 0x32, 0x66, 0x7a, 0x3b, 0x14, 0x60, 0x5d};
-    uint8_t rand[32] = {0x98, 0xf8, 0x81, 0xd5, 0x47, 0x4e, 0xc8, 0xa6, 0x40, 0x60, 0x6e, 0x0f, 0x50, 0x51, 0xfa, 0x86};
-    uint8_t autn[32] = {0xea, 0x2d, 0xe7, 0x5e, 0xd2, 0x01, 0x80, 0x00, 0x4f, 0x82, 0x6a, 0x18, 0xc2, 0xc1, 0x78, 0xe5};
-    uint8_t res[8];
-    uint8_t ck[16];
-    uint8_t ik[16];
-    uint8_t ak[6];
-    uint8_t res_asterisk[16];
-    char supi[15] = "208930000000003";
-    uint8_t kausf[32];
-    uint8_t kseaf[32];
-    uint8_t kamf[32];
-    uint8_t enc_key[16];
-    uint8_t int_key[16];
-
-    f2345(key, rand, res, ck, ik, ak, opc);
-    dumpM("Key", key, 32);
-    dumpM("OPC", opc, 32);
-    dumpM("Rand", rand, 32);
-    dumpM("Autn", autn, 32);
-    dumpM("RES", res, 8);
-    dumpM("CK", ck, 16);
-    dumpM("IK", ik, 16);
-    dumpM("ak", ak, 6);
-    generate_res_5g(res_asterisk, ck, ik, rand, res, (uint8_t *)supi, (uint8_t *)supi+3);
-    dumpM("RES*", res_asterisk, 16);
-    generate_kausf(kausf, ck, ik, autn, (uint8_t *)supi, (uint8_t *)supi+3);
-    dumpM("Kausf", kausf, 32);
-    generate_kseaf(kseaf, kausf, (uint8_t *)supi, (uint8_t *)supi+3);
-    dumpM("Kseaf", kseaf, 32);
-    generate_kamf(kamf, supi, kseaf);
-    dumpM("Kamf", kamf, 32);
-    generate_5g_nas_enc_key(enc_key, kamf, 0x00);
-    generate_5g_nas_int_key(int_key, kamf, 0x02);
-    dumpM("EncKey", enc_key, 16);
-    dumpM("IntKey", int_key, 16);
-
-
-    return 0;
-    */
-
     if(argc != 3)
     {
-        printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP (Optional)>\n");
+        printf("USE: ./ran_simulator <RAN_CONTROLLER_IP> <UE_IP>\n");
         exit(1);
     }
 
@@ -536,7 +581,7 @@ int main(int argc, char const *argv[])
 
     /* Store Local IP */
     /* Local IP is set to 0.0.0.0 */
-    //memcpy(local_ip, ue_ip, 4);
+    //memcpy(local_ip, ue_ip, 4); // Local
     bzero(local_ip, 4);
 
     if ( (sockfd_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
@@ -550,7 +595,7 @@ int main(int argc, char const *argv[])
     while(1)
     {
         /* Receive Controller instructions */
-        receive_controller();
+        receive_controller(sockfd_controller, 0);
     }
 
     return 0;

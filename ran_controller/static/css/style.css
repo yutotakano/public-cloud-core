@@ -384,3 +384,16 @@ pre code, pre tt {
   background-color: transparent;
   border: none;
 }
+
+#num_threads {
+    display: none;
+}
+#multiplexer {
+    display: none;
+}
+#cp_mode:checked ~ #num_threads {
+    display: inline;
+}
+#cp_mode:checked ~ #multiplexer {
+    display: inline;
+}

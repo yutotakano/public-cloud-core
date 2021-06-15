@@ -12,8 +12,12 @@
 				MME/AMF IP Address:
 				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
-				Multiplexer IP Address:
-				<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				Control-Plane Mode:
+				<input type="checkbox" id="cp_mode" name="cp_mode"/>
+				<br>
+				<span id="num_threads" name="num_threads">Number of threads per nUE: <input type="number" id="threads" name="threads" value="100"/></span>
+				<p>
+				Multiplexer IP Address:<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
 				Configuration file (JSON):
 				<input type = "file" name = "config" accept=".json"/>

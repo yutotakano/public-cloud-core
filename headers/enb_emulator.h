@@ -13,7 +13,5 @@ typedef struct _enb_data
 } enb_data;
 
 int enb_emulator_start(enb_data * data);
-void enb_copy_id_to_buffer(uint8_t * buffer);
-void enb_copy_port_to_buffer(uint8_t * buffer);
 
 #endif

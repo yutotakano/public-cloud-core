@@ -131,7 +131,7 @@ class UserInput():
 		return None
 
 
-	def generate_data(self, config, docker_image, epc_ip, multi_ip):
+	def generate_data(self, config, docker_image, epc_ip, multi_ip, cp_mode, num_threads):
 		data = []
 		self.epc_ip = epc_ip
 		self.multi_ip = multi_ip
@@ -166,7 +166,7 @@ class UserInput():
 				self.controller_data['UEs'].add(new_ue)
 				i = i + 1
 
-		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted)
+		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted, cp_mode, num_threads)
 
 		return True
 	
@@ -189,10 +189,18 @@ class UserInput():
 		if request.method == "POST":
 			mme_ip = request.form["mme_ip"]
 			multi_ip = request.form["multi_ip"]
+			if multi_ip == '':
+				multi_ip = mme_ip
 			config = request.files['config'] if request.files.get('config') else None
 			docker_image = request.form['docker_image']
+			try:
+				cp_mode = bool(request.form['cp_mode'])
+			except:
+				cp_mode = False
+			num_threads = int(request.form['threads'])
+			print(num_threads)
 			self.refresh_time = int(request.form['refresh_time'])
-			if self.generate_data(config, docker_image, mme_ip, multi_ip):
+			if self.generate_data(config, docker_image, mme_ip, multi_ip, cp_mode, num_threads):
 				self.configuration = False
 		return redirect(url_for('index'))
 

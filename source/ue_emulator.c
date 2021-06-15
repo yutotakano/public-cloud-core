@@ -37,13 +37,14 @@
 #define CP_ATTACH_TO_ENB 7
 #define CP_S1_HANDOVER 8
 
-ue_data ue;
 pid_t traffic_generator;
 
 uint8_t local_ip[4];
 uint8_t ue_ip[4];
 uint8_t spgw_ip[4];
 uint8_t gtp_teid[4];
+
+int CONTROL_PLANE_ONLY;
 
 /* External function (declared as extern by default) */
 /* Update controller state with IDLE */
@@ -62,6 +63,10 @@ void send_x2_handover_complete(uint32_t ue_id, uint32_t enb_id);
 void send_ue_attach_to_enb_controller(uint32_t ue_id, uint32_t enb_id);
 /* Update controller with S1 Handover Completed */
 void send_s1_handover_complete(uint32_t ue_id, uint32_t enb_id);
+/* Update the controller with UE Behaviour signal*/
+void send_ue_behaviour(uint32_t ue_id);
+/* Update the controller with UE Behaviour error signal */
+void send_ue_behaviour_error(uint32_t ue_id);
 
 
 
@@ -76,15 +81,6 @@ void dKey(uint8_t * pointer, int len)
         printf("%.2x ", pointer[i]);
     }
     printf("\n");
-}
-
-
-void ue_copy_id_to_buffer(uint8_t * buffer)
-{
-	buffer[0] = ue.id[0];
-	buffer[1] = ue.id[1];
-	buffer[2] = ue.id[2];
-	buffer[3] = ue.id[3];
 }
 
 void start_traffic_generator(char * command)
@@ -111,15 +107,19 @@ void stop_traffic_generator()
     kill(traffic_generator*-1, SIGTERM);
 }
 
-int send_ue_context_release()
+int send_ue_context_release(ue_data * ue)
 {
 	int sockfd;
 	idle_msg * msg;
 	int n;
 	uint8_t buffer[32];
 
-	/* Kill the traffic generator child process before send the Detach message to the eNB */
-	stop_traffic_generator();
+	/* Checking CP mode */
+	if(CONTROL_PLANE_ONLY == 0)
+	{
+		/* Kill the traffic generator child process before send the Detach message to the eNB */
+		stop_traffic_generator();
+	}
 
 	/* Socket create */
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -151,7 +151,7 @@ int send_ue_context_release()
     buffer[0] = MOVE_TO_IDLE;
     msg = (idle_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(idle_msg) + 2);
@@ -172,23 +172,26 @@ int send_ue_context_release()
 	}
 	printOK("UE moved to Idle (UEContextRelease)\n");
 	/* Notify the controller */
-	send_idle_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	send_idle_controller( (ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3] );
 	/* Here the UE is in IDLE state */
 	close(sockfd);
 	return 0;
 }
 
-int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
+int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag, ue_data * ue)
 {
 	int sockfd;
 	idle_msg * msg;
 	int n;
 	uint8_t buffer[32];
 
-	/* Kill the traffic generator child process before send the Detach message to the eNB */
-	if(traffic_flag == 1)
-		stop_traffic_generator();
-
+	/* Checking CP mode */
+	if(CONTROL_PLANE_ONLY == 0)
+	{
+		/* Kill the traffic generator child process before send the Detach message to the eNB */
+		if(traffic_flag == 1)
+			stop_traffic_generator();
+	}
 	/* Socket create */
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (sockfd == -1) {
@@ -223,7 +226,7 @@ int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
     	buffer[0] = UE_SWITCH_OFF_DETACH;
     msg = (idle_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(idle_msg) + 2);
@@ -245,13 +248,13 @@ int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag)
 	printOK("UE Detached (UEDetach)\n");
 	/* Notify the controller */
 	if(traffic_flag)
-		send_ue_detach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+		send_ue_detach_controller( (ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3] );
 	/* Here the UE is in IDLE state */
 	close(sockfd);
 	return 0;
 }
 
-int send_ue_attach()
+int send_ue_attach(ue_data * ue)
 {
 	int sockfd;
 	idle_msg * msg;
@@ -289,7 +292,7 @@ int send_ue_attach()
     buffer[0] = UE_ATTACH;
     msg = (idle_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(idle_msg) + 2);
@@ -310,39 +313,43 @@ int send_ue_attach()
 	}
 	printOK("UE Attached (UEAttach)\n");
 
-	/* Analyze response */
-	res = (init_response_msg *) (buffer+1);
-	/* Get TEID */
-	memcpy(gtp_teid, res->teid, 4);
-	/* Get UE IP */
-	memcpy(ue_ip, res->ue_ip, 4);
-
-	/* Print received parameters */
-	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
-	printf("Received new information from eNB\n");
-	printf("New GTP-TEID: 0x%x\n", teid);
-	printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
-	printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
-
-	/* Update data plane */
-	if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+	/* Checking CP mode */
+	if(CONTROL_PLANE_ONLY == 0)
 	{
-		printError("Error updating data plane parameters\n");
-		close(sockfd);
-		return 1;
+		/* Analyze response */
+		res = (init_response_msg *) (buffer+1);
+		/* Get TEID */
+		memcpy(gtp_teid, res->teid, 4);
+		/* Get UE IP */
+		memcpy(ue_ip, res->ue_ip, 4);
+
+		/* Print received parameters */
+		uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+		printf("Received new information from eNB\n");
+		printf("New GTP-TEID: 0x%x\n", teid);
+		printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
+		printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+		/* Update data plane */
+		if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+		{
+			printError("Error updating data plane parameters\n");
+			close(sockfd);
+			return 1;
+		}
+
+		/* Run the traffic generator process */
+		start_traffic_generator(ue->command);
 	}
 
-	/* Run the traffic generator process */
-	start_traffic_generator(ue.command);
-
 	/* Notify the controller */
-	send_ue_attach_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
-	/* Here the UE is in IDLE state */
+	send_ue_attach_controller( (ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3] );
+	/* Here the UE is in Attached state */
 	close(sockfd);
 	return 0;
 }
 
-int send_move_to_connect()
+int send_move_to_connect(ue_data * ue)
 {
 	int sockfd;
 	idle_msg * msg;
@@ -380,7 +387,7 @@ int send_move_to_connect()
     buffer[0] = MOVE_TO_CONNECTED;
     msg = (idle_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(idle_msg) + 2);
@@ -401,36 +408,40 @@ int send_move_to_connect()
 	}
 	printOK("UE Attached (UEServiceRequest)\n");
 
-	/* Analyze response */
-	res = (idle_response_msg *) (buffer+1);
-	/* Gert TEID */
-	memcpy(gtp_teid, res->teid, 4);
-
-	/* Print received parameters */
-	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
-	printf("Received new information from eNB\n");
-	printf("New GTP-TEID: 0x%x\n", teid);
-	printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
-
-	/* Update data plane */
-	if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+	/* Checking CP mode */
+	if(CONTROL_PLANE_ONLY == 0)
 	{
-		printError("Error updating data plane parameters\n");
-		close(sockfd);
-		return 1;
+		/* Analyze response */
+		res = (idle_response_msg *) (buffer+1);
+		/* Gert TEID */
+		memcpy(gtp_teid, res->teid, 4);
+
+		/* Print received parameters */
+		uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+		printf("Received new information from eNB\n");
+		printf("New GTP-TEID: 0x%x\n", teid);
+		printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+		/* Update data plane */
+		if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+		{
+			printError("Error updating data plane parameters\n");
+			close(sockfd);
+			return 1;
+		}
+
+		/* Run the traffic generator process */
+		start_traffic_generator(ue->command);
 	}
 
-	/* Run the traffic generator process */
-	start_traffic_generator(ue.command);
-
 	/* Notify the controller */ /*todo*/
-	send_ue_moved_to_connected_controller( (ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3] );
+	send_ue_moved_to_connected_controller( (ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3] );
 	/* Here the UE is in ATTACHED/CONNECTED state */
 	close(sockfd);
 	return 0;
 }
 
-int send_x2_handover(uint8_t * enb_num)
+int send_x2_handover(uint8_t * enb_num, ue_data * ue)
 {
 	uint32_t enb_n;
 	int enb_ret;
@@ -452,7 +463,7 @@ int send_x2_handover(uint8_t * enb_num)
 	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
 	printInfo("Staring X2 Handover to eNB %d...\n", enb_n);
 	printInfo("Getting Target-eNB IP...\n");
-	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	enb_ret = (int)send_get_enb_ip((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 	if(enb_ret == -1)
 		return 1;
 	if(enb_ret == 0)
@@ -504,7 +515,7 @@ int send_x2_handover(uint8_t * enb_num)
     buffer[0] = HO_SETUP;
     msg = (ho_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 	/* Target-eNB IP */
 	memcpy(msg->target_enb_ip, enb_ip, 4);
 
@@ -568,7 +579,7 @@ int send_x2_handover(uint8_t * enb_num)
     buffer[0] = HO_REQUEST;
     msg = (ho_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 	/* Target-eNB IP is 0 */
 	/* Send UE info to eNB and wait to a response */
 	write(enb_sockfd, buffer, sizeof(ho_msg) + 2);
@@ -592,12 +603,12 @@ int send_x2_handover(uint8_t * enb_num)
 	printOK("X2 Handover-Request done\n");
 
 	/* Update Controller */
-	send_x2_handover_complete((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	send_x2_handover_complete((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 
 	return 0;
 }
 
-int send_s1_handover(uint8_t * enb_num)
+int send_s1_handover(uint8_t * enb_num, ue_data * ue)
 {
 	uint32_t enb_n;
 	int enb_ret;
@@ -618,7 +629,7 @@ int send_s1_handover(uint8_t * enb_num)
 	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
 	printInfo("Staring S1 Handover to eNB %d...\n", enb_n);
 	printInfo("Getting Target-eNB IP...\n");
-	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	enb_ret = (int)send_get_enb_ip((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 	if(enb_ret == -1)
 		return 1;
 	if(enb_ret == 0)
@@ -670,7 +681,7 @@ int send_s1_handover(uint8_t * enb_num)
     buffer[0] = UE_S1_HANDOVER;
     msg = (ho_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 	/* Target-eNB IP */
 	memcpy(msg->target_enb_ip, enb_ip, 4);
 
@@ -699,13 +710,13 @@ int send_s1_handover(uint8_t * enb_num)
 	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
 
 	/* Update Controller */
-	send_s1_handover_complete((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	send_s1_handover_complete((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 
 
 	return 0;
 }
 
-int send_ue_attach_to_enb(uint8_t * enb_num)
+int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 {
 	uint32_t enb_n;
 	int enb_ret;
@@ -730,7 +741,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
 	printInfo("Staring X2 Handover to eNB %d...\n", enb_n);
 	printInfo("Getting Target-eNB IP...\n");
-	enb_ret = (int)send_get_enb_ip((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	enb_ret = (int)send_get_enb_ip((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 	if(enb_ret == -1)
 		return 1;
 	if(enb_ret == 0)
@@ -782,7 +793,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
     buffer[0] = UE_TRANFSER;
     msg = (ho_msg *)(buffer+1);
     /* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 	/* Target-eNB IP */
 	memcpy(msg->target_enb_ip, enb_ip, 4);
 
@@ -846,7 +857,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
     buffer[0] = UE_ATTACH;
     imsg = (idle_msg *)(buffer+1);
     /* MSIN */
-	memcpy(imsg->msin, ue.msin, 10);
+	memcpy(imsg->msin, ue->msin, 10);
 
 	/* Send UE info to eNB and wait to a response */
 	write(enb_sockfd, buffer, sizeof(idle_msg) + 2);
@@ -867,33 +878,37 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 	}
 	printOK("UE Attached (UEAttach)\n");
 
-	/* Analyze response */
-	res = (init_response_msg *) (buffer+1);
-	/* Get TEID */
-	memcpy(gtp_teid, res->teid, 4);
-	/* Get UE IP */
-	memcpy(ue_ip, res->ue_ip, 4);
-
-	/* Print received parameters */
-	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
-	printf("Received new information from eNB\n");
-	printf("New GTP-TEID: 0x%x\n", teid);
-	printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
-	printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
-
-	/* Update data plane */
-	if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+	/* Checking CP mode */
+	if(CONTROL_PLANE_ONLY == 0)
 	{
-		printError("Error updating data plane parameters\n");
-		close(enb_sockfd);
-		return 1;
+		/* Analyze response */
+		res = (init_response_msg *) (buffer+1);
+		/* Get TEID */
+		memcpy(gtp_teid, res->teid, 4);
+		/* Get UE IP */
+		memcpy(ue_ip, res->ue_ip, 4);
+
+		/* Print received parameters */
+		uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+		printf("Received new information from eNB\n");
+		printf("New GTP-TEID: 0x%x\n", teid);
+		printf("New UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
+		printf("New SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+		/* Update data plane */
+		if(update_data_plane(ue_ip, spgw_ip, teid) < 0)
+		{
+			printError("Error updating data plane parameters\n");
+			close(enb_sockfd);
+			return 1;
+		}
+
+		/* Run the traffic generator process */
+		start_traffic_generator(ue->command);
 	}
 
-	/* Run the traffic generator process */
-	start_traffic_generator(ue.command);
-
 	/* Notify the controller */
-	send_ue_attach_to_enb_controller((ue.id[0] << 24) | (ue.id[1] << 16) | (ue.id[2] << 8) | ue.id[3], enb_n);
+	send_ue_attach_to_enb_controller((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 	/* Here the UE is in IDLE state */
 	close(enb_sockfd);
 
@@ -902,7 +917,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num)
 	return 0;
 }
 
-int do_control_plane_action(uint8_t * action)
+int do_control_plane_action(uint8_t * action, ue_data * ue)
 {
 	switch(*action)
 	{
@@ -910,28 +925,28 @@ int do_control_plane_action(uint8_t * action)
 			/* Do nothing */
 			return 0;
 		case CP_DETACH:
-			send_ue_detach(0, 1);
+			send_ue_detach(0, 1, ue);
 			return 0;
 		case CP_DETACH_SWITCH_OFF:
-			send_ue_detach(1, 1);
+			send_ue_detach(1, 1, ue);
 			return 0;
 		case CP_ATTACH:
-			send_ue_attach();
+			send_ue_attach(ue);
 			return 0;
 		case CP_MOVE_TO_IDLE:
-			send_ue_context_release();
+			send_ue_context_release(ue);
 			return 0;
 		case CP_MOVE_TO_CONNECTED:
-			send_move_to_connect();
+			send_move_to_connect(ue);
 			return 0;
 		case CP_X2_HANDOVER:
-			send_x2_handover(action + 1);
+			send_x2_handover(action + 1, ue);
 			return 1;
 		case CP_ATTACH_TO_ENB:
-			send_ue_attach_to_enb(action + 1);
+			send_ue_attach_to_enb(action + 1, ue);
 			return 1;
 		case CP_S1_HANDOVER:
-			send_s1_handover(action + 1);
+			send_s1_handover(action + 1, ue);
 			return 1;
 	}
 	return 0;
@@ -941,27 +956,34 @@ void * control_plane(void * args)
 {
 	int i;
 	uint32_t cp_sleep;
+	ue_data * ue;
 
-	/* Create traffic generator process */
-	start_traffic_generator(ue.command);
+	ue = (ue_data *) args;
+
+	/* If Control Plane Only mode disabled */
+	if(CONTROL_PLANE_ONLY == 0)
+	{
+		/* Create traffic generator process */
+		start_traffic_generator(ue->command);
+	}
 	
 	/* Infinite loop */
 	while(1)
 	{
 		/* control plane behaviour */
-		for(i = 0; i < ue.control_plane_len; i += 4)
+		for(i = 0; i < ue->control_plane_len; i += 4)
 		{
 			/* Do the action */
-			if(do_control_plane_action(ue.control_plane + i) == 1)
+			if(do_control_plane_action(ue->control_plane + i, ue) == 1)
 			{
 				/* Handover special case */
 				i += 4;
 				/* Handover is the last command in the Control Plane FSM string */
-				if( i >= ue.control_plane_len )
+				if( i >= ue->control_plane_len )
 					break;
 			}
 			/* Sleep */
-			cp_sleep = (ue.control_plane[i+1] << 16) | (ue.control_plane[i+2] << 8) | (ue.control_plane[i+3]);
+			cp_sleep = (ue->control_plane[i+1] << 16) | (ue->control_plane[i+2] << 8) | (ue->control_plane[i+3]);
 			if(cp_sleep == 16777215)
 			{
 				printInfo("Control plane: INF sleep detected\n");
@@ -973,7 +995,7 @@ void * control_plane(void * args)
 	}
 }
 
-int ue_emulator_start(ue_data * data)
+int ue_emulator_start(ue_data * data, int cp_mode)
 {
 	int sockfd;
 	uint8_t buffer[1024];
@@ -983,6 +1005,10 @@ int ue_emulator_start(ue_data * data)
 	int i;
 	int ret;
 	pthread_t control_plane_thread;
+	ue_data * ue;
+
+	/* Set Control Plane mode */
+	CONTROL_PLANE_ONLY = cp_mode;
 
     /* Print UE data */
 	printf("ID: %d\n", (data->id[0] << 24) | (data->id[1] << 16) | (data->id[2] << 8) | data->id[3] );
@@ -1003,13 +1029,17 @@ int ue_emulator_start(ue_data * data)
 		printf("%.2x ", data->control_plane[i]);
 	printf("\n");
 
+	/* Allocate memory for a ue_data structure */
+	ue = (ue_data *) malloc(sizeof(ue_data));
+
 	/* Save UE information */
-	memcpy(&ue, data, sizeof(ue_data));
+	memcpy(ue, data, sizeof(ue_data));
 
 	/* Socket create */
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (sockfd == -1) {
     	perror("UE socket");
+    	send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
         return 1;
     }   
   
@@ -1027,6 +1057,7 @@ int ue_emulator_start(ue_data * data)
 			{
 				close(sockfd);
 				perror("UE connect");
+				send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
 				return 1;
 			}
 		}
@@ -1042,19 +1073,19 @@ int ue_emulator_start(ue_data * data)
 	msg = (init_msg *)(buffer+1);
 	bzero(msg, sizeof(msg));
 	/* UE ID */
-	memcpy(msg->id, ue.id, 4);
+	memcpy(msg->id, ue->id, 4);
 	/* MCC */
-	memcpy(msg->mcc, ue.mcc, 3);
+	memcpy(msg->mcc, ue->mcc, 3);
 	/* MNC */
-	memcpy(msg->mnc, ue.mnc, 2);
+	memcpy(msg->mnc, ue->mnc, 2);
 	/* MSIN */
-	memcpy(msg->msin, ue.msin, 10);
+	memcpy(msg->msin, ue->msin, 10);
 	/* Key */
-	memcpy(msg->key, ue.key, 16);
+	memcpy(msg->key, ue->key, 16);
 	/* OpKey */
-	memcpy(msg->op_key, ue.op_key, 16);
+	memcpy(msg->op_key, ue->op_key, 16);
 	/* UE IP */
-	memcpy(msg->ue_ip, ue.ue_ip, 4);
+	memcpy(msg->ue_ip, ue->ue_ip, 4);
 
 	/* Send UE info to eNB and wait to a response */
 	write(sockfd, buffer, sizeof(init_msg) + 1);
@@ -1065,56 +1096,70 @@ int ue_emulator_start(ue_data * data)
 	{
 		perror("UE recv");
 		close(sockfd);
+		send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
 		return 1;
 	}
 	if(buffer[0] != (OK_CODE | INIT_CODE))
 	{
 		printError("Error in remote eNB\n");
 		close(sockfd);
+		send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
 		return 1;
 	}
 
 	close(sockfd);
 
-	/* Analyze response */
-	res = (init_response_msg *) (buffer+1);
-	/* Gert TEID */
-	memcpy(gtp_teid, res->teid, 4);
-	/* Get UE IP */
-	memcpy(ue_ip, res->ue_ip, 4);
-	/* Get SPGW_IP */
-	memcpy(spgw_ip, res->spgw_ip, 4);
-
-	/* Print received parameters */
-	uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
-	printf("Received information from eNB\n");
-	printf("GTP-TEID: 0x%x\n", teid);
-	printf("UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
-	printf("SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
-
-	/* Create data-plane */
-	if(data->spgw_port == 2152)
-		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
-	else
+	/* If Control Plane Only mode disabled */
+	if(CONTROL_PLANE_ONLY == 0)
 	{
-		memcpy(spgw_ip, ue.ue_ip, 4);
-		ret = start_data_plane(ue.local_ip, ue.msin, ue_ip, spgw_ip, teid, data->spgw_port);
+		/* Analyze response */
+		res = (init_response_msg *) (buffer+1);
+		/* Gert TEID */
+		memcpy(gtp_teid, res->teid, 4);
+		/* Get UE IP */
+		memcpy(ue_ip, res->ue_ip, 4);
+		/* Get SPGW_IP */
+		memcpy(spgw_ip, res->spgw_ip, 4);
+
+		/* Print received parameters */
+		uint32_t teid = (gtp_teid[0] << 24) | (gtp_teid[1] << 16) | (gtp_teid[2] << 8) | gtp_teid[3];
+		printf("Received information from eNB\n");
+		printf("GTP-TEID: 0x%x\n", teid);
+		printf("UE IP: %d.%d.%d.%d\n", ue_ip[0], ue_ip[1], ue_ip[2], ue_ip[3]);
+		printf("SPGW IP: %d.%d.%d.%d\n", spgw_ip[0], spgw_ip[1], spgw_ip[2], spgw_ip[3]);
+
+		printInfo("Starting data plane...\n");
+		/* Create data-plane */
+		if(data->spgw_port == 2152)
+			ret = start_data_plane(ue->local_ip, ue->msin, ue_ip, spgw_ip, teid, data->spgw_port);
+		else
+		{
+			memcpy(spgw_ip, ue->ue_ip, 4);
+			ret = start_data_plane(ue->local_ip, ue->msin, ue_ip, spgw_ip, teid, data->spgw_port);
+		}
+
+		if(ret == 1)
+		{
+			printError("start_data_plane error\n");
+			printInfo("Detaching from EPC...\n");
+			send_ue_detach(1, 0, ue);
+			send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
+			return 1;
+		}
 	}
 
-	if(ret == 1)
-	{
-		printError("start_data_plane error\n");
-		printInfo("Detaching from EPC...\n");
-		send_ue_detach(1, 0);
-		return 1;
-	}
+	/* Notify the controller */
+	send_ue_attach_controller( (ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3] );
 
     /* Create control plane thread */
-    if (pthread_create(&control_plane_thread, NULL, control_plane, 0) != 0)
+    if (pthread_create(&control_plane_thread, NULL, control_plane, (void*) ue) != 0)
     {
         perror("pthread_create control_plane_thread");
+        send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
         return 1;
     }
+
+    send_ue_behaviour((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
 
 	return 0;
 }

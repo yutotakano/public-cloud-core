@@ -21,7 +21,7 @@
 #include <pthread.h>
 #include <sys/socket.h> 
 
-#define CLIENT_NUMBER 16
+#define CLIENT_NUMBER 256
 #define ENB_PORT 2233
 #define X2_ENB_PORT 2234
 #define X2_OK 0
@@ -32,6 +32,9 @@ eNB * enb;
 pthread_t enb_thread;
 int sockfd;
 List * list;
+
+void send_enb_behaviour(uint32_t ue_id);
+void send_enb_behaviour_error(uint32_t ue_id);
 
 void dump(uint8_t * pointer, int len)
 {
@@ -45,15 +48,6 @@ void dump(uint8_t * pointer, int len)
 		printf("%.2x ", pointer[i]);
 	}
 	printf("\n");
-}
-
-void enb_copy_id_to_buffer(uint8_t * buffer)
-{
-	uint32_t id = get_enb_id(enb);
-	buffer[0] = (id >> 24) & 0xFF;
-	buffer[1] = (id >> 16) & 0xFF;
-	buffer[2] = (id >> 8) & 0xFF;
-	buffer[3] = id & 0xFF;
 }
 
 uint32_t id_to_uint32(uint8_t * id)
@@ -706,7 +700,10 @@ int enb_emulator_start(enb_data * data)
 	/* Create eNB object */
 	enb = init_eNB(id_to_uint32(data->id), (char *)data->mcc, (char *)data->mnc, data->enb_ip);
 	if(enb == NULL)
+	{
+		send_enb_behaviour_error(id_to_uint32(data->id));
 		return 1;
+	}
 
 	/***************/
     /* Connect eNB */
@@ -715,6 +712,7 @@ int enb_emulator_start(enb_data * data)
     if(sctp_connect_enb_to_mme(enb, data->epc_ip) == 1)
     {
     	printError("SCTP Setup error\n");
+    	send_enb_behaviour_error(get_enb_id(enb));
     	return 1;
     }
 
@@ -723,6 +721,7 @@ int enb_emulator_start(enb_data * data)
     if(procedure_NG_Setup(enb) == 1)
     {
 		printError("gNB NG Setup problems\n");
+		send_enb_behaviour_error(get_enb_id(enb));
 		return 1;
     }
     #else
@@ -730,6 +729,7 @@ int enb_emulator_start(enb_data * data)
     if(procedure_S1_Setup(enb) == 1)
     {
     	printError("eNB S1 Setup problems\n");
+    	send_enb_behaviour_error(get_enb_id(enb));
     	return 1;
     }
     #endif
@@ -740,6 +740,7 @@ int enb_emulator_start(enb_data * data)
 	if(sockfd == -1)
 	{
 		perror("eNB socket");
+		send_enb_behaviour_error(get_enb_id(enb));
 		return 1;
 	}
 
@@ -753,6 +754,7 @@ int enb_emulator_start(enb_data * data)
 	if(bind(sockfd, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
 	{
 		perror("eNB bind");
+		send_enb_behaviour_error(get_enb_id(enb));
 		return 1;
 	}
 
@@ -760,6 +762,7 @@ int enb_emulator_start(enb_data * data)
 	if(listen(sockfd, CLIENT_NUMBER) == -1)
 	{
 		perror("eNB listen");
+		send_enb_behaviour_error(get_enb_id(enb));
 		return 1;
 	}
 
@@ -768,6 +771,7 @@ int enb_emulator_start(enb_data * data)
     if (pthread_create(&enb_thread, NULL, enb_emulator_thread, 0) != 0)
     {
         perror("pthread_create enb_emulator_thread");
+        send_enb_behaviour_error(get_enb_id(enb));
         return 1;
     }
 
@@ -775,8 +779,11 @@ int enb_emulator_start(enb_data * data)
 	if (pthread_create(&x2_t, NULL, x2_thread, 0) != 0)
     {
         perror("pthread_create enb_emulator_thread");
+        send_enb_behaviour_error(get_enb_id(enb));
         return 1;
     }
+
+    send_enb_behaviour(get_enb_id(enb));
 
     /* Return back an wait for Controller messages */
 	return 0;
