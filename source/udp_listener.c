@@ -10,11 +10,32 @@
 #include <libck.h>
 #include <pthread.h>
 
-#include "s1ap_handler.h"
-#include "core/include/core_general.h"
+#include "core/ogs-core.h"
 
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
+
+// TODO: allow this file to compile
+typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE, DUAL_RESPONSE} S1AP_handle_outcome_t;
+
+typedef struct S1AP_handler_response {
+    S1AP_handle_outcome_t outcome;
+    // the SCTP stream ID differs depending on whether
+    // this is a S1Setup message or a UE message
+    uint8_t sctpStreamID;
+    // the response can either be a pointer to an s1ap_message_t
+    // or a pointer to a pkbuf_t, so use void* to allow it to
+    // take on both types
+    void * response;
+    // an (optional) second response, for cases where a single
+    // incoming messages must be responded with two outgoing messages
+    void * response2;
+} S1AP_handler_response_t;
+
+int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
+	return OGS_OK;
+}
+//
 
 int db_sock;
 pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -34,7 +55,7 @@ int configure_udp_socket(char * mme_ip_address)
 	/* Create socket */
 	/*****************/
 	sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
-	d_assert(sock_udp >= 0, return -1, "Failed to setup UDP socket");
+	ogs_assert(sock_udp >= 0); // Failed to setup UDP socket
 
 
 	/***************************/
@@ -49,7 +70,7 @@ int configure_udp_socket(char * mme_ip_address)
     /* Binding */
     /***********/
 	int bind_outcome = bind(sock_udp,(struct sockaddr*)&listener_addr, sizeof(listener_addr));
-	d_assert(bind_outcome != -1, close(sock_udp); return -1, "Failed to bind MME socket");
+	ogs_assert(bind_outcome != -1); // Failed to bind MME socket
 
 	return sock_udp;
 }
@@ -62,7 +83,7 @@ typedef struct process_message_args {
 	int sock_udp;
 	socklen_t from_len;
 	struct sockaddr_in *client_addr;
-	c_uint8_t *buffer;
+	uint8_t *buffer;
 	int num_bytes_received;
 } process_message_args_t;
 
@@ -72,67 +93,66 @@ void *process_message(void *raw_args) {
 	// free the dynamically-allocated buffer as soon as possible
 	// since it takes up a relatively large amount of the limited
 	// amount of available dynamically-allocatable memory (1KB of 7MB)
-	c_uint8_t buffer[args->num_bytes_received];
+	uint8_t buffer[args->num_bytes_received];
 	memcpy(buffer, args->buffer, args->num_bytes_received);
-	core_free(args->buffer);
+	ogs_free(args->buffer);
 
-	if (d_log_get_level(D_MSG_TO_STDOUT) >= D_LOG_LEVEL_INFO)
-		d_print("New SCTP message received:");
-		d_print_hex(buffer, args->num_bytes_received);
+	ogs_info("New SCTP message received:");
+	ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	S1AP_handler_response_t response;
 
-	status_t outcome = s1ap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
-	d_assert(outcome == CORE_OK, return NULL, "Failed to handle S1AP message");
+	int outcome = s1ap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
+	ogs_assert(outcome == OGS_OK); // Failed to handle S1AP message
 
 	if (response.outcome == NO_RESPONSE)
-		d_info("Finished handling NO_RESPONSE message");
+		ogs_info("Finished handling NO_RESPONSE message");
 
 	args->client_addr->sin_port = htons(32566);
 
 	// handle the first response, if there is one
 	if (response.outcome == HAS_RESPONSE || response.outcome == DUAL_RESPONSE) {
-		pkbuf_t *responseBuffer = response.response;
+		ogs_pkbuf_t *responseBuffer = response.response;
 
 		uint8_t response_out[responseBuffer->len + 5];
 		memcpy(response_out, buffer, 4);
 		response_out[4] = response.sctpStreamID;
-		memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
+		memcpy(response_out+5, responseBuffer->data, responseBuffer->len);
 		
 		int ret = sendto(args->sock_udp, (void *)response_out, responseBuffer->len + 5,
 			MSG_CONFIRM, (const struct sockaddr *) args->client_addr,
 			args->from_len);
 
-		pkbuf_free(responseBuffer);
+		ogs_pkbuf_free(responseBuffer);
 
-		d_assert(ret != -1, return NULL, "Failed to send UDP message");
-		d_info("Send %d bytes over UDP", ret);
+		ogs_assert(ret != -1); // Failed to send UDP message
+		ogs_info("Send %d bytes over UDP", ret);
 	}
 
 	// handle the (optional) second response
 	if (response.outcome == DUAL_RESPONSE) {
-		pkbuf_t *responseBuffer = response.response2;
+		ogs_pkbuf_t *responseBuffer = response.response2;
 
 		uint8_t response_out[responseBuffer->len + 5];
 		memcpy(response_out, buffer, 4);
 		response_out[4] = response.sctpStreamID;
-		memcpy(response_out+5, responseBuffer->payload, responseBuffer->len);
+		memcpy(response_out+5, responseBuffer->data, responseBuffer->len);
 		
 		int ret = sendto(args->sock_udp, (void *)response_out, responseBuffer->len + 5,
 			MSG_CONFIRM, (const struct sockaddr *) args->client_addr,
 			args->from_len);
 
-		pkbuf_free(responseBuffer);
+		ogs_pkbuf_free(responseBuffer);
 
-		d_assert(ret != -1, return NULL, "Failed to send UDP message");
-		d_info("Send %d bytes over UDP", ret);
+		ogs_assert(ret != -1); // Failed to send UDP message
+		ogs_info("Send %d bytes over UDP", ret);
 	}
 
 	// free the dynamically-allocated structures
-	core_free(args->client_addr);
-	core_free(args);
+	ogs_free(args->client_addr);
+	ogs_free(args);
 
-	d_info("Finished processing message");
+	ogs_info("Finished processing message");
 
 	return NULL;
 }
@@ -149,19 +169,19 @@ void start_listener(char * mme_ip_address)
 
 	/* Configure the socket */
 	sock_udp = configure_udp_socket(mme_ip_address);
-	d_assert(sock_udp >= 0, return, "Error configuring UDP socket");
-	d_info("UDP socket configured correctly.\n");
+	ogs_assert(sock_udp >= 0); // Error configuring UDP socket
+	ogs_info("UDP socket configured correctly.\n");
 
 	while (1) {
 
 		// setup variables for receiving a message
-		process_message_args_t *args = core_calloc(1, sizeof(process_message_args_t));
-		struct sockaddr_in *client_addr = core_calloc(1, sizeof(struct sockaddr_in));
-		uint8_t *buffer = core_malloc(BUFFER_LEN);
+		process_message_args_t *args = ogs_calloc(1, sizeof(process_message_args_t));
+		struct sockaddr_in *client_addr = ogs_calloc(1, sizeof(struct sockaddr_in));
+		uint8_t *buffer = ogs_malloc(BUFFER_LEN);
 
 		/* Wait to receive a message */
 		n = recvfrom(sock_udp, (char *)buffer, BUFFER_LEN, MSG_WAITALL, ( struct sockaddr *) client_addr, &from_len); 
-		d_assert(n > 0, break, "No longer connected to eNB");
+		ogs_assert(n > 0); // No longer connected to eNB
 
 		// setup the arguments to be passed
 		// to the multithreaded function
@@ -173,10 +193,10 @@ void start_listener(char * mme_ip_address)
 
 		pthread_t thread;
 		int thread_create = pthread_create(&thread, NULL, process_message, (void *) args);
-		d_assert(thread_create == 0, continue, "Failed to create thread"); 
+		ogs_assert(thread_create == 0); // Failed to create thread
 	}
 
-	d_assert(n != -1,, "An UDP error occured");
+	ogs_assert(n != -1); // An UDP error occured
 
 	/* Close the socket when done */
 	close(sock_udp);
@@ -190,11 +210,20 @@ int main(int argc, char const *argv[])
 		printf("RUN: ./corekube_udp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS> [PRODUCTION=0]\n");
 		return 1;
 	}
-	core_initialize();
+
+	// initialise the Open5GS core library
+	ogs_core_initialize();
+
+	// create the default pkbuf size config
+	ogs_pkbuf_config_t config;
+	ogs_pkbuf_default_init(&config);
+
+	// initialise the pkbuf pools with the above config
+	ogs_pkbuf_default_create(&config);
 
 	// in production, turn off info logs
 	if (argc == 4 && atoi(argv[3]))
-		d_log_set_level(D_MSG_TO_STDOUT, D_LOG_LEVEL_ERROR);
+		ogs_log_set_domain_level(OGS_LOG_DOMAIN, OGS_LOG_ERROR);
 
 	// setup the DB IP address
 	//db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));
@@ -204,6 +233,12 @@ int main(int argc, char const *argv[])
 	start_listener((char *)argv[1]);
 
 	db_disconnect(db_sock);
+
+	// delete the pkbuf pools
+	ogs_pkbuf_default_destroy();
+
+	// terminate the Open5GS core library
+	ogs_core_terminate();
 
 	return 0;
 }
