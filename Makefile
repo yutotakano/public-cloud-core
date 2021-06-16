@@ -13,7 +13,7 @@ LIBFLAGS = $(LIB_BIN_DIRECTORY)*
 LINKFLAGS = -Wl,-rpath=$(LIB_BIN_DIRECTORY) -lsctp -lck -lpthread
 
 #INCLUDE FLAGS
-INCLUDE_FLAGS = -I lib/ -I headers/
+INCLUDE_FLAGS = -I lib/ $(addprefix -I,$(shell find lib/ -type d -print)) -I headers/
 
 TARGETS = corekube_udp_worker udp_client
 
