@@ -28,6 +28,20 @@ uint32_t data_hash(void * data)
     return d->teid;
 }
 
+void dump(uint8_t * pointer, int len)
+{
+    int i;
+    for(i = 0; i < len; i++)
+    {
+        if(i % 16 == 0 && i > 0)
+            printf("\n");
+        else if(i % 8 == 0)
+            printf("  ");
+        printf("%.2x ", pointer[i]);
+    }
+    printf("\n");
+}
+
 
 /* Global variables */
 int ran_sock;
@@ -49,6 +63,8 @@ void * uplink(void * args)
     int core_len = sizeof(coreaddr);
     Data data;
 
+    printInfo("Starting Uplink thread...\n");
+
     while(1)
     {
         /* Receive UE message */
@@ -61,9 +77,11 @@ void * uplink(void * args)
         }
         /* Assemble Data structure */
         memset(&data, 0, sizeof(Data));
-        memcpy(&data.ue_addr, &ue_addr, ue_len);
+        memcpy(&(data.ue_addr), &ue_addr, ue_len);
         data.teid = get_ue_teid(buffer);
         data.ue_len = ue_len;
+
+        printf("Uplink TEID: %d\n", data.teid);
 
         /* Save UE address in the hashmap structure */
         if(hashmap_add(map, (uint8_t *) &data, sizeof(Data)) == ERROR)
@@ -80,23 +98,27 @@ void * uplink(void * args)
 void * downlink(void * args)
 {
     uint8_t buffer[BUFFER_LEN];
-    struct sockaddr_in core_addr;
     int n;
-    int core_len = sizeof(core_addr);
+    int core_len = sizeof(coreaddr);
     Data * data;
+
+    printInfo("Starting Downlink thread...\n");
 
     while(1)
     {
         /* Receive SPGW/UPF message */
-        n = recvfrom(ran_sock, (char *)buffer, BUFFER_LEN, 0, ( struct sockaddr *) &core_addr, (socklen_t *) &core_len);
+        n = recvfrom(core_sock, (char *)buffer, BUFFER_LEN, 0, ( struct sockaddr *) &coreaddr, (socklen_t *) &core_len);
         if(n < 0)
         {
-            printError("Uplink read error: %s\n", strerror(errno));
-            close(ran_sock);
+            printError("Downlink read error: %s\n", strerror(errno));
+            close(core_sock);
             return NULL;
         }
+
         /* Get UE address based on the TEID */
         data = (Data *) hashmap_get(map, get_ue_teid(buffer));
+
+        printf("Downlink TEID: %d\n", data->teid);
 
         /* Forward packet to the UE */
         sendto(ran_sock, buffer, n, 0, (const struct sockaddr *) &(data->ue_addr), (socklen_t) data->ue_len);
@@ -195,6 +217,9 @@ int main(int argc, char const *argv[])
         close(core_sock);
         return 1;
     }
+
+    pthread_join(uplink_thread, NULL);
+    pthread_join(downlink_thread, NULL);
 
     return 0;
 }
