@@ -11,6 +11,7 @@
 #include <pthread.h>
 
 #include "core/ogs-core.h"
+#include "ngap/ogs-ngap.h"
 
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
@@ -33,7 +34,17 @@ typedef struct S1AP_handler_response {
 } S1AP_handler_response_t;
 
 int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
-	return OGS_OK;
+	ogs_ngap_message_t msg;
+
+	ogs_pkbuf_t * pkbuf = NULL;
+	pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
+	pkbuf->len = incoming_len;
+	memcpy(pkbuf->data, incoming, pkbuf->len);
+
+	int status = ogs_ngap_decode(&msg, pkbuf);
+	ogs_pkbuf_free(pkbuf);
+
+	return status;
 }
 //
 
@@ -213,6 +224,9 @@ int main(int argc, char const *argv[])
 
 	// initialise the Open5GS core library
 	ogs_core_initialize();
+
+	// initialise the logs for the libraries being used
+    ogs_log_install_domain(&__ogs_ngap_domain, "ngap", OGS_LOG_TRACE);
 
 	// create the default pkbuf size config
 	ogs_pkbuf_config_t config;
