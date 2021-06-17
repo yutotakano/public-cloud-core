@@ -16,6 +16,11 @@
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
 
+#undef OGS_LOG_DOMAIN
+#define OGS_LOG_DOMAIN __corekube_log_domain
+
+int __corekube_log_domain;
+
 // TODO: allow this file to compile
 typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE, DUAL_RESPONSE} S1AP_handle_outcome_t;
 
@@ -38,7 +43,7 @@ int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_respo
 
 	ogs_pkbuf_t * pkbuf = NULL;
 	pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
-	pkbuf->len = incoming_len;
+	pkbuf->len = incoming_len - 10;
 	memcpy(pkbuf->data, incoming, pkbuf->len);
 
 	int status = ogs_ngap_decode(&msg, pkbuf);
@@ -227,6 +232,9 @@ int main(int argc, char const *argv[])
 
 	// initialise the logs for the libraries being used
     ogs_log_install_domain(&__ogs_ngap_domain, "ngap", OGS_LOG_TRACE);
+
+	// initialise the logs for corekube
+	ogs_log_install_domain(&__corekube_log_domain, "ck", OGS_LOG_TRACE);
 
 	// create the default pkbuf size config
 	ogs_pkbuf_config_t config;
