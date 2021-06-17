@@ -4,6 +4,9 @@
 #include "hashmap.h"
 #include "jhash.h"
 
+#define OK 0
+#define ERROR -1
+
 typedef struct _ListNode
 {
 	void * data;
@@ -92,16 +95,18 @@ int hashmap_add(HashMap * hm, uint8_t * data, int size)
 	else {
 		iter = hm->table[index];
 		if(hm->hash(iter->data) == hash) {
+			memcpy(iter->data, new_node->data, size);
 			free(new_node->data);
 			free(new_node);
-			return ERROR;
+			return OK;
 		}
 		while(iter->next != NULL) {
 			/* Check for duplicates */
 			if(hm->hash(iter->data) == hash) {
+				memcpy(iter->data, new_node->data, size);
 				free(new_node->data);
 				free(new_node);
-				return ERROR;
+				return OK;
 			}
 			iter->next = new_node;
 		}
