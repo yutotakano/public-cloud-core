@@ -10,40 +10,22 @@
 #include <libck.h>
 #include <pthread.h>
 
+#include "udp_listener.h"
+
+int __corekube_log_domain;
+int db_sock;
+pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 #include "core/ogs-core.h"
 #include "ngap/ogs-ngap.h"
 
-#define MME_LISTEN_PORT 5566
-#define BUFFER_LEN 1024
-
-#undef OGS_LOG_DOMAIN
-#define OGS_LOG_DOMAIN __corekube_log_domain
-
-int __corekube_log_domain;
-
 // TODO: allow this file to compile
-typedef enum S1AP_handle_outcome {NO_RESPONSE, HAS_RESPONSE, DUAL_RESPONSE} S1AP_handle_outcome_t;
-
-typedef struct S1AP_handler_response {
-    S1AP_handle_outcome_t outcome;
-    // the SCTP stream ID differs depending on whether
-    // this is a S1Setup message or a UE message
-    uint8_t sctpStreamID;
-    // the response can either be a pointer to an s1ap_message_t
-    // or a pointer to a pkbuf_t, so use void* to allow it to
-    // take on both types
-    void * response;
-    // an (optional) second response, for cases where a single
-    // incoming messages must be responded with two outgoing messages
-    void * response2;
-} S1AP_handler_response_t;
-
 int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
 	ogs_ngap_message_t msg;
 
 	ogs_pkbuf_t * pkbuf = NULL;
 	pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
-	pkbuf->len = incoming_len - 10;
+	pkbuf->len = incoming_len;
 	memcpy(pkbuf->data, incoming, pkbuf->len);
 
 	int status = ogs_ngap_decode(&msg, pkbuf);
@@ -52,9 +34,6 @@ int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_respo
 	return status;
 }
 //
-
-int db_sock;
-pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int configure_udp_socket(char * mme_ip_address)
 {
@@ -90,18 +69,6 @@ int configure_udp_socket(char * mme_ip_address)
 
 	return sock_udp;
 }
-
-// TODO: move to separate header
-// or perhaps separate file (since
-// process_message() might be able
-// to be made SCTP / UDP independent?)
-typedef struct process_message_args {
-	int sock_udp;
-	socklen_t from_len;
-	struct sockaddr_in *client_addr;
-	uint8_t *buffer;
-	int num_bytes_received;
-} process_message_args_t;
 
 void *process_message(void *raw_args) {
 	process_message_args_t *args = (process_message_args_t *) raw_args;
