@@ -13,7 +13,7 @@
 #define MULTIPLEXER_PORT 2154
 #define CORE_PORT 2152
 #define BUFFER_LEN 65536
-#define HASHMAP_SIZE 1024
+#define HASHMAP_SIZE 8192
 
 typedef struct _Data {
     struct sockaddr_in ue_addr;
