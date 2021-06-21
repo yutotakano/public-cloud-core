@@ -18,22 +18,7 @@ pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
 #include "ngap/ogs-ngap.h"
-
-// TODO: allow this file to compile
-int s1ap_handler_entrypoint(void *incoming, int incoming_len, S1AP_handler_response_t *response) {
-	ogs_ngap_message_t msg;
-
-	ogs_pkbuf_t * pkbuf = NULL;
-	pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
-	pkbuf->len = incoming_len;
-	memcpy(pkbuf->data, incoming, pkbuf->len);
-
-	int status = ogs_ngap_decode(&msg, pkbuf);
-	ogs_pkbuf_free(pkbuf);
-
-	return status;
-}
-//
+#include "message_handler.h"
 
 int configure_udp_socket(char * mme_ip_address)
 {
@@ -83,10 +68,10 @@ void *process_message(void *raw_args) {
 	ogs_info("New SCTP message received:");
 	ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
-	S1AP_handler_response_t response;
+	message_handler_response_t response;
 
-	int outcome = s1ap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
-	ogs_assert(outcome == OGS_OK); // Failed to handle S1AP message
+	int outcome = message_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
+	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
 	if (response.outcome == NO_RESPONSE)
 		ogs_info("Finished handling NO_RESPONSE message");
