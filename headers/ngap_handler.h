@@ -4,6 +4,7 @@ extern int __corekube_log_domain;
 #define OGS_LOG_DOMAIN __corekube_log_domain
 
 #include "core/ogs-core.h"
+#include "ngap/ogs-ngap.h"
 
 typedef enum message_handle_outcome {
     NO_RESPONSE,
@@ -25,4 +26,14 @@ typedef struct message_handler_response {
     void * response2;
 } message_handler_response_t;
 
-int message_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response);
+int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response);
+
+int bytes_to_message(void *payload, int payload_len, ogs_ngap_message_t *message);
+
+int message_to_bytes(ogs_ngap_message_t *message, ogs_pkbuf_t **out);
+
+int ngap_message_handler(ogs_ngap_message_t *message, message_handler_response_t *response);
+
+int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, message_handler_response_t *response);
+
+int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_handler_response_t *response);

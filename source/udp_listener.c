@@ -18,7 +18,7 @@ pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
 #include "ngap/ogs-ngap.h"
-#include "message_handler.h"
+#include "ngap_handler.h"
 
 int configure_udp_socket(char * mme_ip_address)
 {
@@ -70,7 +70,7 @@ void *process_message(void *raw_args) {
 
 	message_handler_response_t response;
 
-	int outcome = message_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
+	int outcome = ngap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
 	if (response.outcome == NO_RESPONSE)
