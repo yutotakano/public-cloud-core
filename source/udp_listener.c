@@ -140,6 +140,15 @@ void start_listener(char * mme_ip_address)
 	ogs_assert(sock_udp >= 0); // Error configuring UDP socket
 	ogs_info("UDP socket configured correctly.\n");
 
+	// setup the thread attributes so the thread terminates when complete
+	// this requires seting the detach state to DETACHED, rather than the
+	// default value of JOINABLE
+	pthread_attr_t thread_attr;
+	int attr_init = pthread_attr_init(&thread_attr);
+	ogs_assert(attr_init == 0);
+	int detach_state = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+	ogs_assert(detach_state == 0);
+
 	while (1) {
 
 		// setup variables for receiving a message
@@ -160,7 +169,7 @@ void start_listener(char * mme_ip_address)
 		args->sock_udp = sock_udp;
 
 		pthread_t thread;
-		int thread_create = pthread_create(&thread, NULL, process_message, (void *) args);
+		int thread_create = pthread_create(&thread, &thread_attr, process_message, (void *) args);
 		ogs_assert(thread_create == 0); // Failed to create thread
 	}
 
