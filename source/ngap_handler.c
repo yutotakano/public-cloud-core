@@ -1,5 +1,7 @@
 #include "ngap_handler.h"
 
+#include "ngap_ng_setup_request.h"
+
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response) {
     ogs_info("Reached NGAP Handler entrypoint");
 
@@ -96,6 +98,9 @@ int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, messag
     ogs_info("Handling NGAP message of type InitiatingMessage");
 
     switch (initiatingMessage->choice.initiatingMessage->value.present) {
+        case NGAP_InitiatingMessage__value_PR_NGSetupRequest:
+            return ngap_handle_ng_setup_request(initiatingMessage, response);
+            break;
         default:
             response->outcome = NO_RESPONSE;
             return OGS_ERROR;
