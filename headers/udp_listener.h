@@ -1,3 +1,6 @@
+#ifndef __COREKUBE_UDP_LISTENER_H__
+#define __COREKUBE_UDP_LISTENER_H__
+
 #define MME_LISTEN_PORT 5566
 #define BUFFER_LEN 1024
 
@@ -19,3 +22,5 @@ void *process_message(void *raw_args);
 void start_listener(char * mme_ip_address);
 
 int main(int argc, char const *argv[]);
+
+#endif /* __COREKUBE_UDP_LISTENER_H__ */

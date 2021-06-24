@@ -1,3 +1,6 @@
+#ifndef __COREKUBE_NGAP_HANDLER_H__
+#define __COREKUBE_NGAP_HANDLER_H__
+
 extern int __corekube_log_domain;
 
 #undef OGS_LOG_DOMAIN
@@ -37,3 +40,5 @@ int ngap_message_handler(ogs_ngap_message_t *message, message_handler_response_t
 int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, message_handler_response_t *response);
 
 int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_handler_response_t *response);
+
+#endif /* __COREKUBE_NGAP_HANDLER_H__ */
