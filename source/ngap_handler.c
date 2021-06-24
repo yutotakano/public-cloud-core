@@ -6,29 +6,19 @@ int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_re
     ogs_info("Reached NGAP Handler entrypoint");
 
     ogs_ngap_message_t incoming_ngap;
-    ogs_ngap_message_t outgoing_ngap;
-    ogs_ngap_message_t outgoing_ngap_2;
 
     // Decode the incoming message
     int b_to_m = bytes_to_message(incoming, incoming_len, &incoming_ngap);
     ogs_assert(b_to_m == OGS_OK); // Failed to decode incoming NGAP message
 
     // Handle the decoded message
-    response->response = &outgoing_ngap;
-    response->response2 = &outgoing_ngap_2;
     int message_handle = ngap_message_handler(&incoming_ngap, response);
     ogs_assert(message_handle == OGS_OK); // Failed to handle NGAP message
-    
-    // Encode the outgoing message, if one exists
-    if (response->outcome == HAS_RESPONSE || response->outcome == DUAL_RESPONSE) {
-        int m_to_b = message_to_bytes(response->response, (ogs_pkbuf_t **) &response->response);
-        ogs_assert(m_to_b == OGS_OK); // Failed to encode outgoing NGAP message
-    }
 
-    // Encode the second (optional) outgoing message, if one exists
-    if (response->outcome == DUAL_RESPONSE) {
-        int m_to_b = message_to_bytes(response->response2, (ogs_pkbuf_t **) &response->response2);
-        ogs_assert(m_to_b == OGS_OK); // Failed to encode second outgoing NGAP message
+    // handle the outgoing messages, if there are any
+    for (int i = 0; i < response->num_responses; i++) {
+        int m_to_b = message_to_bytes(response->responses[i], (ogs_pkbuf_t **) &response->responses[i]);
+        ogs_assert(m_to_b == OGS_OK); // Failed to encode outgoing NGAP message
     }
 
     // Free up memory
@@ -89,7 +79,7 @@ int ngap_message_handler(ogs_ngap_message_t *message, message_handler_response_t
         case NGAP_NGAP_PDU_PR_unsuccessfulOutcome:
         case NGAP_NGAP_PDU_PR_NOTHING:
         default:
-            response->outcome = NO_RESPONSE;
+            response->num_responses = 0;
             return OGS_ERROR;
     }
 }
@@ -102,7 +92,7 @@ int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, messag
             return ngap_handle_ng_setup_request(initiatingMessage, response);
             break;
         default:
-            response->outcome = NO_RESPONSE;
+            response->num_responses = 0;
             return OGS_ERROR;
     }
 }
@@ -113,7 +103,7 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
     NGAP_SuccessfulOutcome_t *successfulOutcome = ngap_message->choice.successfulOutcome;
 
     // all successful outcomes have no response
-    response->outcome = NO_RESPONSE;
+    response->num_responses = 0;
 
     switch (successfulOutcome->value.present) {
         default:

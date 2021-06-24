@@ -65,8 +65,9 @@ int ngap_handle_ng_setup_request(ogs_ngap_message_t *message, message_handler_re
     // non-UE signalling has a stream ID of 0
     response->sctpStreamID = 0;
 
-    response->outcome = HAS_RESPONSE;
-    int build_response = ngap_build_ng_setup_response(response->response);
+    response->num_responses = 1;
+    response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
+    int build_response = ngap_build_ng_setup_response(response->responses[0]);
     ogs_assert(build_response == OGS_OK);
     
     return OGS_OK;

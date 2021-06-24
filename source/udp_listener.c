@@ -70,36 +70,21 @@ void *process_message(void *raw_args) {
 
 	message_handler_response_t response;
 
+	// initialise the default response values
+	response.num_responses = 0;
+	response.responses = ogs_malloc(sizeof(void *) * MAX_NUM_RESPONSES);
+
 	int outcome = ngap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
-	if (response.outcome == NO_RESPONSE)
+	if (response.num_responses == 0)
 		ogs_info("Finished handling NO_RESPONSE message");
 
 	args->client_addr->sin_port = htons(32566);
 
-	// handle the first response, if there is one
-	if (response.outcome == HAS_RESPONSE || response.outcome == DUAL_RESPONSE) {
-		ogs_pkbuf_t *responseBuffer = response.response;
-
-		uint8_t response_out[responseBuffer->len + 5];
-		memcpy(response_out, buffer, 4);
-		response_out[4] = response.sctpStreamID;
-		memcpy(response_out+5, responseBuffer->data, responseBuffer->len);
-		
-		int ret = sendto(args->sock_udp, (void *)response_out, responseBuffer->len + 5,
-			MSG_CONFIRM, (const struct sockaddr *) args->client_addr,
-			args->from_len);
-
-		ogs_pkbuf_free(responseBuffer);
-
-		ogs_assert(ret != -1); // Failed to send UDP message
-		ogs_info("Send %d bytes over UDP", ret);
-	}
-
-	// handle the (optional) second response
-	if (response.outcome == DUAL_RESPONSE) {
-		ogs_pkbuf_t *responseBuffer = response.response2;
+	// send the responses, if there are any
+	for (int i = 0; i < response.num_responses; i++) {
+		ogs_pkbuf_t *responseBuffer = response.responses[i];
 
 		uint8_t response_out[responseBuffer->len + 5];
 		memcpy(response_out, buffer, 4);

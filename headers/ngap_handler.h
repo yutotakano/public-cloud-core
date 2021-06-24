@@ -9,24 +9,18 @@ extern int __corekube_log_domain;
 #undef OGS_LOG_DOMAIN
 #define OGS_LOG_DOMAIN __corekube_log_domain
 
-typedef enum message_handle_outcome {
-    NO_RESPONSE,
-    HAS_RESPONSE,
-    DUAL_RESPONSE
-} message_handle_outcome_t;
+// the maximum number of responses that any message can possibly have
+#define MAX_NUM_RESPONSES 1
 
 typedef struct message_handler_response {
-    message_handle_outcome_t outcome;
-    // the SCTP stream ID differs depending on whether
-    // this is a S1Setup message or a UE message
-    uint8_t sctpStreamID;
+    int num_responses;
     // the response can either be a pointer to an ngap_message_t
     // or a pointer to a pkbuf_t, so use void* to allow it to
     // take on both types
-    void * response;
-    // an (optional) second response, for cases where a single
-    // incoming messages must be responded with two outgoing messages
-    void * response2;
+    void **responses;
+    // the SCTP stream ID differs depending on whether
+    // this is a S1Setup message or a UE message
+    uint8_t sctpStreamID;
 } message_handler_response_t;
 
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response);
