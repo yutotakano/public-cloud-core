@@ -1,13 +1,13 @@
 #ifndef __COREKUBE_NGAP_HANDLER_H__
 #define __COREKUBE_NGAP_HANDLER_H__
 
+#include "core/ogs-core.h"
+#include "ngap/ogs-ngap.h"
+
 extern int __corekube_log_domain;
 
 #undef OGS_LOG_DOMAIN
 #define OGS_LOG_DOMAIN __corekube_log_domain
-
-#include "core/ogs-core.h"
-#include "ngap/ogs-ngap.h"
 
 typedef enum message_handle_outcome {
     NO_RESPONSE,
