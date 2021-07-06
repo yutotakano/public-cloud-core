@@ -18,6 +18,7 @@ pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
 #include "ngap/ogs-ngap.h"
+#include "nas/common/ogs-nas-common.h"
 #include "ngap_handler.h"
 
 int configure_udp_socket(char * mme_ip_address)
@@ -178,6 +179,7 @@ int main(int argc, char const *argv[])
 
 	// initialise the logs for the libraries being used
     ogs_log_install_domain(&__ogs_ngap_domain, "ngap", OGS_LOG_TRACE);
+	ogs_log_install_domain(&__ogs_nas_domain, "nas", OGS_LOG_TRACE);
 
 	// initialise the logs for corekube
 	ogs_log_install_domain(&__corekube_log_domain, "ck", OGS_LOG_TRACE);

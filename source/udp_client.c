@@ -69,11 +69,21 @@ void runMessage(char * ip_address, int message_number) {
         "494d2d676e622d3230382d39332d3100"
         "66000d00000000010002f83900000008"
         "0015400140";
-
+    
+    char *RegistrationRequest = 
+        "0f0a0c0e"
+        "000f4048000005005500020001002600"
+        "1a197e004179000d0102f83900000000"
+        "00000000102e04f0f0f0f00079001350"
+        "02f839000000010002f839000001e470"
+        "9c5c005a4001200070400100";
 
     switch (message_number) {
         case 1:
             send_message(ip_address, NGSetupRequest, 1);
+            break;
+        case 2:
+            send_message(ip_address, RegistrationRequest, 1);
             break;
         default:
             ogs_info("Unknown message number %d", message_number);
