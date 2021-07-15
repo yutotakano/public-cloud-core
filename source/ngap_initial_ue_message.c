@@ -43,23 +43,29 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     ogs_assert(UserLocationInformation->present == NGAP_UserLocationInformation_PR_userLocationInformationNR); // Only userLocationInformationNR is implemented
     ogs_assert(NAS_PDU); // Failed to find NAS_PDU element
 
-    int handle_nas = nas_handler_entrypoint(NAS_PDU, response);
+    // setup the parameters required by the NAS handler
+    nas_ngap_params_t nas_params;
+    nas_params.ran_ue_ngap_id = (uint32_t *) RAN_UE_NGAP_ID;
+
+    int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
     ogs_assert(handle_nas == OGS_OK);
     // expect a single NAS response (Authentication Request)
     ogs_assert(response->num_responses == 1);
+    // also expect the AMF_UE_NGAP_ID to have been retreived
+    ogs_assert(nas_params.amf_ue_ngap_id);
 
     // prepare the parameters for the response (a Downlink NAS Transport)
-    ngap_downlink_nas_transport_params_t params;
-    params.nasPdu = response->responses[0];
-    params.amf_ue_ngap_id = 1;
-    params.ran_ue_ngap_id = 1;
-    params.ambr = NULL;
-    params.num_of_s_nssai = 0;
+    ngap_downlink_nas_transport_params_t response_params;
+    response_params.nasPdu = response->responses[0];
+    response_params.amf_ue_ngap_id = *nas_params.amf_ue_ngap_id;
+    response_params.ran_ue_ngap_id = *RAN_UE_NGAP_ID;
+    response_params.ambr = NULL;
+    response_params.num_of_s_nssai = 0;
 
     // build the NGAP response
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
-    int build_response = ngap_build_downlink_nas_transport(&params, response->responses[0]);
+    int build_response = ngap_build_downlink_nas_transport(&response_params, response->responses[0]);
     ogs_assert(build_response == OGS_OK);
     
     return OGS_OK;

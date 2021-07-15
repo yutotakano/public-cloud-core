@@ -10,8 +10,8 @@ extern int __corekube_log_domain;
 #define OGS_LOG_DOMAIN __corekube_log_domain
 
 typedef struct ngap_downlink_nas_transport_params {
-    uint64_t amf_ue_ngap_id;
-    uint64_t ran_ue_ngap_id;
+    uint32_t amf_ue_ngap_id;
+    uint32_t ran_ue_ngap_id;
     ogs_pkbuf_t * nasPdu;
     ogs_bitrate_t * ambr;
     int num_of_s_nssai;

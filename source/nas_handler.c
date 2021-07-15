@@ -2,7 +2,7 @@
 
 #include "nas_handler.h"
 
-int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, message_handler_response_t *response) {
+int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, message_handler_response_t *response) {
     ogs_info("NAS handler entrypoint");
 
     ogs_nas_5gs_message_t nasMessage;
@@ -13,9 +13,9 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, message_handler_response_t *r
     ogs_info("NAS Message converted to bytes");
     switch (messageType) {
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GMM:
-            return nas_5gmm_handler(&nasMessage.gmm, response);
+            return nas_5gmm_handler(&nasMessage.gmm, params, response);
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GSM:
-            return nas_5gsm_handler(&nasMessage.gsm, response);
+            return nas_5gsm_handler(&nasMessage.gsm, params, response);
         default:
             ogs_error("Unknown NAS message type: %d", messageType);
             return OGS_ERROR;
@@ -25,14 +25,14 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, message_handler_response_t *r
 }
 
 
-int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, message_handler_response_t *response) {
+int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *params, message_handler_response_t *response) {
     ogs_info("NAS 5GMM Handler");
 
     uint8_t messageType = nasMessage->h.message_type;
     int build_response;
     switch(messageType) {
         case OGS_NAS_5GS_REGISTRATION_REQUEST:
-            build_response = nas_handle_registration_request(&nasMessage->registration_request, response);
+            build_response = nas_handle_registration_request(&nasMessage->registration_request, params, response);
             break;
         default:
             ogs_error("Unknown NAS 5GMM message type: %d", messageType);
@@ -44,7 +44,7 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, message_handler_respons
 }
 
 
-int nas_5gsm_handler(ogs_nas_5gsm_message_t *nasMessage, message_handler_response_t *response) {
+int nas_5gsm_handler(ogs_nas_5gsm_message_t *nasMessage, nas_ngap_params_t *params, message_handler_response_t *response) {
     ogs_info("NAS 5GSM Handler");
 
     uint8_t messageType = nasMessage->h.message_type;

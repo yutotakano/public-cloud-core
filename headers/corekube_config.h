@@ -25,3 +25,18 @@
 #define CoreKube_RelativeCapacity 255
 
 #define CoreKube_NSSAI_sST 1
+
+
+/**
+ * Values used to build the Authentication Request
+ */
+
+#define CoreKube_AMF_Field {0x80, 0x00}
+
+#define CoreKube_SQN_Value {0x00, 0x00, 0x00, 0x00, 0x00, 0x40};
+
+#define CoreKube_NGKSI_TSC 0
+#define CoreKube_NGKSI_Value 0
+
+#define CoreKube_ABBA_Length 2
+#define CoreKube_ABBA_Value "0000"
