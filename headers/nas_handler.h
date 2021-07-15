@@ -14,8 +14,8 @@ extern int __corekube_log_domain;
 // used to allow transferring of values from the NGAP message
 // to the NAS message, and vice-versa
 typedef struct nas_ngap_params {
-    uint32_t * ran_ue_ngap_id;
-    uint32_t * amf_ue_ngap_id;
+    uint64_t * ran_ue_ngap_id;
+    uint64_t * amf_ue_ngap_id;
 } nas_ngap_params_t;
 
 int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, message_handler_response_t *response);

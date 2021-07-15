@@ -13,7 +13,7 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
 
     // convert the RAN_UE_NGAP_ID to a buffer, suitable for the DB
     OCTET_STRING_t ran_ue_ngap_id_buf;
-    ogs_asn_uint32_to_OCTET_STRING(*params->ran_ue_ngap_id, &ran_ue_ngap_id_buf);
+    ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *params->ran_ue_ngap_id, &ran_ue_ngap_id_buf);
 
     // fetch the IMSI from the NAS message
     char imsi[OGS_MAX_IMSI_BCD_LEN];
@@ -31,8 +31,8 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     OCTET_STRING_t amf_ue_ngap_id_buf;
     amf_ue_ngap_id_buf.buf = db_pulls->mme_ue_s1ap_id;
     amf_ue_ngap_id_buf.size = 4;
-    params->amf_ue_ngap_id = ogs_malloc(sizeof(uint32_t));
-    ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, params->amf_ue_ngap_id);
+    params->amf_ue_ngap_id = ogs_malloc(sizeof(uint64_t));
+    ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint64_t *) params->amf_ue_ngap_id);
 
     // generate the authentication parameters from RAND, Key and OPC
     uint8_t amf[OGS_AMF_LEN] = CoreKube_AMF_Field;
