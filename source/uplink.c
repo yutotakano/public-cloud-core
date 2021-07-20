@@ -56,6 +56,7 @@ void * uplink_thread(void * args)
 	int sock_enb = ((uplink_args *)args)->sock_enb;
 	int sock_epc = ((uplink_args *)args)->epc_sock;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
+	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
 	free(args);
 	#ifdef THREAD_LOGS
 	printThread("Uplink thread arguments extracted.\n");
@@ -91,12 +92,39 @@ void * uplink_thread(void * args)
 		dumpMessage(buffer+4, n);
 		#endif
 
+		int tmp_sock;
+		struct sockaddr_in udp_addr;
+
+		/*****************/
+		/* Create socket */
+		/*****************/
+		tmp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+		if (tmp_sock < 0) { 
+			perror("socket creation failed"); 
+			return -1;
+		}
+
+		udp_addr.sin_addr.s_addr = frontend_ip;
+		udp_addr.sin_family = AF_INET;
+		udp_addr.sin_port = 0;
+
+		/***********/
+		/* Binding */
+		/***********/
+		if(bind(tmp_sock, (const struct sockaddr *)&udp_addr, sizeof(udp_addr)) < 0) 
+		{ 
+			perror("Bind MME UDP socket"); 
+			close(tmp_sock);
+			return -1;
+		}
+
 		n += 4;
 		/* Send message to Kubernetes Loadbalancer (EPC Address) using UDP */
-		sendto(sock_epc, buffer, n, 0, (const struct sockaddr *) &epc_addr, sizeof(epc_addr));
+		sendto(tmp_sock, buffer, n, 0, (const struct sockaddr *) &epc_addr, sizeof(epc_addr));
 		#ifdef THREAD_LOGS
 		printThread("UDP message sent.\n");
 		#endif
+		close(tmp_sock);
 
 		/* Reset structures */
 		reset_sctp_structures(&addr, &from_len, &sinfo, &flags);

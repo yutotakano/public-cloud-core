@@ -205,6 +205,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		uargs->sock_enb = sock_enb;
 		uargs->epc_sock = sock_udp;
 		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
+		uargs->frontend_ip = inet_addr(mme_ip_address);
 
 		/* Create uplink thread */
 		if(pthread_create(&uplink_t, NULL, uplink_thread, (void *)uargs) != 0) {
