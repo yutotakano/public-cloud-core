@@ -37,7 +37,8 @@ void * downlink_thread(void * args)
 		sock_enb = array_to_int(buffer);
 		sid = (int) buffer[4];
 		n -= 5;
-		sctp_sendmsg(sock_enb, buffer+5, n, NULL, 0, htonl(S1AP_PPID), 0, sid, 0, 0);
+		if(sctp_sendmsg(sock_enb, buffer+5, n, NULL, 0, htonl(S1AP_PPID), 0, sid, 0, 0) < 0)
+			break;
 	}
 
 	return NULL;
