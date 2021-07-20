@@ -101,7 +101,7 @@ void * uplink_thread(void * args)
 		tmp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 		if (tmp_sock < 0) { 
 			perror("socket creation failed"); 
-			return -1;
+			return NULL;
 		}
 
 		udp_addr.sin_addr.s_addr = frontend_ip;
@@ -115,7 +115,7 @@ void * uplink_thread(void * args)
 		{ 
 			perror("Bind MME UDP socket"); 
 			close(tmp_sock);
-			return -1;
+			return NULL;
 		}
 
 		n += 4;
