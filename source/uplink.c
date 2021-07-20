@@ -80,7 +80,7 @@ void * uplink_thread(void * args)
 	printThread("Socket data added to the buffer.\n");
 	#endif
 
-	while ( (n = sctp_recvmsg(sock_enb, (void *)(buffer + 4), BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) >= 0) {
+	while ( (n = sctp_recvmsg(sock_enb, (void *)(buffer + 4), BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) > 0) {
 		/* Only messages with PPID 18 are accepted */
 		if(ntohl(sinfo.sinfo_ppid) != S1AP_PPID) {
 			reset_sctp_structures(&addr, &from_len, &sinfo, &flags);

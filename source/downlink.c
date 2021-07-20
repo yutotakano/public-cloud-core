@@ -30,7 +30,7 @@ void * downlink_thread(void * args)
 	#endif
 
 	
-	while( (n = recv(sock_udp, buffer, BUFFER_LEN, 0)) >= 0) {
+	while( (n = recv(sock_udp, buffer, BUFFER_LEN, 0)) > 0) {
 		#ifdef THREAD_LOGS
 		printThread("Downlink message received.\n");
 		#endif
