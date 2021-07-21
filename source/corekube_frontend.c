@@ -203,7 +203,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		}
 		/* Set eNB socket */
 		uargs->sock_enb = sock_enb;
-		uargs->d_thread_id = (int) downlink_t;
+		uargs->d_thread_id = downlink_t;
 		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
 		uargs->frontend_ip = inet_addr(mme_ip_address);
 

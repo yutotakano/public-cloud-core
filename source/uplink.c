@@ -132,7 +132,7 @@ void * uplink_thread(void * args)
 	}
 	printInfo("eNB %d disconnected\n", sock_enb);
 	/* Killing downlink thread */
-	pthread_kill((pthread_t) d_thread_id, 9);
+	pthread_kill(d_thread_id, 9);
 	close(sock_enb);
 
 	return NULL;
