@@ -55,7 +55,7 @@ void * uplink_thread(void * args)
 
 	/* Extract the eNB socket from args and free the args structure */
 	int sock_enb = ((uplink_args *)args)->sock_enb;
-	int d_thread_id = ((uplink_args *)args)->d_thread_id;
+	pthread_t d_thread_id = ((uplink_args *)args)->d_thread_id;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
 	free(args);
@@ -132,7 +132,7 @@ void * uplink_thread(void * args)
 	}
 	printInfo("eNB %d disconnected\n", sock_enb);
 	/* Killing downlink thread */
-	pthread_kill(d_thread_id, 9);
+	pthread_cancel(d_thread_id);
 	close(sock_enb);
 
 	return NULL;
