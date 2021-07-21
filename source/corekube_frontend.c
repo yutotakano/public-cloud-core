@@ -143,7 +143,7 @@ int configure_udp_socket(char * mme_ip_address)
 
 void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 {
-	int sock_sctp, sock_udp, sock_enb, enb_count = 0;
+	int sock_sctp, sock_udp, sock_enb, enb_count = 0, d_thread_id;
 	uplink_args * uargs;
 	downlink_args * dargs;
 
@@ -183,7 +183,8 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		dargs->sock_udp = sock_udp;
 
 		/* Create downlink thread */
-		if(pthread_create(&downlink_t, NULL, downlink_thread, (void *)dargs) != 0) {
+		d_thread_id = pthread_create(&downlink_t, NULL, downlink_thread, (void *)dargs);
+		if(d_thread_id != 0) {
 			perror("downlink thread");
 			printError("Closing open sockets.\n");
 			close(sock_sctp);
@@ -203,7 +204,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		}
 		/* Set eNB socket */
 		uargs->sock_enb = sock_enb;
-		uargs->epc_sock = sock_udp;
+		uargs->d_thread_id = d_thread_id;
 		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
 		uargs->frontend_ip = inet_addr(mme_ip_address);
 

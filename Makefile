@@ -4,7 +4,7 @@
 CC = gcc
 
 #FLAGS
-CFLAGS = -c -Wall -ansi -g -std=c99 -DTHREAD_LOGS
+CFLAGS = -c -Wall -ansi -g -std=c99 -DTHREAD_LOGS -D_GNU_SOURCE
 
 #LIB FLAGS
 LIBFLAGS = -lpthread

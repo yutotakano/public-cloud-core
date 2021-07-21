@@ -9,6 +9,7 @@
 #include <netinet/sctp.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <signal.h>
 #include "uplink.h"
 #include "log.h"
 
@@ -54,7 +55,7 @@ void * uplink_thread(void * args)
 
 	/* Extract the eNB socket from args and free the args structure */
 	int sock_enb = ((uplink_args *)args)->sock_enb;
-	int sock_epc = ((uplink_args *)args)->epc_sock;
+	int d_thread_id = ((uplink_args *)args)->d_thread_id;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
 	free(args);
@@ -62,7 +63,7 @@ void * uplink_thread(void * args)
 	printThread("Uplink thread arguments extracted.\n");
 	#endif
 
-	/* Configure EPC UDP address */
+	/* Configure Load Balancer address */
 	epc_addr.sin_addr.s_addr = epc_ip_addr;
     epc_addr.sin_family = AF_INET;
     epc_addr.sin_port = htons(EPC_UDP_PORT);
@@ -129,7 +130,9 @@ void * uplink_thread(void * args)
 		/* Reset structures */
 		reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 	}
-
+	printInfo("eNB %d disconnected\n", sock_enb);
+	/* Killing downlink thread */
+	pthread_kill(d_thread_id, 9);
 	close(sock_enb);
 
 	return NULL;
