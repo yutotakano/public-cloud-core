@@ -181,7 +181,7 @@ class RANControler:
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
 					return
 				if self.num_ues < self.num_threads:
-					num_ues = self.num_ues
+					num = self.num_ues
 					self.num_ues = -1
 				else:
 					num = self.num_threads
