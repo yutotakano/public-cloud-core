@@ -11,11 +11,11 @@ class NervionMultiplexer:
 		self.multi = multi
 
 	def processMessage(self, payload, address):
-		teid = (ord(payload[4]) << 24) | (ord(payload[5]) << 16) | (ord(payload[6]) << 8) | ord(payload[7])
+		teid = (payload[4] << 24) | (payload[5] << 16) | (payload[6] << 8) | payload[7]
 		self.routes[teid] = address
 
 	def getAddress(self, payload):
-		teid = (ord(payload[4]) << 24) | (ord(payload[5]) << 16) | (ord(payload[6]) << 8) | ord(payload[7])
+		teid = (payload[4] << 24) | (payload[5] << 16) | (payload[6] << 8) | payload[7]
 		return self.routes.get(teid)
 
 	def downlink(self):

@@ -184,15 +184,15 @@ class RANControler:
 					num_ues = self.num_ues
 					self.num_ues = -1
 				else:
-					num_ues = self.num_threads
+					num = self.num_threads
 					self.num_ues = self.num_ues - self.num_threads
-
+				print('Number of UEs for this container: ' + str(num))
 				buf = bytearray()
 				buf.append(CODE_OK | CODE_CP_MODE_ONLY)
-				buf.append((num_ues >> 24) & 0xFF)
-				buf.append((num_ues >> 16) & 0xFF)
-				buf.append((num_ues >> 8) & 0xFF)
-				buf.append(num_ues & 0xFF)
+				buf.append((num >> 24) & 0xFF)
+				buf.append((num >> 16) & 0xFF)
+				buf.append((num >> 8) & 0xFF)
+				buf.append(num & 0xFF)
 				self.sock.sendto(buf, (msg['ip'], msg['port']))
 				return
 
