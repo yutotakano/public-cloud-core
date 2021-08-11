@@ -1,4 +1,5 @@
 #include "nas_registration_request.h"
+#include "nas_authentication_response.h"
 
 #include "nas_handler.h"
 
@@ -9,17 +10,33 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
     uint8_t messageType;
     int convertToBytes = nas_bytes_to_message(nasPdu, &nasMessage, &messageType);
     ogs_assert(convertToBytes == OGS_OK); // Failed to convert NAS message to bytes
-
     ogs_info("NAS Message converted to bytes");
+
+    // initialise the nas_security_params, which will be filled
+    // by the specific message handler so the message can be encoded
+    params->nas_security_params = ogs_calloc(1, sizeof(nas_security_params_t));
+
+    int handle_outcome;
     switch (messageType) {
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GMM:
-            return nas_5gmm_handler(&nasMessage.gmm, params, response);
+            handle_outcome = nas_5gmm_handler(&nasMessage.gmm, params, response);
+            break;
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GSM:
-            return nas_5gsm_handler(&nasMessage.gsm, params, response);
+            handle_outcome = nas_5gsm_handler(&nasMessage.gsm, params, response);
+            break;
         default:
             ogs_error("Unknown NAS message type: %d", messageType);
             return OGS_ERROR;
     }
+
+    ogs_assert(handle_outcome == OGS_OK);
+
+    // free up the previously-allocated memory
+    if (params->nas_security_params->knas_enc)
+        ogs_free(params->nas_security_params->knas_enc);
+    if (params->nas_security_params->knas_int)
+        ogs_free(params->nas_security_params->knas_int);
+    ogs_free(params->nas_security_params);
 
     return OGS_OK;
 }
@@ -34,13 +51,16 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
         case OGS_NAS_5GS_REGISTRATION_REQUEST:
             build_response = nas_handle_registration_request(&nasMessage->registration_request, params, response);
             break;
+        case OGS_NAS_5GS_AUTHENTICATION_RESPONSE:
+            build_response = nas_handle_authentication_response(&nasMessage->authentication_response, params, response);
+            break;
         default:
             ogs_error("Unknown NAS 5GMM message type: %d", messageType);
             return OGS_ERROR;
     }
 
     ogs_assert(build_response == OGS_OK);
-    return nas_message_to_bytes(response);
+    return nas_message_to_bytes(params, response);
 }
 
 
@@ -138,8 +158,15 @@ int nas_bytes_to_message(NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message,
     return OGS_OK;
 }
 
-int nas_message_to_bytes(message_handler_response_t * response) {
+int nas_message_to_bytes(nas_ngap_params_t * nas_params, message_handler_response_t * response) {
     ogs_info("NAS Message to bytes");
+
+    nas_security_params_t * nas_security_params = nas_params->nas_security_params;
+    ogs_assert(nas_security_params);
+
+    // currently the DL / UL counts for NAS encoding do not
+    // support more than one NAS message at a time
+    ogs_assert(response->num_responses <= 1);
 
     ogs_nas_5gs_message_t * nasMessage;
     ogs_pkbuf_t * pkbuf;
@@ -147,7 +174,7 @@ int nas_message_to_bytes(message_handler_response_t * response) {
     for (int i = 0; i < response->num_responses; i++) {
         ogs_info("NAS message to bytes for message %d of %d", i+i, response->num_responses);
         nasMessage = response->responses[i];
-        pkbuf = ogs_nas_5gs_plain_encode(nasMessage);
+        pkbuf = nas_5gs_security_encode(nas_security_params, nasMessage);
         ogs_assert(pkbuf);
         ogs_free(nasMessage);
         response->responses[i] = pkbuf;

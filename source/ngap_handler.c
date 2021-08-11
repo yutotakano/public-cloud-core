@@ -1,7 +1,8 @@
-#include "ngap_handler.h"
-
 #include "ngap_ng_setup_request.h"
 #include "ngap_initial_ue_message.h"
+#include "ngap_uplink_nas_transport.h"
+
+#include "ngap_handler.h"
 
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response) {
     ogs_info("Reached NGAP Handler entrypoint");
@@ -88,13 +89,17 @@ int ngap_message_handler(ogs_ngap_message_t *message, message_handler_response_t
 int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, message_handler_response_t *response) {
     ogs_info("Handling NGAP message of type InitiatingMessage");
 
-    switch (initiatingMessage->choice.initiatingMessage->value.present) {
+    NGAP_InitiatingMessage__value_PR messageType = initiatingMessage->choice.initiatingMessage->value.present;
+    switch (messageType) {
         case NGAP_InitiatingMessage__value_PR_NGSetupRequest:
             return ngap_handle_ng_setup_request(initiatingMessage, response);
             break;
         case NGAP_InitiatingMessage__value_PR_InitialUEMessage:
             return ngap_handle_initial_ue_message(initiatingMessage, response);
+        case NGAP_InitiatingMessage__value_PR_UplinkNASTransport:
+            return ngap_handle_uplink_nas_transport(initiatingMessage, response);
         default:
+            ogs_info("Unknown InitiatingMessage type: %d", messageType);
             response->num_responses = 0;
             return OGS_ERROR;
     }

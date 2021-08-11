@@ -1,37 +1,40 @@
 #include "nas_handler.h"
 #include "ngap_downlink_nas_transport.h"
 
-#include "ngap_initial_ue_message.h"
+#include "ngap_uplink_nas_transport.h"
 
-int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_response_t *response) {
-    ogs_info("Handling Initial UE Message");
+int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handler_response_t *response) {
+    ogs_info("Handling Uplink NAS Transport message");
 
     NGAP_InitiatingMessage_t *initiatingMessage = NULL;
-    NGAP_InitialUEMessage_t *InitialUEMessage = NULL;
+    NGAP_UplinkNASTransport_t *UplinkNASTransport = NULL;
 
-    NGAP_InitialUEMessage_IEs_t *ie = NULL;
+    NGAP_UplinkNASTransport_IEs_t *ie = NULL;
     NGAP_RAN_UE_NGAP_ID_t *RAN_UE_NGAP_ID = NULL;
+    NGAP_AMF_UE_NGAP_ID_t *AMF_UE_NGAP_ID = NULL;
     NGAP_NAS_PDU_t *NAS_PDU = NULL;
     NGAP_UserLocationInformation_t *UserLocationInformation = NULL;
 
     ogs_assert(message);
     initiatingMessage = message->choice.initiatingMessage;
     ogs_assert(initiatingMessage);
-    InitialUEMessage = &initiatingMessage->value.choice.InitialUEMessage;
-    ogs_assert(InitialUEMessage);
+    UplinkNASTransport = &initiatingMessage->value.choice.UplinkNASTransport;
+    ogs_assert(UplinkNASTransport);
 
-    for (int i = 0; i < InitialUEMessage->protocolIEs.list.count; i++) {
-        ie = InitialUEMessage->protocolIEs.list.array[i];
+    for (int i = 0; i < UplinkNASTransport->protocolIEs.list.count; i++) {
+        ie = UplinkNASTransport->protocolIEs.list.array[i];
         switch (ie->id) {
         case NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID:
             RAN_UE_NGAP_ID = &ie->value.choice.RAN_UE_NGAP_ID;
+            break;
+        case NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID:
+            AMF_UE_NGAP_ID = &ie->value.choice.AMF_UE_NGAP_ID;
             break;
         case NGAP_ProtocolIE_ID_id_NAS_PDU:
             NAS_PDU = &ie->value.choice.NAS_PDU;
             break;
         case NGAP_ProtocolIE_ID_id_UserLocationInformation:
-            UserLocationInformation =
-                &ie->value.choice.UserLocationInformation;
+            UserLocationInformation = &ie->value.choice.UserLocationInformation;
             break;
         default:
             break;
@@ -39,13 +42,19 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     }
 
     ogs_assert(RAN_UE_NGAP_ID); // Failed to find RAN_UE_NGAP_ID element
+    ogs_assert(AMF_UE_NGAP_ID); // Failed to find AMF_UE_NGAP_ID element
     ogs_assert(UserLocationInformation); // Failed to find UserLocationInformation element
     ogs_assert(UserLocationInformation->present == NGAP_UserLocationInformation_PR_userLocationInformationNR); // Only userLocationInformationNR is implemented
     ogs_assert(NAS_PDU); // Failed to find NAS_PDU element
 
+    // convert the AMF_UE_NGAP_ID to an integer from a byte array
+    uint64_t amf_ue_ngap_id;
+    asn_INTEGER2ulong(AMF_UE_NGAP_ID, (unsigned long *) &amf_ue_ngap_id);
+
     // setup the parameters required by the NAS handler
     nas_ngap_params_t nas_params;
     nas_params.ran_ue_ngap_id = RAN_UE_NGAP_ID;
+    nas_params.amf_ue_ngap_id = &amf_ue_ngap_id;
 
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
     ogs_assert(handle_nas == OGS_OK);

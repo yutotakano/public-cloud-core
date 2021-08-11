@@ -32,20 +32,21 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     amf_ue_ngap_id_buf.buf = db_pulls->mme_ue_s1ap_id;
     amf_ue_ngap_id_buf.size = 4;
     params->amf_ue_ngap_id = ogs_malloc(sizeof(uint64_t));
-    ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint64_t *) params->amf_ue_ngap_id);
+    ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint32_t *) params->amf_ue_ngap_id);
 
-    // generate the authentication parameters from RAND, Key and OPC
-    uint8_t amf[OGS_AMF_LEN] = CoreKube_AMF_Field;
-    uint8_t sqn[OGS_SQN_LEN] = CoreKube_SQN_Value;
+    // generate the authentication and security parameters
     uint8_t autn[OGS_AUTN_LEN];
-    uint8_t ik[16];
-    uint8_t ck[16];
-    uint8_t ak[6];
-    uint8_t res[OGS_MAX_RES_LEN];
-    size_t res_len = OGS_MAX_RES_LEN;
+    uint8_t kamf[OGS_SHA256_DIGEST_SIZE];
+    ogs_info("IMSI: %s", imsi);
+    int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls->opc, db_pulls->key, db_pulls->rand, autn, kamf);
+    ogs_assert(key_gen == OGS_OK);
 
-    milenage_generate(db_pulls->opc, amf, db_pulls->key, sqn, db_pulls->rand, autn, ik, ck, ak, res, &res_len);
-    ogs_assert(res_len != 0); // Failed to generate security parameters
+    ogs_info("generated key (kamf):");
+    ogs_log_hexdump(OGS_LOG_INFO, kamf, OGS_SHA256_DIGEST_SIZE);
+
+    // store the KAMF in the DB,
+    int storeKamf = db_access(NULL, IMSI, (uint8_t *) imsi, 2, 0, KASME_1, kamf, KASME_2, kamf+16);
+    ogs_assert(storeKamf == OGS_OK);
 
     ogs_nas_5gs_authentication_request_t auth_request_params;
     auth_request_params.ngksi.tsc = CoreKube_NGKSI_TSC;
