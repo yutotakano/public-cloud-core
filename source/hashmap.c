@@ -7,18 +7,12 @@
 #define OK 0
 #define ERROR -1
 
-typedef struct _ListNode
-{
-	void * data;
-	struct _ListNode * next;	
-}ListNode;
-
 struct _HashMap
 {
 	uint32_t initval;
 	uint32_t hashmap_size;
 	uint32_t (*hash)(void*);
-	ListNode ** table;
+	void ** table;
 };
 
 HashMap * init_hashmap(uint32_t size, uint32_t (*hash)(void*))
@@ -35,7 +29,7 @@ HashMap * init_hashmap(uint32_t size, uint32_t (*hash)(void*))
 	hm->initval = (uint32_t)rand();
 	/* Allocate the hash table */
 	/* NOTE: Using calloc to initialize every entry to NULL/0 */
-	hm->table = (ListNode**)calloc(size, sizeof(ListNode*));
+	hm->table = (void**)calloc(size, sizeof(void*));
 	if(hm->table == NULL) {
 		free(hm);
 		return NULL;
@@ -46,17 +40,10 @@ HashMap * init_hashmap(uint32_t size, uint32_t (*hash)(void*))
 void free_hashmap(HashMap * hm, void (*destroy)(void *))
 {
 	int i;
-	ListNode * iter, * aux;
 
 	for(i = 0; i < hm->hashmap_size; i++) {
 		/* Delete every item in the list */
-		iter = hm->table[i];
-		while(iter != NULL) {
-			destroy(iter->data);
-			aux = iter->next;
-			free(iter);
-			iter = aux;
-		}
+		destroy(hm->table[i]);
 	}
 	free(hm->table);
 	free(hm);
@@ -64,69 +51,28 @@ void free_hashmap(HashMap * hm, void (*destroy)(void *))
 
 int hashmap_add(HashMap * hm, uint8_t * data, int size)
 {
-	ListNode * new_node, * iter;
 	uint32_t index, hash;
+	void * data_copy;
 
-	/* Allocate memory for the new entry */
-	new_node = (ListNode *)malloc(sizeof(ListNode));
-	if(new_node == NULL)
-		return ERROR;
 	/* Creating a copy of data */
-	new_node->data = malloc(size);
-	if(new_node->data == NULL) {
-		free(new_node);
+	data_copy = malloc(size);
+	if(data_copy == NULL)
 		return ERROR;
-	}
-	memcpy(new_node->data, data, size);
-	new_node->next = NULL;
+	memcpy((uint8_t *)data_copy, data, size);
 
 
 	/* Get the entry index in the table */
-	hash = hm->hash(new_node->data);
+	hash = hm->hash(data);
 	index = jhash(hash, hm->initval) % hm->hashmap_size;
 
-	/* Insert new node at the end of the table[index] list */
-	/* This insertion is used to check duplicates */
-	/* Empty list case */
-	if(hm->table[index] == NULL) {
-		hm->table[index] = new_node;
-	}
-	/* The list is not empty */
-	else {
-		iter = hm->table[index];
-		if(hm->hash(iter->data) == hash) {
-			free(new_node->data);
-			free(new_node);
-			return ERROR;
-		}
-		while(iter->next != NULL) {
-			/* Check for duplicates */
-			if(hm->hash(iter->data) == hash) {
-				free(new_node->data);
-				free(new_node);
-				return ERROR;
-			}
-			iter->next = new_node;
-		}
-	}
+	/* Insert new node in table[index] */
+	hm->table[index] = data_copy;
 
 	return OK;
 }
 
 void * hashmap_get(HashMap * hm, uint32_t hash)
 {
-	ListNode * iter;
-
-	/* Get the head of the list */
-	iter = hm->table[jhash(hash, hm->initval) % hm->hashmap_size];
-
-	/* Iterate over the list */
-	while(iter != NULL) {
-		if(hm->hash(iter->data) == hash)
-			return iter->data;
-		iter = iter->next;
-	}
-
-	return NULL;
+	return hm->table[jhash(hash, hm->initval) % hm->hashmap_size];
 }
 

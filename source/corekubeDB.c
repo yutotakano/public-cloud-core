@@ -174,7 +174,7 @@ void process_line(char * line, ssize_t line_len)
 	}
 
 #ifdef DEBUG
-	show_user_info(new_user);
+	/*show_user_info(new_user);*/
 #endif
 
 	free_user_info((void *)new_user);
@@ -575,8 +575,8 @@ int main(int argc, char const *argv[])
 		return ERROR;
 	}
 	/* Get hashmap_size */
-	if (!config_lookup_int(&cfg, "db.hashmap_size", &hashmap_size)) {
-		printError("Config file error: db.hashmap_size not defined.\n");
+	if (!config_lookup_int(&cfg, "db.num_ues", &hashmap_size)) {
+		printError("Config file error: db.num_ues not defined.\n");
 		config_destroy(&cfg);
 		return ERROR;
 	}
