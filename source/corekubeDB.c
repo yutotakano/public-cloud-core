@@ -174,7 +174,7 @@ void process_line(char * line, ssize_t line_len)
 	}
 
 #ifdef DEBUG
-	/*show_user_info(new_user);*/
+	/* show_user_info(new_user); */
 #endif
 
 	free_user_info((void *)new_user);
@@ -275,6 +275,11 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	UserInfo * user;
 	int offset = 0, res_offset = 0; 
 	uint8_t tmp_nas;
+
+#ifdef DEBUG
+		printf("REQUEST inside the function:");
+		dump_mem(request, request_len);
+#endif
 
 	/* Get user info based on the client's ID*/
 	switch(request[0]) {
@@ -503,15 +508,16 @@ void * attend_request(void * args)
 		}
 #ifdef DEBUG
 		printInfo("Analyzing request...\n");
-		printf("REQUEST:\n");
+		printf("REQUEST:");
 		dump_mem(request, request_len);
 #endif
 		/* Analyze request and generate the response message */
 		analyze_request(request, request_len, response, &response_len);
 #ifdef DEBUG
 		printInfo("Sending answer to client...\n");
-		printf("RESPONSE:\n");
+		printf("RESPONSE:");
 		dump_mem(response, response_len);
+		printf("\n");
 #endif
 		/* Send response to client and close connection */
 		send(client, response, response_len, 0);
@@ -556,6 +562,12 @@ int main(int argc, char const *argv[])
 	const char * db_file_path = NULL;
 	const char * db_ip_address = NULL;
 	int hashmap_size, db_port;
+
+	/* Avoing printf buffering */
+	setvbuf(stdout, NULL, _IONBF, 0); 
+
+	/* Initialize the RAND seed */
+	initRandSeed();
 
 	config_init(&cfg);
 	if (!config_read_file(&cfg, CONFIG_FILE_PATH)) {

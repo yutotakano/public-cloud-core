@@ -14,6 +14,7 @@
 
 typedef struct _UserInfo UserInfo;
 
+void initRandSeed();
 UserInfo * new_user_info();
 void free_user_info(void * user);
 void set_user_imsi(UserInfo * user, char  * imsi);

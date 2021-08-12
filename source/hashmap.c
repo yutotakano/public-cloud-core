@@ -2,14 +2,12 @@
 #include <time.h>
 #include <string.h>
 #include "hashmap.h"
-#include "jhash.h"
 
 #define OK 0
 #define ERROR -1
 
 struct _HashMap
 {
-	uint32_t initval;
 	uint32_t hashmap_size;
 	uint32_t (*hash)(void*);
 	void ** table;
@@ -24,9 +22,6 @@ HashMap * init_hashmap(uint32_t size, uint32_t (*hash)(void*))
 	/* Store values */
 	hm->hash = hash;
 	hm->hashmap_size = size;
-	/* Generate initval */
-	srand(time(0));
-	hm->initval = (uint32_t)rand();
 	/* Allocate the hash table */
 	/* NOTE: Using calloc to initialize every entry to NULL/0 */
 	hm->table = (void**)calloc(size, sizeof(void*));
@@ -63,7 +58,7 @@ int hashmap_add(HashMap * hm, uint8_t * data, int size)
 
 	/* Get the entry index in the table */
 	hash = hm->hash(data);
-	index = jhash(hash, hm->initval) % hm->hashmap_size;
+	index = hash % hm->hashmap_size;
 
 	/* Insert new node in table[index] */
 	hm->table[index] = data_copy;
@@ -73,6 +68,6 @@ int hashmap_add(HashMap * hm, uint8_t * data, int size)
 
 void * hashmap_get(HashMap * hm, uint32_t hash)
 {
-	return hm->table[jhash(hash, hm->initval) % hm->hashmap_size];
+	return hm->table[hash % hm->hashmap_size];
 }
 

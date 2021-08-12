@@ -18,6 +18,11 @@
 	u32 = (array[0] << 24) | (array[1] << 16) | (array[2] << 8) | (array[3]);	\
 }
 
+void initRandSeed()
+{
+	srand(time(0));
+}
+
 struct _UserInfo
 {
 	char imsi[IMSI_LEN];
@@ -181,7 +186,6 @@ void generate_rand(UserInfo * user)
 
 	uint32_t num;
 
-	srand(time(0));
 	num = (uint32_t)rand();
 	UINT32_TO_ARRAY(user->rand, num);
 	num = (uint32_t)rand();
