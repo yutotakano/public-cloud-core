@@ -4,7 +4,7 @@
 #include "core/ogs-core.h"
 #include "nas/5gs/ogs-nas-5gs.h"
 #include "ngap_handler.h"
-#include "nas_handler.h"
+#include "nas_ngap_params.h"
 
 extern int __corekube_log_domain;
 

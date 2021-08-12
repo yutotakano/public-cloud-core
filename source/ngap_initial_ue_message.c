@@ -1,3 +1,4 @@
+#include "nas_ngap_params.h"
 #include "nas_handler.h"
 #include "ngap_downlink_nas_transport.h"
 
@@ -45,6 +46,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
 
     // setup the parameters required by the NAS handler
     nas_ngap_params_t nas_params;
+    bzero(&nas_params, sizeof(nas_ngap_params_t));
     nas_params.ran_ue_ngap_id = RAN_UE_NGAP_ID;
 
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
@@ -56,6 +58,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
 
     // prepare the parameters for the response (a Downlink NAS Transport)
     ngap_downlink_nas_transport_params_t response_params;
+    bzero(&response_params, sizeof(ngap_downlink_nas_transport_params_t));
     response_params.nasPdu = response->responses[0];
     response_params.amf_ue_ngap_id = *nas_params.amf_ue_ngap_id;
     response_params.ran_ue_ngap_id = *RAN_UE_NGAP_ID;

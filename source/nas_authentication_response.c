@@ -2,6 +2,7 @@
 #include "db_accesses.h"
 #include "corekube_config.h"
 #include "nas_security_mode_command.h"
+#include "nas_security.h"
 
 #include "nas_authentication_response.h"
 

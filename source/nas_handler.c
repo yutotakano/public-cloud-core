@@ -1,5 +1,6 @@
 #include "nas_registration_request.h"
 #include "nas_authentication_response.h"
+#include "nas_security.h"
 
 #include "nas_handler.h"
 
@@ -8,13 +9,15 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
 
     ogs_nas_5gs_message_t nasMessage;
     uint8_t messageType;
-    int convertToBytes = nas_bytes_to_message(nasPdu, &nasMessage, &messageType);
+
+    if (! params->nas_security_params) {
+        // initialise the nas_security_params
+        params->nas_security_params = ogs_calloc(1, sizeof(nas_security_params_t));
+    }
+
+    int convertToBytes = nas_bytes_to_message(params, nasPdu, &nasMessage, &messageType);
     ogs_assert(convertToBytes == OGS_OK); // Failed to convert NAS message to bytes
     ogs_info("NAS Message converted to bytes");
-
-    // initialise the nas_security_params, which will be filled
-    // by the specific message handler so the message can be encoded
-    params->nas_security_params = ogs_calloc(1, sizeof(nas_security_params_t));
 
     int handle_outcome;
     switch (messageType) {
@@ -78,7 +81,7 @@ int nas_5gsm_handler(ogs_nas_5gsm_message_t *nasMessage, nas_ngap_params_t *para
 }
 
 
-int nas_bytes_to_message(NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message, uint8_t *messageType) {
+int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message, uint8_t *messageType) {
     ogs_info("NAS bytes to message");
 
     ogs_nas_5gs_security_header_t *sh = NULL;
@@ -87,6 +90,7 @@ int nas_bytes_to_message(NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message,
     ogs_nas_5gmm_header_t *h = NULL;
     ogs_pkbuf_t *nasbuf = NULL;
 
+    ogs_assert(params);
     ogs_assert(nasPdu);
 
     /* The Packet Buffer(pkbuf_t) for NAS message MUST make a HEADROOM. 
@@ -129,13 +133,8 @@ int nas_bytes_to_message(NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message,
         return OGS_ERROR;
     }
 
-    /*if (ran_ue->amf_ue) {
-        if (nas_5gs_security_decode(ran_ue->amf_ue,
-                security_header_type, nasbuf) != OGS_OK) {
-            ogs_error("nas_eps_security_decode failed()");
-	        return OGS_ERROR;
-        }
-    }*/
+    int security_decode = nas_5gs_security_decode(params, security_header_type, nasbuf);
+    ogs_assert(security_decode == OGS_OK);
 
     h = (ogs_nas_5gmm_header_t *)nasbuf->data;
     ogs_assert(h);
@@ -161,9 +160,6 @@ int nas_bytes_to_message(NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message,
 int nas_message_to_bytes(nas_ngap_params_t * nas_params, message_handler_response_t * response) {
     ogs_info("NAS Message to bytes");
 
-    nas_security_params_t * nas_security_params = nas_params->nas_security_params;
-    ogs_assert(nas_security_params);
-
     // currently the DL / UL counts for NAS encoding do not
     // support more than one NAS message at a time
     ogs_assert(response->num_responses <= 1);
@@ -174,7 +170,7 @@ int nas_message_to_bytes(nas_ngap_params_t * nas_params, message_handler_respons
     for (int i = 0; i < response->num_responses; i++) {
         ogs_info("NAS message to bytes for message %d of %d", i+i, response->num_responses);
         nasMessage = response->responses[i];
-        pkbuf = nas_5gs_security_encode(nas_security_params, nasMessage);
+        pkbuf = nas_5gs_security_encode(nas_params, nasMessage);
         ogs_assert(pkbuf);
         ogs_free(nasMessage);
         response->responses[i] = pkbuf;

@@ -2,6 +2,7 @@
 #include <libck.h>
 #include "db_accesses.h"
 #include "corekube_config.h"
+#include "nas_security.h"
 
 #include "nas_registration_request.h"
 
@@ -37,12 +38,8 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     // generate the authentication and security parameters
     uint8_t autn[OGS_AUTN_LEN];
     uint8_t kamf[OGS_SHA256_DIGEST_SIZE];
-    ogs_info("IMSI: %s", imsi);
     int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls->opc, db_pulls->key, db_pulls->rand, autn, kamf);
     ogs_assert(key_gen == OGS_OK);
-
-    ogs_info("generated key (kamf):");
-    ogs_log_hexdump(OGS_LOG_INFO, kamf, OGS_SHA256_DIGEST_SIZE);
 
     // store the KAMF in the DB,
     int storeKamf = db_access(NULL, IMSI, (uint8_t *) imsi, 2, 0, KASME_1, kamf, KASME_2, kamf+16);

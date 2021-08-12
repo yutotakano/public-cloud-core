@@ -1,15 +1,19 @@
 #include "ngap/ogs-ngap.h"
+#include "db_accesses.h"
 
 #include "nas_security.h"
 
-ogs_pkbuf_t *nas_5gs_security_encode(nas_security_params_t * nas_security_params, ogs_nas_5gs_message_t *message) {
+ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_message_t *message) {
+    ogs_info("Encoding NAS 5GS message");
+
     int integrity_protected = 0;
     int ciphered = 0;
     ogs_nas_5gs_security_header_t h;
     ogs_pkbuf_t *new = NULL;
 
     ogs_assert(message);
-    ogs_assert(nas_security_params);
+    ogs_assert(params);
+    ogs_assert(params->nas_security_params);
 
     switch (message->h.security_header_type) {
     case OGS_NAS_SECURITY_HEADER_PLAIN_NAS_MESSAGE:
@@ -43,7 +47,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_security_params_t * nas_security_params
     h.security_header_type = message->h.security_header_type;
     h.extended_protocol_discriminator =
         message->h.extended_protocol_discriminator;
-    h.sequence_number = (nas_security_params->dl_count & 0xff);
+    h.sequence_number = (params->nas_security_params->dl_count & 0xff);
 
     new = ogs_nas_5gs_plain_encode(message);
     if (!new) {
@@ -52,12 +56,16 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_security_params_t * nas_security_params
     }
 
     if (ciphered) {
-        ogs_assert(nas_security_params->knas_enc);
-        ogs_assert(nas_security_params->dl_count);
+        // the NAS encryption key is required, check it exists
+        if (!params->nas_security_params->knas_enc) {
+            // security key is missing, fetch it from the DB
+            int fetch_keys = nas_security_fetch_keys(params);
+            ogs_assert(fetch_keys == OGS_OK);
+        }
 
         /* encrypt NAS message */
         ogs_nas_encrypt(COREKUBE_NAS_SECURITY_ENC_ALGORITHM,
-            nas_security_params->knas_enc, nas_security_params->dl_count,
+            params->nas_security_params->knas_enc, params->nas_security_params->dl_count,
             COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS,
             COREKUBE_NAS_SECURITY_DOWNLINK_DIRECTION, new);
     }
@@ -67,19 +75,21 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_security_params_t * nas_security_params
     *(uint8_t *)(new->data) = h.sequence_number;
 
     if (integrity_protected) {
-        ogs_assert(nas_security_params->knas_int);
+        // the NAS integrity key is required, check it exists
+        if (!params->nas_security_params->knas_int) {
+            // integrity key is missing, fetch it from the DB
+            int fetch_keys = nas_security_fetch_keys(params);
+            ogs_assert(fetch_keys == OGS_OK);
+        }
 
         uint8_t mac[COREKUBE_NAS_SECURITY_MAC_SIZE];
 
         /* calculate NAS MAC(message authentication code) */
         ogs_nas_mac_calculate(COREKUBE_NAS_SECURITY_INT_ALGORITHM,
-            nas_security_params->knas_int, nas_security_params->dl_count,
+            params->nas_security_params->knas_int, params->nas_security_params->dl_count,
             COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS,
             COREKUBE_NAS_SECURITY_DOWNLINK_DIRECTION, new, mac);
         memcpy(&h.message_authentication_code, mac, sizeof(mac));
-
-        ogs_info("DL count: %d", nas_security_params->dl_count);
-        ogs_log_hexdump(OGS_LOG_INFO, nas_security_params->knas_int, 16);
     }
 
     /* encode all security header */
@@ -89,28 +99,16 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_security_params_t * nas_security_params
     return new;
 }
 
-#if 0
-
-int nas_5gs_security_decode(amf_ue_t *amf_ue, 
-    ogs_nas_security_header_type_t security_header_type, ogs_pkbuf_t *pkbuf)
+int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_type_t security_header_type, ogs_pkbuf_t *pkbuf)
 {
-    ogs_assert(amf_ue);
+    ogs_info("Decoding NAS 5GS message");
+
     ogs_assert(pkbuf);
     ogs_assert(pkbuf->data);
 
-    if (!amf_ue->security_context_available) {
-        security_header_type.integrity_protected = 0;
-        security_header_type.new_security_context = 0;
+    if (COREKUBE_NAS_SECURITY_ENC_ALGORITHM == 0)
         security_header_type.ciphered = 0;
-    }
-
-    if (security_header_type.new_security_context) {
-        amf_ue->ul_count.i32 = 0;
-    }
-
-    if (amf_ue->selected_enc_algorithm == 0)
-        security_header_type.ciphered = 0;
-    if (amf_ue->selected_int_algorithm == 0)
+    if (COREKUBE_NAS_SECURITY_INT_ALGORITHM == 0)
         security_header_type.integrity_protected = 0;
 
     if (security_header_type.ciphered || 
@@ -124,19 +122,21 @@ int nas_5gs_security_decode(amf_ue_t *amf_ue,
         /* NAS Security Header.Sequence_Number */
         ogs_assert(ogs_pkbuf_pull(pkbuf, 6));
 
-        /* calculate ul_count */
-        if (amf_ue->ul_count.sqn > h->sequence_number)
-            amf_ue->ul_count.overflow++;
-        amf_ue->ul_count.sqn = h->sequence_number;
-
         if (security_header_type.integrity_protected) {
             uint8_t mac[COREKUBE_NAS_SECURITY_MAC_SIZE];
             uint32_t mac32;
             uint32_t original_mac = h->message_authentication_code;
 
+            // the NAS integrity key is required, check it exists
+            if (!params->nas_security_params->knas_int) {
+                // integrity key is missing, fetch it from the DB
+                int fetch_keys = nas_security_fetch_keys(params);
+                ogs_assert(fetch_keys == OGS_OK);
+            }
+
             /* calculate NAS MAC(message authentication code) */
-            ogs_nas_mac_calculate(amf_ue->selected_int_algorithm,
-                amf_ue->knas_int, amf_ue->ul_count.i32,
+            ogs_nas_mac_calculate(COREKUBE_NAS_SECURITY_INT_ALGORITHM,
+                params->nas_security_params->knas_int, params->nas_security_params->ul_count,
                 COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS,
                 COREKUBE_NAS_SECURITY_UPLINK_DIRECTION, pkbuf, mac);
             h->message_authentication_code = original_mac;
@@ -145,7 +145,6 @@ int nas_5gs_security_decode(amf_ue_t *amf_ue,
             if (h->message_authentication_code != mac32) {
                 ogs_warn("NAS MAC verification failed(0x%x != 0x%x)",
                     be32toh(h->message_authentication_code), be32toh(mac32));
-                amf_ue->mac_failed = 1;
             }
         }
 
@@ -153,9 +152,17 @@ int nas_5gs_security_decode(amf_ue_t *amf_ue,
         ogs_assert(ogs_pkbuf_pull(pkbuf, 1));
 
         if (security_header_type.ciphered) {
+
+            // the NAS security key is required, check it exists
+            if (!params->nas_security_params->knas_enc) {
+                // security key is missing, fetch it from the DB
+                int fetch_keys = nas_security_fetch_keys(params);
+                ogs_assert(fetch_keys == OGS_OK);
+            }
+
             /* decrypt NAS message */
-            ogs_nas_encrypt(amf_ue->selected_enc_algorithm,
-                amf_ue->knas_enc, amf_ue->ul_count.i32,
+            ogs_nas_encrypt(COREKUBE_NAS_SECURITY_ENC_ALGORITHM,
+                params->nas_security_params->knas_enc, params->nas_security_params->ul_count,
                 COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS,
                 COREKUBE_NAS_SECURITY_UPLINK_DIRECTION, pkbuf);
         }
@@ -163,7 +170,6 @@ int nas_5gs_security_decode(amf_ue_t *amf_ue,
 
     return OGS_OK;
 }
-#endif
 
 
 int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * opc, uint8_t * key, uint8_t * rand, uint8_t * autn, uint8_t * kamf) {
@@ -201,6 +207,32 @@ int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * o
     uint8_t abba_value[CoreKube_ABBA_Length];
     OGS_HEX(CoreKube_ABBA_Value, strlen(CoreKube_ABBA_Value), abba_value);
     ogs_kdf_kamf(supi, (uint8_t *) abba_value, CoreKube_ABBA_Length, kseaf, kamf);
+
+    return OGS_OK;
+}
+
+int nas_security_fetch_keys(nas_ngap_params_t * params) {
+    ogs_info("Fetching NAS security keys from database");
+
+    ogs_assert(params);
+    ogs_assert(params->amf_ue_ngap_id);
+
+    // convert the AMF_UE_NGAP_ID to a buffer, suitable for the DB
+    OCTET_STRING_t amf_ue_ngap_id_buf;
+    ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *params->amf_ue_ngap_id, &amf_ue_ngap_id_buf);
+
+    // fetch the KAMF (stored as KASME1 and KASME2) and DL count from the DB
+    // (required to encode the Security Mode Command response)
+    corekube_db_pulls_t *db_pulls;
+    int db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 3, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER);
+    ogs_assert(db == OGS_OK);
+
+    // store the KNAS_INT, KNAS_ENC and DL count in the NAS params
+    int store_keys = nas_security_store_keys_in_params(db_pulls, params->nas_security_params);
+    ogs_assert(store_keys == OGS_OK);
+
+    // free the structures pulled from the DB
+    ogs_free(db_pulls->head);
 
     return OGS_OK;
 }
