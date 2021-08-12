@@ -128,6 +128,7 @@ void start_cp_mode_only(int num_threads)
     /* Create num_threads */
     for(i = 0; i < (num_threads); i++)
     {
+        //sleep(5);
         printInfo("Creating Control-Plane thread %d\n", i);
         if (pthread_create(cp_mode_threads+i, NULL, control_plane_only_mode, 0) != 0)
         {

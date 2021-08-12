@@ -3116,14 +3116,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-			{
-				printError("SCTP Timeout (%s)\n", strerror(errno));
-			}
-			else
-			{
-				printError("SCTP (%s)\n", strerror(errno));
-			}
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return 1;
 		}
 
@@ -3177,14 +3170,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-		{
-			printError("SCTP Timeout (%s)\n", strerror(errno));
-		}
-		else
-		{
-			printError("SCTP (%s)\n", strerror(errno));
-		}
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 		return 1;
 	}
 
@@ -3222,14 +3208,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-		{
-			printError("SCTP Timeout (%s)\n", strerror(errno));
-		}
-		else
-		{
-			printError("SCTP (%s)\n", strerror(errno));
-		}
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 		return 1;
 	}
 
@@ -3338,14 +3317,7 @@ int procedure_UE_Context_Release(eNB * enb, UE * ue)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-			{
-				printError("SCTP Timeout (%s)\n", strerror(errno));
-			}
-			else
-			{
-				printError("SCTP (%s)\n", strerror(errno));
-			}
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return 1;
 		}
 
@@ -3440,14 +3412,7 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-			{
-				printError("SCTP Timeout (%s)\n", strerror(errno));
-			}
-			else
-			{
-				printError("SCTP (%s)\n", strerror(errno));
-			}
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return 1;
 		}
 
@@ -3554,14 +3519,7 @@ int procedure_UE_Service_Request(eNB * enb, UE * ue, uint8_t * ue_ip)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-			{
-				printError("SCTP Timeout (%s)\n", strerror(errno));
-			}
-			else
-			{
-				printError("SCTP (%s)\n", strerror(errno));
-			}
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return 1;
 		}
 
@@ -3655,14 +3613,7 @@ int procedure_UE_X2_handover(eNB * enb, UE * ue)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
-			{
-				printError("SCTP Timeout (%s)\n", strerror(errno));
-			}
-			else
-			{
-				printError("SCTP (%s)\n", strerror(errno));
-			}
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return 1;
 		}
 
