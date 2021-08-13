@@ -524,8 +524,15 @@ void * attend_request(void * args)
 		printf("\n\n");
 #endif
 		/* Send response to client and close connection */
-		if(response_len > 1)
-			send(client, response, response_len, 0);
+		if(response_len > 0)
+		{
+			if(send(client, response, response_len, 0) < 0)
+			{
+				printError("The response generated is invalid (socket %d) (ERRNO %d): %s\n", client, errno, strerror(errno));
+				close(client);
+				return NULL;
+			}
+		}
 	}
 
 	return NULL;
