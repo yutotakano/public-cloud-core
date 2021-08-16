@@ -98,6 +98,12 @@
 /* Registration Complete */
 #define REGISTRATION_COMPLETE 0x43
 
+/* Deregistration request */
+#define ID_CAUSE 0x0F
+#define ID_UE_CONTEXT_RELEASE 0x29
+#define DEREGISTRATION_ACCEPT 0x46
+#define ID_UE_NGAP_IDS 0x72
+
 void memory_dump(uint8_t * mem, int len)
 {
 	int i;
@@ -233,6 +239,7 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 				break;
 			case ID_GUAMI:
 				printf("\tGUAMI\n");
+				set_guami(ue, buffer + offset + 4);
 				offset += 3 + buffer[offset + 2];
 				break;
 			case ID_ALLOWED_NSSAI:
@@ -261,6 +268,18 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 				break;
 			case ID_UE_AGGREGATE_MAXIMUM_BIT_RATE:
 				printf("\tUE Aggregate Maximum Bit Rate\n");
+				offset += 3 + buffer[offset + 2];
+				break;
+			case ID_UE_NGAP_IDS:
+				printf("\tUE-NGAP-IDs: ");
+				for(j = 0; j < buffer[offset + 2]; j++)
+					printf("%.2x ", buffer[offset + 3 + j]);
+				printf("\n");
+				offset += 3 + buffer[offset + 2];
+				break;
+			case ID_CAUSE:
+				if(buffer[offset + 3] == 0x48) /* Deregister */
+					printf("\tNAS: Deregister\n");
 				offset += 3 + buffer[offset + 2];
 				break;
 			case ID_PDU_SESSION_RESOURCE_SETUP_LIST_SU_REQ:
@@ -334,7 +353,6 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 				if(buffer[offset+5] == 0) /* NAS PDU Plain message */
 				{
 					printf("\tNAS PDU Plain message\n");
-					printf("\tAuthentication Request\n");
 					if(buffer[offset+6] == AUTHENTICATION_REQUEST)
 					{
 						printf("\tAuthentication Request\n");
@@ -351,6 +369,8 @@ void analyze_message_items(eNB * enb, UE * ue, uint8_t * buffer, int len)
 						printf("\n");
 						memcpy(get_auth_challenge(ue)->AUTN, buffer+offset+30, 16);
 					}
+					if(buffer[offset+6] == DEREGISTRATION_ACCEPT)
+						printf("\tDeregistration accept (UE originating)\n");
 				}
 				offset += 3 + buffer[offset + 2];
 				break;
@@ -426,6 +446,40 @@ int analyze_NG_RegistrationRequest(UE * ue, eNB * enb, uint8_t * buffer, int len
 		return ERROR;
 	}
 	analyze_message_items(enb, ue, buffer+5, buffer[4]);
+
+	return OK;
+}
+
+int analyze_NG_DeregistrationRequest(UE * ue, eNB * enb, uint8_t * buffer, int len)
+{
+	printInfo("Analyzing Deregistration Request...\n");
+	if(buffer[0] != 0x00 || buffer[1] != ID_DOWNLINK_NAS_TRANSPORT) {
+		printError("Invalid NG Initial Context Setup Request\n");
+		return ERROR;
+	}
+	/* Check criticality */
+	if(buffer[2] != CRITICALITY_IGNORE) {
+		printError("Wrong Criticality\n");
+		return ERROR;
+	}
+	analyze_message_items(enb, ue, buffer+4, buffer[3]);
+
+	return OK;
+}
+
+int analyze_NR_UEContextReleaseCommand(UE * ue, eNB * enb, uint8_t * buffer, int len)
+{
+	printInfo("Analyzing UEContextReleaseCommand...\n");
+	if(buffer[0] != 0x00 || buffer[1] != ID_UE_CONTEXT_RELEASE) {
+		printError("Invalid NG Initial Context Setup Request\n");
+		return ERROR;
+	}
+	/* Check criticality */
+	if(buffer[2] != CRITICALITY_REJECT) {
+		printError("Wrong Criticality\n");
+		return ERROR;
+	}
+	analyze_message_items(enb, ue, buffer+4, buffer[3]);
 
 	return OK;
 }
@@ -1101,6 +1155,91 @@ int generate_NG_PDUSessionResponse(eNB * enb, UE * ue, uint8_t * buffer)
 	return offset;
 }
 
+int add_NG_Deregistration_Request_Header(uint8_t * buffer)
+{
+	buffer[0] = 0;
+	buffer[1] = ID_UPLINK_NAS_TRANSPORT;
+	buffer[2] = CRITICALITY_IGNORE;
+	buffer[3] = 0x3e; /* Content Length */
+	buffer[4] = 0;
+	buffer[5] = 0;
+	buffer[6] = 4; /* protocolIEs: 4 items */
+	return 7;
+}
+
+int add_NG_UEContextReleaseComplete_Header(uint8_t * buffer)
+{
+	buffer[0] = SUCCESFUL_OUTCOME;
+	buffer[1] = ID_UE_CONTEXT_RELEASE;
+	buffer[2] = CRITICALITY_REJECT;
+	buffer[3] = 0x21; /* Content Length */
+	buffer[4] = 0;
+	buffer[5] = 0;
+	buffer[6] = 3; /* protocolIEs: 4 items */
+	return 7;
+}
+
+#define DEREFISTRATION_REQUEST 0x45
+
+int add_protocolIE_NAS_PDU_Deregistration_Request(UE * ue, uint8_t * buffer)
+{
+	buffer[0] = 0;
+	buffer[1] = ID_NAS_PDU;
+	buffer[2] = CRITICALITY_REJECT;
+	buffer[3] = 0x19; /* Length */ //TODO
+	buffer[4] = 0x18; /* Length - 1 */ //TODO
+	buffer[5] = EPD_5G_Mobility_Management_Messages;
+	buffer[6] = 0x02; /* Security header type: Integrity protected and ciphered */
+
+	buffer[11] = get_nas_sequence_number(ue);
+	/* Plain NAS message */
+	buffer[12] = EPD_5G_Mobility_Management_Messages;
+	buffer[13] = 0; /* Security Header Type: Plain Message */
+	buffer[14] = DEREFISTRATION_REQUEST;
+	buffer[15] = 0x41; /* Deregistration type and NAS key set identifier */
+	/* 5GS mobile identity */
+	buffer[16] = 0x00; /* Lenght */
+	buffer[17] = 0x0b; /* Lenght */
+	buffer[18] = 0xF2; /* Type of identity: 5G-GUTI */
+	memcpy(buffer+19, get_guami(ue), GUAMI_LEN);
+	memcpy(buffer+25, get_m_tmsi(ue), 4);
+
+	/* Calculate Message Authentication Code (bearer 1 and count 0)*/
+	nas_integrity_eia2(get_auth_challenge(ue)->NAS_KEY_INT, buffer+11, 18, 3, 1, buffer+7);
+	return 29;
+}
+
+int generate_NG_Deregistration_Request(eNB * enb, UE * ue, uint8_t * buffer)
+{
+	int offset = 0;
+
+	/* Clean the buffer */
+	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
+
+	offset = add_NG_Deregistration_Request_Header(buffer);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_NAS_PDU_Deregistration_Request(ue, buffer+offset);
+	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
+
+	return offset;
+}
+
+int generate_NG_UEContextReleaseComplete(eNB * enb, UE * ue, uint8_t * buffer)
+{
+	int offset = 0;
+
+	/* Clean the buffer */
+	bzero(buffer, NG_REGISTRATION_REQUEST_LEN);
+
+	offset = add_NG_UEContextReleaseComplete_Header(buffer);
+	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
+	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
+	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
+
+	return offset;
+}
+
 int procedure_Registration_Request(eNB * enb, UE * ue)
 {
 	uint8_t buffer[BUFFER_LEN];
@@ -1119,6 +1258,8 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	from_len = (socklen_t)sizeof(struct sockaddr_in);
 	bzero((void *)&addr, sizeof(struct sockaddr_in));
 
+	reset_nas_sequence_number(ue);
+
 	printInfo("Generating Registration Request...\n");
 	/* Registration Request */
 	len = generate_NG_Registration_Request(enb, ue, buffer);
@@ -1133,7 +1274,7 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		printError("No data received from AMF\n");
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 		return ERROR;
 	}
 	if(analyze_NG_AuthenticationRequest(ue, enb, buffer, recv_len) == 1)
@@ -1169,7 +1310,7 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		printError("No data received from AMF\n");
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 		return ERROR;
 	}
 	if(analyze_NG_SecurityModeCommand(ue, enb, buffer, recv_len) == 1)
@@ -1197,7 +1338,7 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 	if(recv_len < 0)
 	{
-		printError("No data received from AMF\n");
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 		return ERROR;
 	}
 	if(analyze_NG_RegistrationRequest(ue, enb, buffer, recv_len) == 1)
@@ -1239,7 +1380,7 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
 		if(recv_len < 0)
 		{
-			printError("No data received from AMF\n");
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
 			return ERROR;
 		}
 		if(analyze_NG_ConfigurationUpdateCommand(ue, enb, buffer, recv_len) == OK)
@@ -1266,3 +1407,72 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	return OK;
 }
 
+int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
+{
+	uint8_t buffer[BUFFER_LEN];
+	uint16_t len = 0;
+	int flags = 0;
+	int recv_len;
+	struct sockaddr_in addr;
+	struct sctp_sndrcvinfo sndrcvinfo;
+	socklen_t from_len;
+
+	if(switch_off == 1)
+	{
+		printWarning("5G UE_SWITCH_OFF_DETACH events not implemented.\n");
+		return ERROR;
+	}
+
+	int socket = get_mme_socket(enb);
+	from_len = (socklen_t)sizeof(struct sockaddr_in);
+	bzero((void *)&addr, sizeof(struct sockaddr_in));
+
+	/* Registration Request */
+	printInfo("Generating Deregistration request...\n");
+	len = generate_NG_Deregistration_Request(enb, ue, buffer);
+	/* Sending Deregistration Request */
+	/* MUST BE ON STREAM 60 */
+	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
+	printOK("Deregistration request sent.\n");
+
+	/* Receiving AMF answer */
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+	flags = 0;
+	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+	if(recv_len < 0)
+	{
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		return ERROR;
+	}
+	if(analyze_NG_DeregistrationRequest(ue, enb, buffer, recv_len) == 1)
+	{
+		printError("Wrong Deregistration accept message.\n");
+		return ERROR;
+	}
+	printOK("Deregistration accept\n");
+	/* Receiving AMF answer */
+	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+	flags = 0;
+	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+	if(recv_len < 0)
+	{
+		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		return ERROR;
+	}
+	if(analyze_NR_UEContextReleaseCommand(ue, enb, buffer, recv_len) == 1)
+	{
+		printError("Wrong UEContextReleaseCommand message.\n");
+		return ERROR;
+	}
+	printOK("UEContextReleaseCommand\n");
+
+	/* UEContextReleaseComplete */
+	printInfo("Generating UEContextReleaseComplete...\n");
+	len = generate_NG_UEContextReleaseComplete(enb, ue, buffer);
+	/* Sending UEContextReleaseComplete */
+	/* MUST BE ON STREAM 60 */
+	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
+	printOK("UEContextReleaseComplete sent.\n");
+
+	return OK;
+}

@@ -9,6 +9,7 @@
 #define IP_LEN 4
 #define GUTI_LEN 10
 #define AUTH_RES_LENGTH 8
+#define GUAMI_LEN 6
 
 typedef struct _UE UE;
 typedef struct _Auth_Challenge
@@ -66,6 +67,8 @@ char * get_msin_string(UE * ue);
 void set_security_capabilities(UE * ue, uint8_t * sec_cap);
 uint8_t * get_security_capabilities(UE * ue);
 int ue_compare(void * data, void * key);
+void set_guami(UE * ue, uint8_t * guami);
+uint8_t * get_guami(UE * ue);
 
 void printUE(UE * ue);
 

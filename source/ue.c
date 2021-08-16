@@ -36,6 +36,7 @@ struct _UE
 	uint8_t nas_sequence_number;
 	Auth_Challenge auth_challenge;
 	uint8_t security_capabilities[4];
+	uint8_t guami[GUAMI_LEN];
 };
 
 void printUE(UE * ue)
@@ -326,4 +327,14 @@ int ue_compare(void * data, void * key)
 {
 	UE * ue = (UE *)data;
 	return memcmp((uint8_t *)ue->msin_string, (uint8_t *)key, 10);
+}
+
+void set_guami(UE * ue, uint8_t * guami)
+{
+	memcpy(ue->guami, guami, GUAMI_LEN);
+}
+
+uint8_t * get_guami(UE * ue)
+{
+	return ue->guami;
 }
