@@ -277,7 +277,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	uint8_t tmp_nas;
 
 #ifdef DEBUG
-		printf("REQUEST inside the function:");
+		printf("REQUEST inside the function (%d):", request_len);
 		dump_mem(request, request_len);
 #endif
 
@@ -308,6 +308,9 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 			user = (UserInfo *) hashmap_get(imsi_map, hash_mme_ue_s1ap_id(request+1));
 			break;
 		default:
+#ifdef DEBUG
+			printError("Trying to access the DB with an invalid ID.\n");
+#endif
 			response[0] = 0;
 			*response_len = 1;
 			return;
@@ -317,7 +320,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	/* Invalid user ID */
 	if(user == NULL) {
 #ifdef DEBUG
-		printError("Invalid user ID\n");
+		printError("The requested UE does not exist\n");
 #endif
 		response[0] = 0;
 		*response_len = 1;
@@ -325,7 +328,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	}
 
 #ifdef DEBUG
-	printInfo("Requested User Info: \n");
+	printInfo("Requested User Info: ");
 	show_user_info(user);
 #endif
 
@@ -503,24 +506,33 @@ void * attend_request(void * args)
 		/* Read client's request */
 		request_len = recv(client, request, BUFFER_LEN, 0);
 		if(request_len == 0) {
+			printError("RECV error (socket %d) (ERRNO: %d): %s\n", client, errno, strerror(errno));
 			close(client);
 			return NULL;
 		}
 #ifdef DEBUG
-		printInfo("Analyzing request...\n");
-		printf("REQUEST:");
+		printInfo("Analyzing request from socket %d\n", client);
+		printf("REQUEST (%d):", request_len);
 		dump_mem(request, request_len);
 #endif
 		/* Analyze request and generate the response message */
 		analyze_request(request, request_len, response, &response_len);
 #ifdef DEBUG
-		printInfo("Sending answer to client...\n");
-		printf("RESPONSE:");
+		printInfo("Sending answer to client (socket %d)\n", client);
+		printf("RESPONSE (%d):", response_len);
 		dump_mem(response, response_len);
-		printf("\n");
+		printf("\n\n");
 #endif
 		/* Send response to client and close connection */
-		send(client, response, response_len, 0);
+		if(response_len > 0)
+		{
+			if(send(client, response, response_len, 0) < 0)
+			{
+				printError("The response generated is invalid (socket %d) (ERRNO %d): %s\n", client, errno, strerror(errno));
+				close(client);
+				return NULL;
+			}
+		}
 	}
 
 	return NULL;
