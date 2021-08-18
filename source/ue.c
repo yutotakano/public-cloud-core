@@ -41,9 +41,27 @@ struct _UE
 
 void printUE(UE * ue)
 {
-	printf("PLMN: %.2x %.2x %.2x\n", ue->plmn[0], ue->plmn[1], ue->plmn[2]);
-	printf("MSIN: %.2x %.2x %.2x %.2x %.2x\n", ue->msin[0], ue->msin[1], ue->msin[2], ue->msin[3], ue->msin[4]);
-	printf("CAPABILITIES: %.2x %.2x %.2x\n", ue->net_capabilities[0], ue->net_capabilities[1], ue->net_capabilities[2]);
+	uint8_t str[4];
+	int i;
+	printf("UE Dump: \n");
+	str[0] = ue->mcc[0];
+	str[1] = ue->mcc[1];
+	str[2] = ue->mcc[2];
+	str[3] = 0;
+	printf("\tMCC: %s\n", str);
+	str[0] = ue->mnc[0];
+	str[1] = ue->mnc[1];
+	str[2] = 0;
+	printf("\tMNC: %s\n", str);
+	printf("\tMSIN: %s\n", ue->msin_string);
+	printf("\tPLMN (HEX): %.2x %.2x %.2x\n", ue->plmn[0], ue->plmn[1], ue->plmn[2]);
+	printf("\tMSIN (HEX): %.2x %.2x %.2x %.2x %.2x\n", ue->msin[0], ue->msin[1], ue->msin[2], ue->msin[3], ue->msin[4]);
+	printf("MME S1AP ID: \n");
+	for(i = 0; i < ue->mme_s1ap_id_len; i++)
+		printf("%.2x ", ue->mme_s1ap_id[i]);
+	printf("\n");
+
+
 }
 
 void generate_plmn_UE(uint8_t * plmn, char * mcc, char * mnc)

@@ -3117,6 +3117,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 		if(recv_len < 0)
 		{
 			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+			printUE(ue);
 			return 1;
 		}
 
@@ -3125,6 +3126,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 		if(err == 1)
 		{
 			printError("Authentication Request error\n");
+			printUE(ue);
 			return 1;
 		}
 		else if(err == 2)
@@ -3171,6 +3173,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return 1;
 	}
 
@@ -3179,12 +3182,10 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	if(err == 1)
     {
     	printError("Security Mode Command\n");
+    	printUE(ue);
     	return 1;
     }
-    else
-    {
-    	printOK("Security Mode Command\n");
-    }
+    printOK("Security Mode Command\n");
 
     /* Temporary encryption and integrity keys generation */
 	generate_nas_enc_keys(auth_challenge->KASME, auth_challenge->NAS_KEY_ENC, get_nas_session_enc_alg(ue));
@@ -3209,6 +3210,7 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return 1;
 	}
 
@@ -3217,12 +3219,10 @@ int procedure_Attach_Default_EPS_Bearer(eNB * enb, UE * ue)
 	if(err == 1)
     {
     	printError("Initial Context Setup Request\n");
+    	printUE(ue);
     	return 1;
     }
-    else
-    {
-    	printOK("Initial Context Setup Request\n");
-    }
+    printOK("Initial Context Setup Request\n");
 
 
 	/*********************************/
@@ -3413,6 +3413,7 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 		if(recv_len < 0)
 		{
 			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+			printUE(ue);
 			return 1;
 		}
 
@@ -3425,6 +3426,7 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 			if(err == 1)
 			{
 				printError("Detach procedure error\n");
+				printUE(ue);
 				return 1;
 			}
 			else
