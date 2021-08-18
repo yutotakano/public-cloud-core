@@ -17,7 +17,7 @@
 #define BUFFER_LEN 1020
 #define EPC_UDP_PORT 5566
 
-void dumpMessage(uint8_t * message, int len)
+void dumpUplink(uint8_t * message, int len)
 {
 	int i;
 	printf("Message dump (%d):", len);
@@ -90,7 +90,7 @@ void * uplink_thread(void * args)
 
 		#ifdef THREAD_LOGS
 		printThread("Uplink message received.\n");
-		dumpMessage(buffer+4, n);
+		dumpUplink(buffer+4, n);
 		#endif
 
 		int tmp_sock;
