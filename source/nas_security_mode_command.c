@@ -39,10 +39,10 @@ int nas_build_security_mode_command(ogs_nas_5gs_message_t *message)
     ngksi->tsc = CoreKube_NGKSI_TSC;
     ngksi->value = CoreKube_NGKSI_Value;
 
-    replayed_ue_security_capabilities->nr_ea = 0xF0; // COREKUBE_NAS_SECURITY_5GEA_SUPPORT;
-    replayed_ue_security_capabilities->nr_ia = 0xF0; // COREKUBE_NAS_SECURITY_5GIA_SUPPORT;
-    replayed_ue_security_capabilities->eutra_ea = 0xF0; // COREKUBE_NAS_SECURITY_EEA_SUPPORT;
-    replayed_ue_security_capabilities->eutra_ia = 0xF0; // COREKUBE_NAS_SECURITY_EIA_SUPPORT;
+    replayed_ue_security_capabilities->nr_ea = COREKUBE_UE_SECURITY_CAPABILITY_NR_EA;
+    replayed_ue_security_capabilities->nr_ia = COREKUBE_UE_SECURITY_CAPABILITY_NR_IA;
+    replayed_ue_security_capabilities->eutra_ea = COREKUBE_UE_SECURITY_CAPABILITY_EUTRA_EA;
+    replayed_ue_security_capabilities->eutra_ia = COREKUBE_UE_SECURITY_CAPABILITY_EUTRA_EA;
 
     replayed_ue_security_capabilities->length =
         sizeof(replayed_ue_security_capabilities->nr_ea) +

@@ -1,5 +1,6 @@
 #include "nas_registration_request.h"
 #include "nas_authentication_response.h"
+#include "nas_security_mode_complete.h"
 #include "nas_security.h"
 
 #include "nas_handler.h"
@@ -34,13 +35,20 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
 
     ogs_assert(handle_outcome == OGS_OK);
 
-    // free up the previously-allocated memory
-    if (params->nas_security_params->knas_enc)
-        ogs_free(params->nas_security_params->knas_enc);
-    if (params->nas_security_params->knas_int)
-        ogs_free(params->nas_security_params->knas_int);
-    ogs_free(params->nas_security_params);
+    return OGS_OK;
+}
 
+int nas_security_params_free(nas_security_params_t * params) {
+    // free up the previously-allocated memory
+    if (!params)
+        return OGS_OK;
+    if (params->knas_enc)
+        ogs_free(params->knas_enc);
+    if (params->knas_int)
+        ogs_free(params->knas_int);
+    if (params->kamf)
+        ogs_free(params->kamf);
+    ogs_free(params);
     return OGS_OK;
 }
 
@@ -49,6 +57,7 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
     ogs_info("NAS 5GMM Handler");
 
     uint8_t messageType = nasMessage->h.message_type;
+    params->nas_message_type = messageType;
     int build_response;
     switch(messageType) {
         case OGS_NAS_5GS_REGISTRATION_REQUEST:
@@ -56,6 +65,9 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
             break;
         case OGS_NAS_5GS_AUTHENTICATION_RESPONSE:
             build_response = nas_handle_authentication_response(&nasMessage->authentication_response, params, response);
+            break;
+        case OGS_NAS_5GS_SECURITY_MODE_COMPLETE:
+            build_response = nas_handle_security_mode_complete(&nasMessage->security_mode_complete, params, response);
             break;
         default:
             ogs_error("Unknown NAS 5GMM message type: %d", messageType);

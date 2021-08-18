@@ -13,6 +13,7 @@ typedef struct nas_security_params {
     uint32_t dl_count;
     uint8_t * knas_int;
     uint8_t * knas_enc;
+    uint8_t * kamf;
 } nas_security_params_t;
 
 #endif /* __COREKUBE_NAS_SECURITY_PARAMS_H__ */

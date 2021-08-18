@@ -1,6 +1,9 @@
 #include "nas_ngap_params.h"
 #include "nas_handler.h"
 #include "ngap_downlink_nas_transport.h"
+#include "nas_initial_context_setup_request.h"
+#include "db_accesses.h"
+#include "corekube_config.h"
 
 #include "ngap_uplink_nas_transport.h"
 
@@ -60,25 +63,61 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
 
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
     ogs_assert(handle_nas == OGS_OK);
-    // expect a single NAS response (Authentication Request)
+
+    // expect a single NAS response
     ogs_assert(response->num_responses == 1);
-    // also expect the AMF_UE_NGAP_ID to have been retreived
-    ogs_assert(nas_params.amf_ue_ngap_id);
 
-    // prepare the parameters for the response (a Downlink NAS Transport)
-    ngap_downlink_nas_transport_params_t response_params;
-    bzero(&response_params, sizeof(ngap_downlink_nas_transport_params_t));
-    response_params.nasPdu = response->responses[0];
-    response_params.amf_ue_ngap_id = *nas_params.amf_ue_ngap_id;
-    response_params.ran_ue_ngap_id = *RAN_UE_NGAP_ID;
-    response_params.ambr = NULL;
-    response_params.num_of_s_nssai = 0;
+    // check for the special case of the NAS Security Mode Complete message,
+    // which needs a NGAP response of type Initial Context Setup Request,
+    // rather than the Downlink NAS Transport
+    if (nas_params.nas_message_type == OGS_NAS_5GS_SECURITY_MODE_COMPLETE) {
+        // the NAS handler should have derived the masked IMEISV
+        ogs_assert(nas_params.masked_imeisv);
 
-    // build the NGAP response
-    response->num_responses = 1;
-    response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
-    int build_response = ngap_build_downlink_nas_transport(&response_params, response->responses[0]);
-    ogs_assert(build_response == OGS_OK);
+        // prepare the parameters for the response (an Initial Context Setup Request)
+        ngap_initial_context_setup_request_params_t initial_context_setup_request_params;
+        bzero(&initial_context_setup_request_params, sizeof(ngap_initial_context_setup_request_params_t));
+        initial_context_setup_request_params.amf_ue_ngap_id = amf_ue_ngap_id;
+        initial_context_setup_request_params.ran_ue_ngap_id = *RAN_UE_NGAP_ID;
+        initial_context_setup_request_params.nasPdu = response->responses[0];
+        initial_context_setup_request_params.num_of_s_nssai = 1;
+        ogs_nas_s_nssai_ie_t nssai;
+        nssai.sst = CoreKube_NSSAI_sST;
+        nssai.sd.v = OGS_S_NSSAI_NO_SD_VALUE;
+        initial_context_setup_request_params.s_nssai[0] = nssai;
+        initial_context_setup_request_params.masked_imeisv = nas_params.masked_imeisv;
+
+        // format the AMF_UE_NGAP_ID as a uint8_t buffer, to be passed to the DB
+        OCTET_STRING_t amf_id_buf;
+        ogs_asn_uint32_to_OCTET_STRING((uint32_t) amf_ue_ngap_id, &amf_id_buf);
+
+        // generate the kgnb
+        initial_context_setup_request_params.kgnb = ogs_malloc(32 * sizeof(uint8_t));
+        ogs_kdf_kgnb_and_kn3iwf(nas_params.nas_security_params->kamf, nas_params.nas_security_params->ul_count, COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS, initial_context_setup_request_params.kgnb);
+
+        // build the NGAP response
+        response->num_responses = 1;
+        response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
+        int build_response = ngap_build_initial_context_setup_request(&initial_context_setup_request_params, response->responses[0]);
+        ogs_assert(build_response == OGS_OK);
+    }
+    else {
+        // prepare the parameters for the response (a Downlink NAS Transport)
+        ngap_downlink_nas_transport_params_t downlink_nas_params;
+        bzero(&downlink_nas_params, sizeof(ngap_downlink_nas_transport_params_t));
+        downlink_nas_params.nasPdu = response->responses[0];
+        downlink_nas_params.amf_ue_ngap_id = *nas_params.amf_ue_ngap_id;
+        downlink_nas_params.ran_ue_ngap_id = *RAN_UE_NGAP_ID;
+
+        // build the NGAP response
+        response->num_responses = 1;
+        response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
+        int build_response = ngap_build_downlink_nas_transport(&downlink_nas_params, response->responses[0]);
+        ogs_assert(build_response == OGS_OK);
+    }
+
+    // free up the NAS security parameters
+    nas_security_params_free(nas_params.nas_security_params);
     
     return OGS_OK;
 }

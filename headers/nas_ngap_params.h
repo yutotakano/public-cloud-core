@@ -14,6 +14,8 @@ extern int __corekube_log_domain;
 typedef struct nas_ngap_params {
     uint64_t * ran_ue_ngap_id;
     uint64_t * amf_ue_ngap_id;
+    uint8_t nas_message_type;
+    uint8_t * masked_imeisv;
     nas_security_params_t * nas_security_params;
 } nas_ngap_params_t;
 

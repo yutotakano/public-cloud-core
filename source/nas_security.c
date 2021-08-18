@@ -248,18 +248,19 @@ int nas_security_store_keys_in_params(corekube_db_pulls_t * db_pulls, nas_securi
     ogs_assert(db_pulls->kasme1);
     ogs_assert(db_pulls->kasme2);
 
-    uint8_t kamf[32];
-    memcpy(kamf, db_pulls->kasme1, 16);
-    memcpy(kamf+16, db_pulls->kasme2, 16);
+    // store the Kamf in the security params struct
+    nas_security_params->kamf = ogs_malloc(32 * sizeof(uint8_t));
+    memcpy(nas_security_params->kamf, db_pulls->kasme1, 16);
+    memcpy(nas_security_params->kamf+16, db_pulls->kasme2, 16);
 
     nas_security_params->knas_int = ogs_malloc(16 * sizeof(uint8_t));
     nas_security_params->knas_enc = ogs_calloc(16, sizeof(uint8_t));
 
     // generate knas_int
-    ogs_kdf_nas_5gs(OGS_KDF_NAS_INT_ALG, COREKUBE_NAS_SECURITY_INT_ALGORITHM, kamf, nas_security_params->knas_int);
+    ogs_kdf_nas_5gs(OGS_KDF_NAS_INT_ALG, COREKUBE_NAS_SECURITY_INT_ALGORITHM, nas_security_params->kamf, nas_security_params->knas_int);
 
     // generate knas_enc
-    ogs_kdf_nas_5gs(OGS_KDF_NAS_ENC_ALG, COREKUBE_NAS_SECURITY_ENC_ALGORITHM, kamf, nas_security_params->knas_enc);
+    ogs_kdf_nas_5gs(OGS_KDF_NAS_ENC_ALG, COREKUBE_NAS_SECURITY_ENC_ALGORITHM, nas_security_params->kamf, nas_security_params->knas_enc);
 
     // copy the DL count if required
     if (db_pulls->epc_nas_sequence_number) {

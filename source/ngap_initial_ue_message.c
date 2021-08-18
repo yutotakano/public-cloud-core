@@ -56,6 +56,9 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     // also expect the AMF_UE_NGAP_ID to have been retreived
     ogs_assert(nas_params.amf_ue_ngap_id);
 
+    // free up the NAS security parameters
+    nas_security_params_free(nas_params.nas_security_params);
+
     // prepare the parameters for the response (a Downlink NAS Transport)
     ngap_downlink_nas_transport_params_t response_params;
     bzero(&response_params, sizeof(ngap_downlink_nas_transport_params_t));
