@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define OK 0
+#define ERROR -1
+
 typedef struct _HashMap HashMap;
 
 HashMap * init_hashmap(uint32_t size, uint32_t (*hash)(void*));
