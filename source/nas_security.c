@@ -59,7 +59,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
         // the NAS encryption key is required, check it exists
         if (!params->nas_security_params->knas_enc) {
             // security key is missing, fetch it from the DB
-            int fetch_keys = nas_security_fetch_keys(params);
+            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL);
             ogs_assert(fetch_keys == OGS_OK);
         }
 
@@ -78,7 +78,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
         // the NAS integrity key is required, check it exists
         if (!params->nas_security_params->knas_int) {
             // integrity key is missing, fetch it from the DB
-            int fetch_keys = nas_security_fetch_keys(params);
+            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL);
             ogs_assert(fetch_keys == OGS_OK);
         }
 
@@ -130,7 +130,7 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
             // the NAS integrity key is required, check it exists
             if (!params->nas_security_params->knas_int) {
                 // integrity key is missing, fetch it from the DB
-                int fetch_keys = nas_security_fetch_keys(params);
+                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL);
                 ogs_assert(fetch_keys == OGS_OK);
             }
 
@@ -156,7 +156,7 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
             // the NAS security key is required, check it exists
             if (!params->nas_security_params->knas_enc) {
                 // security key is missing, fetch it from the DB
-                int fetch_keys = nas_security_fetch_keys(params);
+                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL);
                 ogs_assert(fetch_keys == OGS_OK);
             }
 
@@ -211,7 +211,7 @@ int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * o
     return OGS_OK;
 }
 
-int nas_security_fetch_keys(nas_ngap_params_t * params) {
+int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
     ogs_info("Fetching NAS security keys from database");
 
     ogs_assert(params);
@@ -221,10 +221,23 @@ int nas_security_fetch_keys(nas_ngap_params_t * params) {
     OCTET_STRING_t amf_ue_ngap_id_buf;
     ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *params->amf_ue_ngap_id, &amf_ue_ngap_id_buf);
 
-    // fetch the KAMF (stored as KASME1 and KASME2) and DL count from the DB
-    // (required to encode the Security Mode Command response)
+    // check to see if both the UL / DL counts should be fetched, or just one.
+    // normally both are required (to decode an incoming NAS message and then
+    // encode the response) but sometimes just a response needs to be sent, or
+    // just an incoming message needs to be received.
+    // fetch the KAMF (stored as KASME1 and KASME2) and DL / UL counts from the DB
     corekube_db_pulls_t *db_pulls;
-    int db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 3, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER);
+    int db;
+    if (includeCounts == NAS_COUNTS_BOTH_UL_DL)
+        db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 4, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER, UE_NAS_SEQUENCE_NUMBER);
+    else if (includeCounts == NAS_COUNTS_JUST_DL)
+        db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 3, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER);
+    else if (includeCounts == NAS_COUNTS_JUST_UL)
+        db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 3, KASME_1, KASME_2, UE_NAS_SEQUENCE_NUMBER);
+    else {
+        ogs_error("Unknown includeCounts param: %d", includeCounts);
+        return OGS_ERROR;
+    }
     ogs_assert(db == OGS_OK);
 
     // store the KNAS_INT, KNAS_ENC and DL count in the NAS params
@@ -265,17 +278,19 @@ int nas_security_store_keys_in_params(corekube_db_pulls_t * db_pulls, nas_securi
     // copy the DL count if required
     if (db_pulls->epc_nas_sequence_number) {
         OCTET_STRING_t dl_count_buf;
-        dl_count_buf.buf = db_pulls->epc_nas_sequence_number;
+        dl_count_buf.buf = db_pulls->epc_nas_sequence_number+2; // TODO: bodge from when counts were stored as 6 bytes
         dl_count_buf.size = 4;
         ogs_asn_OCTET_STRING_to_uint32(&dl_count_buf, &nas_security_params->dl_count);
+        ogs_info("Fetched DL count: %d", nas_security_params->dl_count);
     }
 
-    // copy the DL count if required
-    if (db_pulls->epc_nas_sequence_number) {
+    // copy the UL count if required
+    if (db_pulls->ue_nas_sequence_number) {
         OCTET_STRING_t ul_count_buf;
-        ul_count_buf.buf = db_pulls->epc_nas_sequence_number;
+        ul_count_buf.buf = db_pulls->ue_nas_sequence_number+2; // TODO: bodge from when counts were stored as 6 bytes
         ul_count_buf.size = 4;
-        ogs_asn_OCTET_STRING_to_uint32(&ul_count_buf, &nas_security_params->dl_count);
+        ogs_asn_OCTET_STRING_to_uint32(&ul_count_buf, &nas_security_params->ul_count);
+        ogs_info("Fetched UL count: %d", nas_security_params->ul_count);
     }
 
     return OGS_OK;
