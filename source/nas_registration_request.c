@@ -41,8 +41,9 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls->opc, db_pulls->key, db_pulls->rand, autn, kamf);
     ogs_assert(key_gen == OGS_OK);
 
-    // store the KAMF in the DB,
-    int storeKamf = db_access(NULL, IMSI, (uint8_t *) imsi, 2, 0, KASME_1, kamf, KASME_2, kamf+16);
+    // store the KAMF in the DB, and set the NAS UL / DL counts to zero
+    uint8_t zero_nas_count[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    int storeKamf = db_access(NULL, IMSI, (uint8_t *) imsi, 4, 0, KASME_1, kamf, KASME_2, kamf+16, EPC_NAS_SEQUENCE_NUMBER, zero_nas_count, UE_NAS_SEQUENCE_NUMBER, zero_nas_count);
     ogs_assert(storeKamf == OGS_OK);
 
     ogs_nas_5gs_authentication_request_t auth_request_params;
