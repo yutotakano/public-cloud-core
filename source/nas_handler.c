@@ -69,6 +69,10 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
         case OGS_NAS_5GS_SECURITY_MODE_COMPLETE:
             build_response = nas_handle_security_mode_complete(&nasMessage->security_mode_complete, params, response);
             break;
+        case OGS_NAS_5GS_REGISTRATION_COMPLETE:
+            ogs_info("UE Registration Complete");
+            build_response = OGS_OK; // No response to build
+            break;
         default:
             ogs_error("Unknown NAS 5GMM message type: %d", messageType);
             return OGS_ERROR;
