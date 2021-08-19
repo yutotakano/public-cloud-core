@@ -114,8 +114,13 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
     response->num_responses = 0;
 
     switch (successfulOutcome->value.present) {
+        case NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:
+            ogs_info("Received Initial Context Setup Response"); // do nothing
+            break; // TODO: commented out to deliberately cause error, as this eases debugging
         default:
             ogs_error("Unknown NGAP SuccessfulOutcome type: %d", successfulOutcome->value.present);
             return OGS_ERROR;
     }
+
+    return OGS_OK;
 }
