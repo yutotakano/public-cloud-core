@@ -18,6 +18,8 @@ int nas_security_params_free(nas_security_params_t * params);
 
 int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message, uint8_t * messageType);
 
+int security_decode_gsm(nas_ngap_params_t * params, ogs_pkbuf_t *nasbuf);
+
 int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *params, message_handler_response_t *response);
 
 int nas_5gsm_handler(ogs_nas_5gsm_message_t *nasMessage, nas_ngap_params_t *params, message_handler_response_t *response);

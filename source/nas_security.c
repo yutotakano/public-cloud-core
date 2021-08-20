@@ -103,6 +103,13 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
 {
     ogs_info("Decoding NAS 5GS message");
 
+    // NAS GSM messages are not security encoded, and will fail if decoding is attempted
+    ogs_nas_5gsm_header_t * h = (ogs_nas_5gsm_header_t *)pkbuf->data;
+    if (h->extended_protocol_discriminator == OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GSM) {
+        ogs_info("Found Session Management (5GSM) Message");
+        return OGS_OK;
+    }
+
     ogs_assert(pkbuf);
     ogs_assert(pkbuf->data);
 
