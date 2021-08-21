@@ -120,6 +120,9 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
         case NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse:
             ogs_info("Received PDU Session Resource Setup Response"); // do nothing
             break;
+        case NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete:
+            ogs_info("Received UE Context Release Complete"); // do nothing
+            break;
         default:
             ogs_error("Unknown NGAP SuccessfulOutcome type: %d", successfulOutcome->value.present);
             return OGS_ERROR;

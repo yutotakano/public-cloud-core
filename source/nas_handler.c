@@ -3,6 +3,7 @@
 #include "nas_security_mode_complete.h"
 #include "nas_ul_nas_transport.h"
 #include "nas_pdu_session_establishment_request.h"
+#include "nas_deregistration_request_from_ue.h"
 #include "nas_security.h"
 
 #include "nas_handler.h"
@@ -77,6 +78,9 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
             break;
         case OGS_NAS_5GS_UL_NAS_TRANSPORT:
             build_response = nas_handle_ul_nas_transport(&nasMessage->ul_nas_transport, params, response);
+            break;
+        case OGS_NAS_5GS_DEREGISTRATION_REQUEST:
+            build_response = nas_handle_deregistration_request_from_ue(&nasMessage->deregistration_request_from_ue, params, response);
             break;
         default:
             ogs_error("Unknown NAS 5GMM message type: %d", messageType);
