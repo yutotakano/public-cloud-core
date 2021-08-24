@@ -132,6 +132,12 @@ void runMessage(char * ip_address, int message_number) {
         "007940135002f839000000010002f839"
         "000001e4cb957900";
 
+    char *UEContextReleaseComplete =
+        "0f0a0c0e"
+        "20290026000003000a40020001005540"
+        "020001007940135002f8390000000100"
+        "02f839000001e4cb95790000";
+
     switch (message_number) {
         case 1:
             send_message(ip_address, NGSetupRequest, 1);
@@ -159,6 +165,9 @@ void runMessage(char * ip_address, int message_number) {
             break;
         case 9:
             send_message(ip_address, DetachRequest, 2);
+            break;
+        case 10:
+            send_message(ip_address, UEContextReleaseComplete, 0);
             break;
         default:
             ogs_info("Unknown message number %d", message_number);
