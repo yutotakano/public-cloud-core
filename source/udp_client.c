@@ -86,6 +86,16 @@ void runMessage(char * ip_address, int message_number) {
         "135002f839000000010002f839000001"
         "e4709c5c";
 
+    char *SecurityModeComplete =
+        "0f0a0c0e"
+        "002e4067000004000a00020001005500"
+        "0200010026003d3c7e049def51f3007e"
+        "005e7700094573806121856151f17100"
+        "237e004179000d0102f8390000000000"
+        "000000101001002e04f0f0f0f02f0201"
+        "01530100007940135002f83900000001"
+        "0002f839000001e4709c5c";
+
     switch (message_number) {
         case 1:
             send_message(ip_address, NGSetupRequest, 1);
@@ -95,6 +105,9 @@ void runMessage(char * ip_address, int message_number) {
             break;
         case 3:
             send_message(ip_address, AuthenticationResponse, 1);
+            break;
+        case 4:
+            send_message(ip_address, SecurityModeComplete, 1);
             break;
         default:
             ogs_info("Unknown message number %d", message_number);
