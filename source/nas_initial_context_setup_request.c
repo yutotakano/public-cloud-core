@@ -187,6 +187,7 @@ int ngap_build_initial_context_setup_request(ngap_initial_context_setup_request_
         MaskedIMEISV->buf = CALLOC(MaskedIMEISV->size, sizeof(uint8_t));
         MaskedIMEISV->bits_unused = 0;
         memcpy(MaskedIMEISV->buf, params->masked_imeisv, MaskedIMEISV->size);
+        ogs_free(params->masked_imeisv);
     }
 
     if (params->nasPdu) {

@@ -47,13 +47,17 @@ int nas_handle_ul_nas_transport(ogs_nas_5gs_ul_nas_transport_t *message, nas_nga
         return OGS_ERROR;
     }
 
-    ogs_pkbuf_t * nasBuf = (ogs_pkbuf_t *) response->responses[0];
+    ogs_pkbuf_t * nasPkbuf = (ogs_pkbuf_t *) response->responses[0];
+    uint8_t * nasBuf = ogs_malloc(nasPkbuf->len * sizeof(uint8_t));
+    memcpy(nasBuf, nasPkbuf->data, nasPkbuf->len);
 
     nas_dl_nas_transport_params_t nas_params;
     bzero(&nas_params, sizeof(nas_dl_nas_transport_params_t));
     nas_params.payload_container_type = OGS_NAS_PAYLOAD_CONTAINER_N1_SM_INFORMATION;
-    nas_params.payload_container.length = nasBuf->len;
-    nas_params.payload_container.buffer = nasBuf->data;
+    nas_params.payload_container.length = nasPkbuf->len;
+    nas_params.payload_container.buffer = nasBuf;
+
+    ogs_pkbuf_free(nasPkbuf);
 
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_nas_5gs_message_t));

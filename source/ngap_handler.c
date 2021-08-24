@@ -53,7 +53,7 @@ int message_to_bytes(ogs_ngap_message_t *message, ogs_pkbuf_t **out)
 
     ogs_pkbuf_t *pkbuf = ogs_ngap_encode(message);
 
-    ogs_ngap_free(message);
+    ogs_free(message);
     *out = pkbuf;
 
     return OGS_OK;

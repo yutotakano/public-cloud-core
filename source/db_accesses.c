@@ -4,7 +4,7 @@
 #include <stdarg.h>
 extern int db_sock;
 
-int db_access(corekube_db_pulls_t ** dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull, ...) {
+int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull, ...) {
     ogs_info("DB access");
 
     int bufferInputSize = db_buffer_input_size(numPush, numPull);
@@ -23,11 +23,10 @@ int db_access(corekube_db_pulls_t ** dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyVa
         int bufferOutputSize = db_buffer_output_size(numPull);
         uint8_t * outputBuffer = ogs_calloc(bufferOutputSize, sizeof(uint8_t));
 
-        *dbPulls = ogs_calloc(1, sizeof(corekube_db_pulls_t));
-        (*dbPulls)->head = outputBuffer;
+        dbPulls->head = outputBuffer;
 
         int n = recv_response(db_sock, outputBuffer, bufferOutputSize);
-        extract_db_values(outputBuffer, n, *dbPulls);
+        extract_db_values(outputBuffer, n, dbPulls);
     }
 
     return OGS_OK;

@@ -14,7 +14,7 @@ extern int __corekube_log_domain;
     IMSI, \
     IMSI
 
-int db_access(corekube_db_pulls_t ** dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull, ...);
+int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull, ...);
 
 int db_buffer_input_size(int numPush, int numPull);
 

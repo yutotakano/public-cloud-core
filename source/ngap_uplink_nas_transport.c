@@ -93,10 +93,6 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             initial_context_setup_request_params.s_nssai[0] = nssai;
             initial_context_setup_request_params.masked_imeisv = nas_params.masked_imeisv;
 
-            // format the AMF_UE_NGAP_ID as a uint8_t buffer, to be passed to the DB
-            OCTET_STRING_t amf_id_buf;
-            ogs_asn_uint32_to_OCTET_STRING((uint32_t) amf_ue_ngap_id, &amf_id_buf);
-
             // generate the kgnb
             initial_context_setup_request_params.kgnb = ogs_malloc(32 * sizeof(uint8_t));
             ogs_kdf_kgnb_and_kn3iwf(nas_params.nas_security_params->kamf, nas_params.nas_security_params->ul_count, COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS, initial_context_setup_request_params.kgnb);
@@ -106,6 +102,9 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
             build_response = ngap_build_initial_context_setup_request(&initial_context_setup_request_params, response->responses[0]);
             ogs_assert(build_response == OGS_OK);
+
+            // free the memory allocated to store the kgnb
+            ogs_free(initial_context_setup_request_params.kgnb);
 
             break;
         case OGS_NAS_5GS_PDU_SESSION_ESTABLISHMENT_REQUEST:
@@ -128,6 +127,8 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
             build_response = ngap_build_pdu_session_resource_setup_request(&pdu_session_resource_setup_request_params, response->responses[0]);
             ogs_assert(build_response == OGS_OK);
+
+            ogs_free(pdu_session_resource_setup_request_params.nasPdu);
 
             break;
         case OGS_NAS_5GS_REGISTRATION_COMPLETE:

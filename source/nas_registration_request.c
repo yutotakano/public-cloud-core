@@ -23,14 +23,17 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
 
     // store the RAN_UE_NGAP_ID in the DB,
     // whilst also fetching the AMF_UE_NGAP_ID, RAND, KEY and OPC
-    corekube_db_pulls_t *db_pulls;
+    corekube_db_pulls_t db_pulls;
     int db = db_access(&db_pulls, IMSI, (uint8_t *) imsi, 1, 4, ENB_UE_S1AP_ID, ran_ue_ngap_id_buf.buf, MME_UE_S1AP_ID, RAND, KEY, OPC);
     ogs_assert(db == OGS_OK);
+
+    // free the RAN_UE_NGAP_ID buffer
+    ogs_free(ran_ue_ngap_id_buf.buf);
 
     // store the AMF_UE_NGAP_ID in the NAS params, so it can be used
     // by the calling NGAP message handler
     OCTET_STRING_t amf_ue_ngap_id_buf;
-    amf_ue_ngap_id_buf.buf = db_pulls->mme_ue_s1ap_id;
+    amf_ue_ngap_id_buf.buf = db_pulls.mme_ue_s1ap_id;
     amf_ue_ngap_id_buf.size = 4;
     params->amf_ue_ngap_id = ogs_malloc(sizeof(uint64_t));
     ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint32_t *) params->amf_ue_ngap_id);
@@ -38,7 +41,7 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     // generate the authentication and security parameters
     uint8_t autn[OGS_AUTN_LEN];
     uint8_t kamf[OGS_SHA256_DIGEST_SIZE];
-    int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls->opc, db_pulls->key, db_pulls->rand, autn, kamf);
+    int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls.opc, db_pulls.key, db_pulls.rand, autn, kamf);
     ogs_assert(key_gen == OGS_OK);
 
     // store the KAMF in the DB, and set the NAS UL / DL counts to zero
@@ -53,10 +56,10 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     OGS_HEX(CoreKube_ABBA_Value, strlen(CoreKube_ABBA_Value), auth_request_params.abba.value);
 
     memcpy(auth_request_params.authentication_parameter_autn.autn, autn, OGS_AUTN_LEN);
-    memcpy(auth_request_params.authentication_parameter_rand.rand, db_pulls->rand, OGS_RAND_LEN);
+    memcpy(auth_request_params.authentication_parameter_rand.rand, db_pulls.rand, OGS_RAND_LEN);
 
     // free the structures pulled from the DB
-    ogs_free(db_pulls->head);
+    ogs_free(db_pulls.head);
 
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_nas_5gs_message_t));

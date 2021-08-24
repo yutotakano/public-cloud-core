@@ -187,6 +187,9 @@ int nas_build_pdu_session_establishment_accept(ogs_nas_5gs_message_t *message)
         OGS_NAS_5GS_PDU_SESSION_ESTABLISHMENT_ACCEPT_EXTENDED_PROTOCOL_CONFIGURATION_OPTIONS_PRESENT;
     extended_protocol_configuration_options->buffer = pco_buf;
     extended_protocol_configuration_options->length = pco_len;
+    // Free created (now uneeded) structures
+    ogs_free(pco.ids[0].data);
+    ogs_free(pco.ids[1].data);
 
     /* DNN */
     pdu_session_establishment_accept->presencemask |=

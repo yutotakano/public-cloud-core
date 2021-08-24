@@ -150,6 +150,9 @@ int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs
         return OGS_ERROR;
     }
 
+    // Free the temporary buffer used during the decoding process
+    ogs_pkbuf_free(nasbuf);
+
     return OGS_OK;
 }
 

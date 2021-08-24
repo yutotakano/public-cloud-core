@@ -87,16 +87,22 @@ int nas_handle_security_mode_complete(ogs_nas_5gs_security_mode_complete_t *mess
     ogs_asn_uint32_to_OCTET_STRING((uint32_t) *params->amf_ue_ngap_id, &amf_id_buf);
 
     // fetch the TMSI (for NAS Registration Request)
-    corekube_db_pulls_t *db_pulls;
+    corekube_db_pulls_t db_pulls;
     int db = db_access(&db_pulls, MME_UE_S1AP_ID, (uint8_t *) amf_id_buf.buf, 0, 1, TMSI);
     ogs_assert(db == OGS_OK);
+
+    // free the DB access buffer
+    ogs_free(amf_id_buf.buf);
 
     // convert the TMSI to a uint32_t
     uint32_t tmsi;
     OCTET_STRING_t tmsi_buf;
     tmsi_buf.size = 4;
-    tmsi_buf.buf = db_pulls->tmsi;
+    tmsi_buf.buf = db_pulls.tmsi;
     ogs_asn_OCTET_STRING_to_uint32(&tmsi_buf, &tmsi);
+
+    // Free the pulled data from the DV
+    ogs_free(db_pulls.head);
 
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_nas_5gs_message_t));

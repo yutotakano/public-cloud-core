@@ -215,6 +215,11 @@ int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * o
     OGS_HEX(CoreKube_ABBA_Value, strlen(CoreKube_ABBA_Value), abba_value);
     ogs_kdf_kamf(supi, (uint8_t *) abba_value, CoreKube_ABBA_Length, kseaf, kamf);
 
+    // free the allocated structures
+    ogs_free(serving_network_name);
+    ogs_free(suci);
+    ogs_free(supi);
+
     return OGS_OK;
 }
 
@@ -233,7 +238,7 @@ int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
     // encode the response) but sometimes just a response needs to be sent, or
     // just an incoming message needs to be received.
     // fetch the KAMF (stored as KASME1 and KASME2) and DL / UL counts from the DB
-    corekube_db_pulls_t *db_pulls;
+    corekube_db_pulls_t db_pulls;
     int db;
     if (includeCounts == NAS_COUNTS_BOTH_UL_DL)
         db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 4, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER, UE_NAS_SEQUENCE_NUMBER);
@@ -248,11 +253,13 @@ int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
     ogs_assert(db == OGS_OK);
 
     // store the KNAS_INT, KNAS_ENC and DL count in the NAS params
-    int store_keys = nas_security_store_keys_in_params(db_pulls, params->nas_security_params);
+    int store_keys = nas_security_store_keys_in_params(&db_pulls, params->nas_security_params);
     ogs_assert(store_keys == OGS_OK);
 
+    // free the buffer used for the DB access
+    ogs_free(amf_ue_ngap_id_buf.buf);
     // free the structures pulled from the DB
-    ogs_free(db_pulls->head);
+    ogs_free(db_pulls.head);
 
     return OGS_OK;
 }

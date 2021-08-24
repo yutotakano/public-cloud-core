@@ -10,7 +10,7 @@ extern int __corekube_log_domain;
 #define OGS_LOG_DOMAIN __corekube_log_domain
 
 // the maximum number of responses that any message can possibly have
-#define MAX_NUM_RESPONSES 1
+#define MAX_NUM_RESPONSES 2
 
 typedef struct message_handler_response {
     int num_responses;

@@ -105,6 +105,7 @@ void *process_message(void *raw_args) {
 	// free the dynamically-allocated structures
 	ogs_free(args->client_addr);
 	ogs_free(args);
+	ogs_free(response.responses);
 
 	ogs_info("Finished processing message");
 

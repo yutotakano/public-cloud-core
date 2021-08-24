@@ -68,6 +68,9 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     response_params.ambr = NULL;
     response_params.num_of_s_nssai = 0;
 
+    // free the dynamically-allocated AMF_UE_NGAP_ID
+    ogs_free(nas_params.amf_ue_ngap_id);
+
     // build the NGAP response
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
