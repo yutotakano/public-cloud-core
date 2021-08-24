@@ -14,8 +14,10 @@
 
 int db_connect(char * ip_addr, int port)
 {
+	int flag = 1;
 	struct sockaddr_in db_addr;
 	int sock;
+	int res;
 
 	/* Configure DB */
 	db_addr.sin_family = AF_INET;
@@ -29,13 +31,21 @@ int db_connect(char * ip_addr, int port)
 	/* Create socket */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock == -1)
-		exit(-1);
+		return -1;
+
+	/* Disable Nagle's algorithm */
+	res = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+	if(res < 0) {
+		printError("Error disabling Nagle's algorithm\n");
+		close(sock);
+		return -1;
+	}
 
 	/* Connect with DB */
 	if(connect(sock, (struct sockaddr *)&db_addr, sizeof(struct sockaddr)) == -1) {
 		printError("Unable to connect with %s:%d.\n", ip_addr, port);
 		close(sock);
-		exit(-1);
+		return -1;
 	}
 	return sock;
 }
