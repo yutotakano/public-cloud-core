@@ -124,6 +124,14 @@ void runMessage(char * ip_address, int message_number) {
         "020001004b40110000010d0003e0c0a8"
         "386f000000010001";
 
+    char *DetachRequest =
+        "0f0a0c0e"
+        "002e4043000004000a00020001005500"
+        "02000100260019187e01f867c361037e"
+        "004501000bf202f83902018000000001"
+        "007940135002f839000000010002f839"
+        "000001e4cb957900";
+
     switch (message_number) {
         case 1:
             send_message(ip_address, NGSetupRequest, 1);
@@ -148,6 +156,9 @@ void runMessage(char * ip_address, int message_number) {
             break;
         case 8:
             send_message(ip_address, PDUSessionResourceSetupResponse, 0);
+            break;
+        case 9:
+            send_message(ip_address, DetachRequest, 2);
             break;
         default:
             ogs_info("Unknown message number %d", message_number);
