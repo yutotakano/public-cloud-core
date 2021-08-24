@@ -14,6 +14,7 @@
 #include "log.h"
 
 #define S1AP_PPID 18
+#define NGAP_PPID 60
 #define BUFFER_LEN 1020
 #define EPC_UDP_PORT 5566
 
@@ -52,12 +53,17 @@ void * uplink_thread(void * args)
 	struct sctp_sndrcvinfo sinfo;
 	struct sockaddr_in addr, epc_addr;
 	uint8_t buffer[BUFFER_LEN+4];
+	uint32_t ppid;
 
 	/* Extract the eNB socket from args and free the args structure */
 	int sock_enb = ((uplink_args *)args)->sock_enb;
 	pthread_t d_thread_id = ((uplink_args *)args)->d_thread_id;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
+	if(((uplink_args *)args)->frontend_ip == 1)
+		ppid = htonl(NGAP_PPID);
+	else
+		ppid = htonl(S1AP_PPID);
 	free(args);
 	#ifdef THREAD_LOGS
 	printThread("Uplink thread arguments extracted.\n");
@@ -83,7 +89,7 @@ void * uplink_thread(void * args)
 
 	while ( (n = sctp_recvmsg(sock_enb, (void *)(buffer + 4), BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) > 0) {
 		/* Only messages with PPID 18 are accepted */
-		if(ntohl(sinfo.sinfo_ppid) != S1AP_PPID) {
+		if(ntohl(sinfo.sinfo_ppid) != ppid) {
 			reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 			continue;
 		}

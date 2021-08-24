@@ -16,6 +16,7 @@
 
 
 #define MME_LISTEN_PORT 36412
+#define AMF_LISTEN_PORT 38412
 #define SCTP_OUT_STREAMS 32
 #define SCTP_IN_STREAMS 32
 #define SCTP_MAX_ATTEMPTS 2
@@ -24,7 +25,7 @@
 #define SOCKET_LISTEN_QUEUE 5 /* Extract from openair-cn (openair-cn/SCTP/sctp_primitives_server.c) */
 #define UDP_PORT 32566
 
-int configure_sctp_socket(char * mme_ip_address)
+int configure_sctp_socket(char * mme_ip_address, int is5g)
 {
 	int sock_sctp;
 	struct sockaddr_in listener_addr;
@@ -84,7 +85,10 @@ int configure_sctp_socket(char * mme_ip_address)
     /***************************/
     listener_addr.sin_addr.s_addr = inet_addr(mme_ip_address);
     listener_addr.sin_family = AF_INET;
-    listener_addr.sin_port = htons(MME_LISTEN_PORT);
+    if(is5g == 1)
+    	listener_addr.sin_port = htons(AMF_LISTEN_PORT);
+    else
+    	listener_addr.sin_port = htons(MME_LISTEN_PORT);
     memset(&(listener_addr.sin_zero), 0, sizeof(struct sockaddr));
 
     /***********/
@@ -141,7 +145,7 @@ int configure_udp_socket(char * mme_ip_address)
 }
 
 
-void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
+void frontend(char * mme_ip_address, char * k8s_lb_ip_address, int is5g)
 {
 	int sock_sctp, sock_udp, sock_enb, enb_count = 0;
 	uplink_args * uargs;
@@ -150,7 +154,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 	pthread_t downlink_t, uplink_t;
 
 
-	sock_sctp = configure_sctp_socket(mme_ip_address);
+	sock_sctp = configure_sctp_socket(mme_ip_address, is5g);
 	if(sock_sctp < 0) {
 		printError("Error configuring SCTP socket.\n");
 		return;
@@ -181,6 +185,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 			continue;
 		}
 		dargs->sock_udp = sock_udp;
+		dargs->flag_5g = is5g;
 
 		/* Create downlink thread */
 		if(pthread_create(&downlink_t, NULL, downlink_thread, (void *)dargs) != 0) {
@@ -206,6 +211,7 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 		uargs->d_thread_id = downlink_t;
 		uargs->epc_addr = inet_addr(k8s_lb_ip_address);
 		uargs->frontend_ip = inet_addr(mme_ip_address);
+		uargs->flag_5g = is5g;
 
 		/* Create uplink thread */
 		if(pthread_create(&uplink_t, NULL, uplink_thread, (void *)uargs) != 0) {
@@ -228,12 +234,23 @@ void frontend(char * mme_ip_address, char * k8s_lb_ip_address)
 
 int main(int argc, char const *argv[])
 {
-	if(argc != 3) {
-		printf("RUN: ./corekube_frontend <FRONTEND_IP_ADDRESS> <K8S_LOADBALANCER_IP_ADDRESS>\n");
+	if(argc != 4) {
+		printf("RUN: ./corekube_frontend <FRONTEND_IP_ADDRESS> <K8S_LOADBALANCER_IP_ADDRESS> <4G/5G>\n");
 		return 1;
 	}
 
-	frontend((char *)argv[1], (char *)argv[2]);
+	if(strcmp((char *)argv[3], "4G") == 0) {
+		printInfo("Starting 4G CoreKube Frontend...\n");
+		frontend((char *)argv[1], (char *)argv[2], 0);
+	}
+	else if(strcmp((char *)argv[3], "5G") == 0) {
+		printInfo("Starting 5G CoreKube Frontend...\n");
+		frontend((char *)argv[1], (char *)argv[2], 1);
+	}
+	else {
+		printf("Invalid third parameter.\n");
+		return 1;
+	}
 
 	return 0;
 }

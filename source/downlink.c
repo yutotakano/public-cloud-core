@@ -12,6 +12,7 @@
 
 #define BUFFER_LEN 1024
 #define S1AP_PPID 18
+#define NGAP_PPID 60
 
 void dumpDownlink(uint8_t * message, int len)
 {
@@ -34,8 +35,13 @@ void * downlink_thread(void * args)
 {
 	int n, sock_enb, sid;
 	uint8_t buffer[BUFFER_LEN];
+	uint32_t ppid;
 
 	int sock_udp = ((downlink_args *)args)->sock_udp;
+	if(((downlink_args *)args)->flag_5g == 1)
+		ppid = htonl(NGAP_PPID);
+	else
+		ppid = htonl(S1AP_PPID);
 	free(args);
 	#ifdef THREAD_LOGS
 	printThread("Downlink thread arguments extracted.\n");
@@ -50,7 +56,7 @@ void * downlink_thread(void * args)
 		sock_enb = array_to_int(buffer);
 		sid = (int) buffer[4];
 		n -= 5;
-		if(sctp_sendmsg(sock_enb, buffer+5, n, NULL, 0, htonl(S1AP_PPID), 0, sid, 0, 0) < 0)
+		if(sctp_sendmsg(sock_enb, buffer+5, n, NULL, 0, ppid, 0, sid, 0, 0) < 0)
 			break;
 		#ifdef THREAD_LOGS
 		printThread("Downlink message sent.\n");
