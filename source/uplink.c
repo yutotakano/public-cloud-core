@@ -60,10 +60,18 @@ void * uplink_thread(void * args)
 	pthread_t d_thread_id = ((uplink_args *)args)->d_thread_id;
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
-	if(((uplink_args *)args)->frontend_ip == 1)
+	if(((uplink_args *)args)->flag_5g == 1) {
 		ppid = htonl(NGAP_PPID);
-	else
+		#ifdef THREAD_LOGS
+		printThread("5G Uplink thread using PPID %d.\n", ppid);
+		#endif
+	}
+	else {
 		ppid = htonl(S1AP_PPID);
+		#ifdef THREAD_LOGS
+		printThread("4G Uplink thread using PPID %d.\n", ppid);
+		#endif
+	}
 	free(args);
 	#ifdef THREAD_LOGS
 	printThread("Uplink thread arguments extracted.\n");
@@ -90,6 +98,9 @@ void * uplink_thread(void * args)
 	while ( (n = sctp_recvmsg(sock_enb, (void *)(buffer + 4), BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sinfo, &flags)) > 0) {
 		/* Only messages with PPID 18 are accepted */
 		if(ntohl(sinfo.sinfo_ppid) != ppid) {
+			#ifdef THREAD_LOGS
+			printThread("Uplink thread error: Invalid PPID.\n");
+			#endif
 			reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 			continue;
 		}
