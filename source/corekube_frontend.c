@@ -32,6 +32,9 @@ int configure_sctp_socket(char * mme_ip_address, int is5g)
 	struct sctp_event_subscribe events;
     struct sctp_initmsg init;
 
+    /* Avoing printf buffering */
+	setvbuf(stdout, NULL, _IONBF, 0); 
+
 
 	/*****************/
 	/* Create socket */
