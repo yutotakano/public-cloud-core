@@ -61,13 +61,13 @@ void * uplink_thread(void * args)
 	uint32_t epc_ip_addr = ((uplink_args *)args)->epc_addr;
 	uint32_t frontend_ip = ((uplink_args *)args)->frontend_ip;
 	if(((uplink_args *)args)->flag_5g == 1) {
-		ppid = htonl(NGAP_PPID);
+		ppid = NGAP_PPID;
 		#ifdef THREAD_LOGS
 		printThread("5G Uplink thread using PPID %d.\n", ppid);
 		#endif
 	}
 	else {
-		ppid = htonl(S1AP_PPID);
+		ppid = S1AP_PPID;
 		#ifdef THREAD_LOGS
 		printThread("4G Uplink thread using PPID %d.\n", ppid);
 		#endif
@@ -99,7 +99,7 @@ void * uplink_thread(void * args)
 		/* Only messages with PPID 18 are accepted */
 		if(ntohl(sinfo.sinfo_ppid) != ppid) {
 			#ifdef THREAD_LOGS
-			printThread("Uplink thread error: Invalid PPID.\n");
+			printThread("Uplink thread error: Invalid PPID (Recv PPID %d != %d).\n", ntohl(sinfo.sinfo_ppid), ppid);
 			#endif
 			reset_sctp_structures(&addr, &from_len, &sinfo, &flags);
 			continue;
