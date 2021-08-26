@@ -175,6 +175,9 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
+        // turn off printf buffering
+        setvbuf(stdout, NULL, _IONBF, 0);
+
 	// initialise the Open5GS core library
 	ogs_core_initialize();
 
