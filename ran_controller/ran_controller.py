@@ -13,6 +13,7 @@ from kubernetes import config, client
 
 # Debug variable to use in local testbed
 k8s = True
+mobilestream = False
 
 
 
@@ -156,12 +157,15 @@ class RANControler:
 		print(msg['type'])
 		if msg['type'] == 'init' or msg['type'] == 'cp_mode':
 			print('New slave at ' + msg['ip'] + ':' + str(msg['port']))
+			print('NodeIP (integer): %d' % msg['ip_node'])
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				enb.acquire_assign()
 				if enb.get_status() == Status.STOPPED and msg['ip_node'] not in self.enb_ips:
 					enb.set_pending()
-					self.enb_ips.append(msg['ip_node'])
+					# This is needed because of the MobileStream implementation
+					if mobilestream == True:
+						self.enb_ips.append(msg['ip_node'])
 					enb.acquire()
 					enb.release_assign()
 					# This slave has to be a eNB
@@ -240,7 +244,8 @@ class RANControler:
 			enb = self.get_enb_by_buffer(msg['data'])
 
 			ip_node = (msg['data'][4] << 24) | (msg['data'][5] << 16) | (msg['data'][6] << 8) | msg['data'][7]
-			self.enb_ips.remove(ip_node)
+			if mobilestream == True:
+				self.enb_ips.remove(ip_node)
 
 			# Save eNB address
 			enb.set_stopped() # Stopped/Not Running
