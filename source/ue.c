@@ -56,7 +56,7 @@ void printUE(UE * ue)
 	printf("\tMSIN: %s\n", ue->msin_string);
 	printf("\tPLMN (HEX): %.2x %.2x %.2x\n", ue->plmn[0], ue->plmn[1], ue->plmn[2]);
 	printf("\tMSIN (HEX): %.2x %.2x %.2x %.2x %.2x\n", ue->msin[0], ue->msin[1], ue->msin[2], ue->msin[3], ue->msin[4]);
-	printf("MME S1AP ID: \n");
+	printf("MME S1AP ID: ");
 	for(i = 0; i < ue->mme_s1ap_id_len; i++)
 		printf("%.2x ", ue->mme_s1ap_id[i]);
 	printf("\n");
