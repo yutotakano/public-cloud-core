@@ -10,6 +10,7 @@ RUN apt-get -y install git libsctp-dev build-essential libssl-dev python3 python
 # Install Python dependencies
 RUN pip3 install Flask
 RUN pip3 install kubernetes
+RUN pip3 install flask-socketio
 
 # Install GarbageCollector
 RUN git clone https://github.com/j0lama/GarbageCollector.git
