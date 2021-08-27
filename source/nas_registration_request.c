@@ -35,7 +35,7 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     OCTET_STRING_t amf_ue_ngap_id_buf;
     amf_ue_ngap_id_buf.buf = db_pulls.mme_ue_s1ap_id;
     amf_ue_ngap_id_buf.size = 4;
-    params->amf_ue_ngap_id = ogs_malloc(sizeof(uint64_t));
+    params->amf_ue_ngap_id = ogs_calloc(1, sizeof(uint64_t));
     ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint32_t *) params->amf_ue_ngap_id);
 
     // generate the authentication and security parameters
