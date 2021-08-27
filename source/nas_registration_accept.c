@@ -64,6 +64,7 @@ int nas_build_registration_accept(uint32_t m_tmsi, ogs_nas_5gs_message_t *messag
     ogs_5gs_tai0_list_t list0;
     ogs_5gs_tai2_list_t list2;
     bzero(&list0, sizeof(ogs_5gs_tai0_list_t));
+    bzero(&list2, sizeof(ogs_5gs_tai2_list_t));
     list0.tai[0].num = 1;
     list0.tai[0].plmn_id = PLMNid;
     list0.tai[0].type = OGS_TAI0_TYPE;
