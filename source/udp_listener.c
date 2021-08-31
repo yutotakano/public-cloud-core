@@ -175,18 +175,25 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
-        // turn off printf buffering
-        setvbuf(stdout, NULL, _IONBF, 0);
+	// turn off printf buffering
+	setvbuf(stdout, NULL, _IONBF, 0);
+
+	// in production, turn off info logs
+	int default_log_level = OGS_LOG_INFO;
+	if (argc == 4 && atoi(argv[3]) >= OGS_LOG_NONE && atoi(argv[3]) <= OGS_LOG_FULL)
+		default_log_level = atoi(argv[3]);
 
 	// initialise the Open5GS core library
 	ogs_core_initialize();
+	ogs_core()->log.level = default_log_level;
 
 	// initialise the logs for the libraries being used
-    ogs_log_install_domain(&__ogs_ngap_domain, "ngap", OGS_LOG_TRACE);
-	ogs_log_install_domain(&__ogs_nas_domain, "nas", OGS_LOG_TRACE);
+	ogs_log_install_domain(&__ogs_ngap_domain, "ngap", default_log_level);
+	ogs_log_install_domain(&__ogs_nas_domain, "nas", default_log_level);
 
 	// initialise the logs for corekube
-	ogs_log_install_domain(&__corekube_log_domain, "ck", OGS_LOG_TRACE);
+	ogs_log_install_domain(&__corekube_log_domain, "ck", default_log_level);
+	ogs_log_set_domain_level(OGS_LOG_DOMAIN, default_log_level);
 
 	// create the default pkbuf size config
 	ogs_pkbuf_config_t config;
@@ -194,10 +201,6 @@ int main(int argc, char const *argv[])
 
 	// initialise the pkbuf pools with the above config
 	ogs_pkbuf_default_create(&config);
-
-	// in production, turn off info logs
-	if (argc == 4 && atoi(argv[3]))
-		ogs_log_set_domain_level(OGS_LOG_DOMAIN, OGS_LOG_ERROR);
 
 	// setup the DB IP address
 	//db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));
