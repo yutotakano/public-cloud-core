@@ -67,7 +67,8 @@ int nas_handle_security_mode_complete(ogs_nas_5gs_security_mode_complete_t *mess
                 params->masked_imeisv[6] = 0xff;
             } else {
                 ogs_error("Unknown IMEISV Length [%d]", imeisv->length);
-                ogs_log_hexdump(OGS_LOG_ERROR, imeisv->buffer, imeisv->length);
+                if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_ERROR)
+                    ogs_log_hexdump(OGS_LOG_ERROR, imeisv->buffer, imeisv->length);
             }
             break;
         default:
