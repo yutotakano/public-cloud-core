@@ -2,7 +2,9 @@
 
 #include <libck.h>
 #include <stdarg.h>
+#include <pthread.h>
 extern int db_sock;
+extern pthread_mutex_t db_sock_mutex;
 
 int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull, ...) {
     ogs_info("DB access");
@@ -16,6 +18,7 @@ int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyVal
     ogs_assert(dbReq == OGS_OK);
 	va_end(ap);
 
+    pthread_mutex_lock(&db_sock_mutex);
     send_request(db_sock, inputBuffer, bufferInputSize);
     ogs_free(inputBuffer);
 
@@ -28,6 +31,7 @@ int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyVal
         int n = recv_response(db_sock, outputBuffer, bufferOutputSize);
         extract_db_values(outputBuffer, n, dbPulls);
     }
+    pthread_mutex_unlock(&db_sock_mutex);
 
     return OGS_OK;
 }
