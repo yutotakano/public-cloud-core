@@ -62,7 +62,7 @@ int message_to_bytes(ogs_ngap_message_t *message, ogs_pkbuf_t **out)
 int ngap_message_handler(ogs_ngap_message_t *message, message_handler_response_t *response) {
     ogs_info("Handling NGAP message");
 
-    if (ogs_log_get_domain_level(OGS_LOG_DOMAIN) >= OGS_LOG_INFO) {
+    if (ogs_log_get_domain_level(OGS_LOG_DOMAIN) >= OGS_LOG_TRACE) {
         int ngap_print = asn_fprint(stdout, &asn_DEF_NGAP_NGAP_PDU, message);
         ogs_assert(ngap_print == 0); // Failed to print NGSP message
     }
