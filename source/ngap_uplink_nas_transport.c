@@ -128,8 +128,6 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             build_response = ngap_build_pdu_session_resource_setup_request(&pdu_session_resource_setup_request_params, response->responses[0]);
             ogs_assert(build_response == OGS_OK);
 
-            ogs_free(pdu_session_resource_setup_request_params.nasPdu);
-
             break;
         case OGS_NAS_5GS_REGISTRATION_COMPLETE:
             // special case: the NAS Registration Complete message needs no
