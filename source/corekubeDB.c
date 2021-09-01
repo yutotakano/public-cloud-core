@@ -276,11 +276,6 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	int offset = 0, res_offset = 0; 
 	uint8_t tmp_nas;
 
-#ifdef DEBUG
-		printf("REQUEST inside the function (%d):", request_len);
-		dump_mem(request, request_len);
-#endif
-
 	/* Get user info based on the client's ID*/
 	switch(request[0]) {
 		case IMSI:
