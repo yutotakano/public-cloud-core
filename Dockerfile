@@ -2,7 +2,7 @@
 # Based upon corekube-worker/Dockerfile
 
 # Download ubuntu from the Docker Hub
-FROM ubuntu:bionic
+FROM ubuntu:bionic as build
 
 # Setup Timezone file
 ENV TZ=Europe/London
@@ -12,7 +12,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt-get update
 RUN apt-get -y install git libsctp-dev build-essential
 
-# Build and install libck
+# Build libck
 COPY .deploy_keys/libck_deploy_key .
 RUN eval $(ssh-agent) && \
     ssh-add libck_deploy_key && \
@@ -20,11 +20,11 @@ RUN eval $(ssh-agent) && \
     git clone git@github.com:j0lama/libck.git
 WORKDIR libck/
 RUN make
-RUN make install
+RUN make install # installs headers for compilation
 
 WORKDIR ../
 
-# Build and install the Open5GS libraries:
+# Build the Open5GS libraries:
 COPY .deploy_keys/open5gs-corekube_deploy_key .
 RUN eval $(ssh-agent) && \
     ssh-add open5gs-corekube_deploy_key && \
@@ -39,11 +39,20 @@ WORKDIR ../
 
 # Copy the corekube_worker
 COPY ./ corekube_worker/
-# Copy the Open5GS libraries to the worker
-RUN mkdir corekube_worker/bin && \
-    LIBS=`find open5gs-corekube/build/lib/ -type f -name "libogs*.so.2.3.0"` && \
-    for lib in $LIBS; do mv $lib corekube_worker/bin/$(basename "$lib" .3.0) ; done
 
-# Install corekube_worker
+# Copy the libraries to the worker directory
+RUN mkdir corekube_worker/bin
+RUN LIBS=`find open5gs-corekube/build/lib/ -type f -name "libogs*.so.2.3.0"` && \
+    for lib in $LIBS; do mv $lib corekube_worker/bin/$(basename "$lib" .3.0) ; done
+RUN cp libck/libck.so corekube_worker/bin/
+
+# Build corekube_worker
 WORKDIR corekube_worker/
 RUN make
+
+
+
+FROM busybox:glibc
+
+COPY --from=build /corekube_worker/corekube_udp_worker /
+COPY --from=build /corekube_worker/bin /bin/

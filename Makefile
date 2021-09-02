@@ -10,7 +10,7 @@ CFLAGS = -c -Wall -g -DTHREAD_LOGS # -ansi -std=c99
 LIBFLAGS = $(LIB_BIN_DIRECTORY)*
 
 #LINK FLAGS 
-LINKFLAGS = -Wl,-rpath=$(LIB_BIN_DIRECTORY) -lsctp -lck -lpthread
+LINKFLAGS = -Wl,-rpath=$(LIB_BIN_DIRECTORY) -lck -lpthread
 
 #INCLUDE FLAGS
 INCLUDE_FLAGS = -I lib/ $(addprefix -I,$(shell find lib/ -type d -print)) -I headers/
