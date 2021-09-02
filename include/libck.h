@@ -40,7 +40,8 @@ enum ITEM_TYPE
 	ENC_KEY,
 	INT_KEY,
 	KASME_1,
-	KASME_2
+	KASME_2,
+	EOM
 };
 typedef uint8_t ITEM_TYPE;
 

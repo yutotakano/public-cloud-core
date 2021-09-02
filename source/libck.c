@@ -182,6 +182,11 @@ int pull_items(uint8_t * buffer, int push_len, int num_items, ...)
 		ptr = pull_item(ptr, item);
 	}
 
+	ptr = pull_item(ptr, EOM);
+
+	/* Add End-Of-Message byte */
+
+
 	va_end(ap);
 
 	return (int)(ptr - buffer);
