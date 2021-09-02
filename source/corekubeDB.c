@@ -276,6 +276,11 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	int offset = 0, res_offset = 0, i; 
 	uint8_t tmp_nas;
 
+#ifdef DEBUG	
+	printf("REQUEST (%d):", request_len);
+	dump_mem(request, request_len);
+#endif
+
 	/* Get user info based on the client's ID*/
 	switch(request[0]) {
 		case IMSI:
@@ -521,8 +526,6 @@ void * attend_request(void * args)
 		}
 #ifdef DEBUG
 		printInfo("Analyzing request from socket %d\n", client);
-		printf("REQUEST (%d):", request_len);
-		dump_mem(request, request_len);
 #endif
 
 		while(multi_pkt < request_len)
