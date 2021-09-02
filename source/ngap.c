@@ -721,11 +721,11 @@ int add_protocolIE_User_Location_Information(eNB * enb, uint8_t * buffer)
 	/* nR-CGI */
 	buffer[4] = ID_NR_CGI;
 	memcpy(buffer+5, get_plmn(enb), PLMN_LENGTH); /* PLMN */
-	buffer[8] = 0;
-	buffer[9] = (enb_id >> 24) & 0xFF;
-	buffer[10] = (enb_id >> 16) & 0xFF;
-	buffer[11] = (enb_id >> 8) & 0xFF;
-	buffer[12] = enb_id & 0xFF;
+	buffer[8] = (enb_id >> 24) & 0xFF;
+	buffer[9] = (enb_id >> 16) & 0xFF;
+	buffer[10] = (enb_id >> 8) & 0xFF;
+	buffer[11] = enb_id & 0xFF;
+	buffer[12] = 0;
 	memcpy(buffer+13, get_plmn(enb), PLMN_LENGTH); /* PLMN */
 	buffer[16] = 0x00; /* tAI */
 	buffer[17] = 0x00; /* tAI */
