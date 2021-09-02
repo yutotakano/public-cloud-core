@@ -264,17 +264,12 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 	}
 }
 
-void send_request(int sock, uint8_t * buffer, int buffer_len)
+int send_request(int sock, uint8_t * buffer, int buffer_len)
 {
-	int rsp = send(sock, buffer, buffer_len, 0);
-	if (rsp <= 0)
-		exit(-1);
+	return  send(sock, buffer, buffer_len, 0);
 }
 
 int recv_response(int sock, uint8_t * buffer, int buffer_len)
 {
-	int rsp = recv(sock, buffer, buffer_len, 0);
-	if (rsp <= 0)
-		exit(-1);
-	return rsp;
+	return recv(sock, buffer, buffer_len, 0);
 }
