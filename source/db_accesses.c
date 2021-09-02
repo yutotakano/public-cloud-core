@@ -64,6 +64,9 @@ int form_db_request(uint8_t *buffer, va_list ap, ITEM_TYPE dbKey, uint8_t * dbKe
 		ptr = pull_item(ptr, item);
 	}
 
+    *ptr = EOM;
+    ptr++;
+
     return OGS_OK;
 }
 
