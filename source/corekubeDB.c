@@ -509,9 +509,9 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 void * attend_request(void * args)
 {
 	int client, * client_ref;
+	int multi_pkt;
 	uint8_t request[BUFFER_LEN], response[BUFFER_LEN];
 	int request_len, response_len;
-	int multi_pkt = 0;
 
 	client_ref = (int *) args;
 	client = *client_ref;
@@ -528,6 +528,7 @@ void * attend_request(void * args)
 		printInfo("Analyzing request from socket %d\n", client);
 #endif
 
+		multi_pkt = 0;
 		while(multi_pkt < request_len)
 		{
 			/* Analyze request and generate the response message */
