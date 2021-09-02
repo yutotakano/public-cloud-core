@@ -271,9 +271,9 @@ int configure_network(const char * ip_address, int port)
 	return OK;
 }
 
-void analyze_request(uint8_t * request, int request_len, uint8_t * response, int * response_len) {
+int analyze_request(uint8_t * request, int request_len, uint8_t * response, int * response_len) {
 	UserInfo * user;
-	int offset = 0, res_offset = 0; 
+	int offset = 0, res_offset = 0, i; 
 	uint8_t tmp_nas;
 
 	/* Get user info based on the client's ID*/
@@ -306,9 +306,15 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 #ifdef DEBUG
 			printError("Trying to access the DB with an invalid ID.\n");
 #endif
+			for(i = 1; i < request_len; i++) {
+				if(request[i] == EOM) {
+					break;
+				}
+			}
+			i++;
 			response[0] = 0;
 			*response_len = 1;
-			return;
+			return i;
 	}
 	offset += 17;
 
@@ -317,9 +323,15 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 #ifdef DEBUG
 		printError("The requested UE does not exist\n");
 #endif
+		for(i = 1; i < request_len; i++) {
+			if(request[i] == EOM) {
+				break;
+			}
+		}
+		i++;
 		response[0] = 0;
 		*response_len = 1;
-		return;
+		return i;
 	}
 
 #ifdef DEBUG
@@ -377,7 +389,7 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 	offset++;
 
 	/* Copy the fields specified in the PULL item list */
-	while(offset < request_len) {
+	while(offset < request_len && request[offset] != EOM) {
 		switch(request[offset]) {
 			case IMSI:
 				response[res_offset] = IMSI;
@@ -484,8 +496,9 @@ void analyze_request(uint8_t * request, int request_len, uint8_t * response, int
 		res_offset += 17;
 		offset++;
 	}
+	offset++;
 	*response_len = res_offset;
-	return;
+	return offset;
 }
 
 void * attend_request(void * args)
@@ -493,6 +506,7 @@ void * attend_request(void * args)
 	int client, * client_ref;
 	uint8_t request[BUFFER_LEN], response[BUFFER_LEN];
 	int request_len, response_len;
+	int multi_pkt = 0;
 
 	client_ref = (int *) args;
 	client = *client_ref;
@@ -510,22 +524,27 @@ void * attend_request(void * args)
 		printf("REQUEST (%d):", request_len);
 		dump_mem(request, request_len);
 #endif
-		/* Analyze request and generate the response message */
-		analyze_request(request, request_len, response, &response_len);
-#ifdef DEBUG
-		printInfo("Sending answer to client (socket %d)\n", client);
-		printf("RESPONSE (%d):", response_len);
-		dump_mem(response, response_len);
-		printf("\n\n");
-#endif
-		/* Send response to client and close connection */
-		if(response_len > 0)
+
+		while(multi_pkt < request_len)
 		{
-			if(send(client, response, response_len, 0) < 0)
+			/* Analyze request and generate the response message */
+			multi_pkt += analyze_request(request + multi_pkt, request_len - multi_pkt, response, &response_len);
+
+	#ifdef DEBUG
+			printInfo("Sending answer to client (socket %d)\n", client);
+			printf("RESPONSE (%d):", response_len);
+			dump_mem(response, response_len);
+			printf("\n\n");
+	#endif
+			/* Send response to client and close connection */
+			if(response_len > 0)
 			{
-				printError("The response generated is invalid (socket %d) (ERRNO %d): %s\n", client, errno, strerror(errno));
-				close(client);
-				return NULL;
+				if(send(client, response, response_len, 0) < 0)
+				{
+					printError("The response generated is invalid (socket %d) (ERRNO %d): %s\n", client, errno, strerror(errno));
+					close(client);
+					return NULL;
+				}
 			}
 		}
 	}
