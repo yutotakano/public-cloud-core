@@ -68,7 +68,7 @@ void *process_message(void *raw_args) {
 
 	ogs_info("New SCTP message received.");
 	if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
-		ogs_log_hexdump(OGS_LOG_TRACE, buffer, args->num_bytes_received);
+		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	message_handler_response_t response;
 
