@@ -19,16 +19,27 @@ int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyVal
 	va_end(ap);
 
     pthread_mutex_lock(&db_sock_mutex);
-    send_request(db_sock, inputBuffer, bufferInputSize);
+    ogs_trace("DB Request:");
+    if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
+        ogs_log_hexdump(OGS_LOG_INFO, inputBuffer, bufferInputSize);
+    ssize_t sendDB;
+    sendDB = send_request(db_sock, inputBuffer, bufferInputSize);
     ogs_free(inputBuffer);
+    ogs_trace("sendDB: %ld, bufferInputSize: %d", sendDB, bufferInputSize);
+    //ogs_assert(sendDB == bufferInputSize); // TODO: this assertion fails but should succeed
 
     if (numPull > 0) {
         int bufferOutputSize = db_buffer_output_size(numPull);
         uint8_t * outputBuffer = ogs_calloc(bufferOutputSize, sizeof(uint8_t));
 
+        ogs_assert(dbPulls);
         dbPulls->head = outputBuffer;
 
         int n = recv_response(db_sock, outputBuffer, bufferOutputSize);
+        ogs_trace("DB Response:");
+        if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
+            ogs_log_hexdump(OGS_LOG_INFO, outputBuffer, bufferOutputSize);
+        ogs_assert(n == (17 * numPull));
         extract_db_values(outputBuffer, n, dbPulls);
     }
     pthread_mutex_unlock(&db_sock_mutex);
