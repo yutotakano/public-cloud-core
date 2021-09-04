@@ -46,7 +46,9 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
 
     // store the KAMF in the DB, and set the NAS UL / DL counts to zero
     uint8_t zero_nas_count[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    int storeKamf = db_access(NULL, IMSI, (uint8_t *) imsi, 4, 0, KASME_1, kamf, KASME_2, kamf+16, EPC_NAS_SEQUENCE_NUMBER, zero_nas_count, UE_NAS_SEQUENCE_NUMBER, zero_nas_count);
+    // TODO: pulling the SPGW_IP is for debug purposes only
+    corekube_db_pulls_t db_pulls2;
+    int storeKamf = db_access(&db_pulls2, IMSI, (uint8_t *) imsi, 4, 1, KASME_1, kamf, KASME_2, kamf+16, EPC_NAS_SEQUENCE_NUMBER, zero_nas_count, UE_NAS_SEQUENCE_NUMBER, zero_nas_count, SPGW_IP);
     ogs_assert(storeKamf == OGS_OK);
 
     ogs_nas_5gs_authentication_request_t auth_request_params;
