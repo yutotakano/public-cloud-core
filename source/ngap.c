@@ -1276,11 +1276,13 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return ERROR;
 	}
 	if(analyze_NG_AuthenticationRequest(ue, enb, buffer, recv_len) == 1)
 	{
 		printError("Wrong NG Authentication Request\n");
+		printUE(ue);
 		return ERROR;
 	}
 
@@ -1312,11 +1314,13 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return ERROR;
 	}
 	if(analyze_NG_SecurityModeCommand(ue, enb, buffer, recv_len) == 1)
 	{
 		printError("Wrong NG Security Mode Command\n");
+		printUE(ue);
 		return ERROR;
 	}
 
@@ -1340,11 +1344,13 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return ERROR;
 	}
 	if(analyze_NG_RegistrationRequest(ue, enb, buffer, recv_len) == 1)
 	{
 		printError("Wrong NG Registration Request\n");
+		printUE(ue);
 		return ERROR;
 	}
 
@@ -1382,16 +1388,19 @@ int procedure_Registration_Request(eNB * enb, UE * ue)
 		if(recv_len < 0)
 		{
 			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+			printUE(ue);
 			return ERROR;
 		}
 		if(analyze_NG_ConfigurationUpdateCommand(ue, enb, buffer, recv_len) == OK)
 		{
 			printInfo("Configuration Update Command message detected!\n");
+			printUE(ue);
 			continue;
 		}
 		if(analyze_NG_PDUSessionEstablishmentAccept(ue, enb, buffer, recv_len) == 1)
 		{
 			printError("Wrong NG PDU Session Establishment Accept\n");
+			printUE(ue);
 			return ERROR;
 		}
 		break;
@@ -1443,11 +1452,13 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return ERROR;
 	}
 	if(analyze_NG_DeregistrationRequest(ue, enb, buffer, recv_len) == 1)
 	{
 		printError("Wrong Deregistration accept message.\n");
+		printUE(ue);
 		return ERROR;
 	}
 	printOK("Deregistration accept\n");
@@ -1459,11 +1470,13 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	if(recv_len < 0)
 	{
 		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+		printUE(ue);
 		return ERROR;
 	}
 	if(analyze_NR_UEContextReleaseCommand(ue, enb, buffer, recv_len) == 1)
 	{
 		printError("Wrong UEContextReleaseCommand message.\n");
+		printUE(ue);
 		return ERROR;
 	}
 	printOK("UEContextReleaseCommand\n");
