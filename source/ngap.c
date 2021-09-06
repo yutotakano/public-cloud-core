@@ -1450,6 +1450,10 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 		return ERROR;
 	}
 	printOK("Deregistration accept\n");
+
+	/* Reseting AMF_UE_NGAP_ID */
+	reset_mme_s1ap_id_len(ue);
+
 	/* Receiving AMF answer */
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 	flags = 0;

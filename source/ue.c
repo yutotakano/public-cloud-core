@@ -111,7 +111,7 @@ UE * init_UE(char * mcc, char * mnc, char * msin, uint8_t * key, uint8_t * op_ke
 	generate_tun_name(ue, ue->msin_string);
 	memcpy(ue->key, key, KEY_LENGTH);
 	memcpy(ue->op_key, op_key, KEY_LENGTH);
-	ue->mme_s1ap_id_len = -1;
+	ue->mme_s1ap_id_len = 0;
 	memcpy(ue->ue_ip, ue_ip, IP_LEN);
 
 	/* Save MCC and MNC */
@@ -174,10 +174,15 @@ uint8_t * get_mme_s1ap_id(UE * ue, uint8_t * len)
 
 void set_mme_s1ap_id(UE * ue, uint8_t * mme_s1ap_id, uint8_t len)
 {
-	if(ue->mme_s1ap_id_len != -1)
+	if(ue->mme_s1ap_id_len != 0)
 		return;
 	memcpy(ue->mme_s1ap_id, mme_s1ap_id, len);
 	ue->mme_s1ap_id_len = len;
+}
+
+void reset_mme_s1ap_id_len(UE * ue)
+{
+	ue->mme_s1ap_id_len = 0;
 }
 
 uint8_t * get_ue_key(UE * ue)
