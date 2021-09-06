@@ -3461,6 +3461,9 @@ int procedure_UE_Detach(eNB * enb, UE * ue, uint8_t switch_off)
 	sctp_sendmsg(socket, (void *) ue_context_release_response_buffer, (size_t) len, NULL, 0, htonl(SCTP_S1AP), 0, 1, 0, 0);
 	GC_free(ue_context_release_response_buffer);
 
+	/* Reseting MME_UE_NGAP_ID */
+	reset_mme_s1ap_id_len(ue);
+
 	return 0;
 }
 
