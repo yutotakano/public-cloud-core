@@ -1451,9 +1451,6 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	}
 	printOK("Deregistration accept\n");
 
-	/* Reseting AMF_UE_NGAP_ID */
-	reset_mme_s1ap_id_len(ue);
-
 	/* Receiving AMF answer */
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
 	flags = 0;
@@ -1477,6 +1474,9 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	/* MUST BE ON STREAM 60 */
 	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
 	printOK("UEContextReleaseComplete sent.\n");
+
+	/* Reseting AMF_UE_NGAP_ID */
+	reset_mme_s1ap_id_len(ue);
 
 	return OK;
 }
