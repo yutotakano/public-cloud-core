@@ -538,6 +538,7 @@ int add_protocolIE_Global_RAN_Node_ID(eNB * enb, uint8_t * buffer)
 	buffer[4] = GLOBAL_GNB_ID;
 	memcpy(buffer+5, get_plmn(enb), PLMN_LENGTH); /* PLMN */
 	/* gNB ID */
+	enb_id = enb_id << 2;
 	buffer[8] = (enb_id >> 24) & 0xFF;
 	buffer[9] = (enb_id >> 16) & 0xFF;
 	buffer[10] = (enb_id >> 8) & 0xFF;
