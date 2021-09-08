@@ -451,18 +451,16 @@ int analyze_NG_RegistrationRequest(UE * ue, eNB * enb, uint8_t * buffer, int len
 	return OK;
 }
 
-int analyze_NG_DeregistrationRequest(UE * ue, eNB * enb, uint8_t * buffer, int len)
+int analyze_NG_DeregistrationAccept(UE * ue, eNB * enb, uint8_t * buffer, int len)
 {
-	printInfo("Analyzing Deregistration Request...\n");
+	printInfo("Analyzing Deregistration Accept...\n");
 	if(buffer[0] != 0x00 || buffer[1] != ID_DOWNLINK_NAS_TRANSPORT) {
-		printError("Invalid NG Initial Context Setup Request\n");
+		printError("Invalid Deregistration Accept\n");
 		return ERROR;
 	}
 	/* Check criticality */
-	if(buffer[2] != CRITICALITY_IGNORE) {
+	if(buffer[2] != CRITICALITY_IGNORE)
 		printError("Wrong Criticality\n");
-		return ERROR;
-	}
 	analyze_message_items(enb, ue, buffer+4, buffer[3]);
 
 	return OK;
@@ -472,14 +470,12 @@ int analyze_NR_UEContextReleaseCommand(UE * ue, eNB * enb, uint8_t * buffer, int
 {
 	printInfo("Analyzing UEContextReleaseCommand...\n");
 	if(buffer[0] != 0x00 || buffer[1] != ID_UE_CONTEXT_RELEASE) {
-		printError("Invalid NG Initial Context Setup Request\n");
+		printError("Invalid NG UEContextReleaseCommand\n");
 		return ERROR;
 	}
 	/* Check criticality */
-	if(buffer[2] != CRITICALITY_REJECT) {
-		printError("Wrong Criticality\n");
-		return ERROR;
-	}
+	if(buffer[2] != CRITICALITY_REJECT)
+		printWarning("Wrong Criticality\n");
 	analyze_message_items(enb, ue, buffer+4, buffer[3]);
 
 	return OK;
@@ -1181,9 +1177,9 @@ int add_NG_UEContextReleaseComplete_Header(uint8_t * buffer)
 	return 7;
 }
 
-#define DEREFISTRATION_REQUEST 0x45
+#define DEREGISTRATION_REQUEST 0x45
 
-int add_protocolIE_NAS_PDU_Deregistration_Request(UE * ue, uint8_t * buffer)
+int add_protocolIE_NAS_PDU_Deregistration_Request(UE * ue, uint8_t * buffer, int switch_off)
 {
 	buffer[0] = 0;
 	buffer[1] = ID_NAS_PDU;
@@ -1197,8 +1193,12 @@ int add_protocolIE_NAS_PDU_Deregistration_Request(UE * ue, uint8_t * buffer)
 	/* Plain NAS message */
 	buffer[12] = EPD_5G_Mobility_Management_Messages;
 	buffer[13] = 0; /* Security Header Type: Plain Message */
-	buffer[14] = DEREFISTRATION_REQUEST;
-	buffer[15] = 0x41; /* Deregistration type and NAS key set identifier */
+	buffer[14] = DEREGISTRATION_REQUEST;
+	/* Deregistration type and NAS key set identifier */
+	if(switch_off == 0)
+		buffer[15] = 0x01; /* Switch off OFF */
+	else
+		buffer[15] = 0x09; /* Switch off ON */
 	/* 5GS mobile identity */
 	buffer[16] = 0x00; /* Lenght */
 	buffer[17] = 0x0b; /* Lenght */
@@ -1211,7 +1211,7 @@ int add_protocolIE_NAS_PDU_Deregistration_Request(UE * ue, uint8_t * buffer)
 	return 29;
 }
 
-int generate_NG_Deregistration_Request(eNB * enb, UE * ue, uint8_t * buffer)
+int generate_NG_Deregistration_Request(eNB * enb, UE * ue, uint8_t * buffer, int switch_off)
 {
 	int offset = 0;
 
@@ -1221,7 +1221,7 @@ int generate_NG_Deregistration_Request(eNB * enb, UE * ue, uint8_t * buffer)
 	offset = add_NG_Deregistration_Request_Header(buffer);
 	offset += add_protocolIE_AMF_UE_NGAP_ID(ue, buffer+offset, buffer);
 	offset += add_protocolIE_RAN_UE_NGAP_ID(ue, buffer+offset);
-	offset += add_protocolIE_NAS_PDU_Deregistration_Request(ue, buffer+offset);
+	offset += add_protocolIE_NAS_PDU_Deregistration_Request(ue, buffer+offset, switch_off);
 	offset += add_protocolIE_User_Location_Information(enb, buffer+offset);
 
 	return offset;
@@ -1449,30 +1449,32 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 
 	/* Registration Request */
 	printInfo("Generating Deregistration request...\n");
-	len = generate_NG_Deregistration_Request(enb, ue, buffer);
+	len = generate_NG_Deregistration_Request(enb, ue, buffer, switch_off);
 	/* Sending Deregistration Request */
 	/* MUST BE ON STREAM 60 */
 	sctp_sendmsg(socket, (void *) buffer, (size_t) len, NULL, 0, htonl(SCTP_NGAP), 0, 0, 0, 0);
 	printOK("Deregistration request sent.\n");
 
-	/* Receiving AMF answer */
-	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
-	flags = 0;
-	recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
-	if(recv_len < 0)
-	{
-		printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
-		printUE(ue);
-		return ERROR;
+	if(switch_off == 0) {
+		/* Receiving AMF answer */
+		bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));
+		flags = 0;
+		recv_len = sctp_recvmsg(socket, (void *)buffer, BUFFER_LEN, (struct sockaddr *)&addr, &from_len, &sndrcvinfo, &flags);
+		if(recv_len < 0)
+		{
+			printError("SCTP (ERRNO: %d): %s\n", errno, strerror(errno));
+			printUE(ue);
+			return ERROR;
+		}
+		if(analyze_NG_DeregistrationAccept(ue, enb, buffer, recv_len) == 1)
+		{
+			printError("Wrong Deregistration accept message.\n");
+			memory_dump(buffer, recv_len);
+			printUE(ue);
+			return ERROR;
+		}
+		printOK("Deregistration accept\n");
 	}
-	if(analyze_NG_DeregistrationRequest(ue, enb, buffer, recv_len) == 1)
-	{
-		printError("Wrong Deregistration accept message.\n");
-		memory_dump(buffer, recv_len);
-		printUE(ue);
-		return ERROR;
-	}
-	printOK("Deregistration accept\n");
 
 	/* Receiving AMF answer */
 	bzero(&sndrcvinfo, sizeof(struct sctp_sndrcvinfo));

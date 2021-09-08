@@ -168,7 +168,8 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 		#ifdef _5G
-		if(procedure_Deregistration_Request(enb, ue, switch_off))
+		//if(procedure_Deregistration_Request(enb, ue, switch_off))
+		if(procedure_Deregistration_Request(enb, ue, 1))
 		{
 			printError("Move to Detached (UEDeregister) error\n");
 			response[0] = 0;
