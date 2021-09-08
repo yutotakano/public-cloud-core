@@ -19,7 +19,7 @@ typedef struct process_message_args {
 
 void *process_message(void *raw_args);
 
-void start_listener(char * mme_ip_address);
+void start_listener(char * mme_ip_address, int use_threads);
 
 int main(int argc, char const *argv[]);
 

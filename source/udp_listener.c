@@ -114,7 +114,7 @@ void *process_message(void *raw_args) {
 }
 
 
-void start_listener(char * mme_ip_address)
+void start_listener(char * mme_ip_address, int use_threads)
 {
 	int sock_udp;
 	int n;
@@ -156,9 +156,14 @@ void start_listener(char * mme_ip_address)
 		args->num_bytes_received = n;
 		args->sock_udp = sock_udp;
 
-		pthread_t thread;
-		int thread_create = pthread_create(&thread, &thread_attr, process_message, (void *) args);
-		ogs_assert(thread_create == 0); // Failed to create thread
+		if (use_threads) {
+			pthread_t thread;
+			int thread_create = pthread_create(&thread, &thread_attr, process_message, (void *) args);
+			ogs_assert(thread_create == 0); // Failed to create thread
+		}
+		else {
+			process_message((void *) args);
+		}
 	}
 
 	ogs_assert(n != -1); // An UDP error occured
@@ -171,8 +176,8 @@ void start_listener(char * mme_ip_address)
 
 int main(int argc, char const *argv[])
 {
-	if(argc != 3 && argc != 4) {
-		printf("RUN: ./corekube_udp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS> [PRODUCTION=0]\n");
+	if(argc < 3 || argc > 5) {
+		printf("RUN: ./corekube_udp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS> [LOG_LEVEL=4] [THREADS=1]\n");
 		return 1;
 	}
 
@@ -181,8 +186,13 @@ int main(int argc, char const *argv[])
 
 	// in production, turn off info logs
 	int default_log_level = OGS_LOG_INFO;
-	if (argc == 4 && atoi(argv[3]) >= OGS_LOG_NONE && atoi(argv[3]) <= OGS_LOG_FULL)
+	if (argc >= 4 && atoi(argv[3]) >= OGS_LOG_NONE && atoi(argv[3]) <= OGS_LOG_FULL)
 		default_log_level = atoi(argv[3]);
+
+	// determine whether threading should be used
+	int use_threads = 1;
+	if (argc >= 5 && ! atoi(argv[4]))
+		use_threads = 0;
 
 	// initialise the Open5GS core library
 	ogs_core_initialize();
@@ -208,7 +218,7 @@ int main(int argc, char const *argv[])
 	//memcpy(db_ip_address, (char *)argv[2], strlen((char *)argv[2]));
 	db_sock = db_connect((char *)argv[2], 0);
 
-	start_listener((char *)argv[1]);
+	start_listener((char *)argv[1], use_threads);
 
 	db_disconnect(db_sock);
 
