@@ -1437,12 +1437,6 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	struct sctp_sndrcvinfo sndrcvinfo;
 	socklen_t from_len;
 
-	if(switch_off == 1)
-	{
-		printWarning("5G UE_SWITCH_OFF_DETACH events not implemented.\n");
-		return ERROR;
-	}
-
 	int socket = get_mme_socket(enb);
 	from_len = (socklen_t)sizeof(struct sockaddr_in);
 	bzero((void *)&addr, sizeof(struct sockaddr_in));
