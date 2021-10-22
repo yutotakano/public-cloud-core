@@ -198,7 +198,8 @@ class UserInput():
 			except:
 				cp_mode = False
 			num_threads = int(request.form['threads'])
-			print(num_threads)
+			if cp_mode == True:
+				print('Control-Plane Only mode: ' + str(num_threads) + ' threads per container')
 			self.refresh_time = int(request.form['refresh_time'])
 			if self.generate_data(config, docker_image, mme_ip, multi_ip, cp_mode, num_threads):
 				self.configuration = False

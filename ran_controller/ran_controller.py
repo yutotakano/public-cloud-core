@@ -12,7 +12,7 @@ import math
 from kubernetes import config, client
 
 # Debug variable to use in local testbed
-k8s = True
+k8s = False
 mobilestream = False
 
 
