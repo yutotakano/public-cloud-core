@@ -12,7 +12,7 @@ import math
 from kubernetes import config, client
 
 # Debug variable to use in local testbed
-k8s = True
+k8s = False
 mobilestream = False
 
 
@@ -134,6 +134,7 @@ class RANControler:
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
+		print('Getting eNB with ID: %d' % num)
 		for enb in self.controller_data['eNBs']:
 			if enb.get_id_int() == num:
 				return enb
@@ -157,7 +158,7 @@ class RANControler:
 		print(msg['type'])
 		if msg['type'] == 'init' or msg['type'] == 'cp_mode':
 			print('New slave at ' + msg['ip'] + ':' + str(msg['port']))
-			print('NodeIP (integer): %d' % msg['ip_node'])
+			print('Node IP: ' + str(socket.inet_ntoa(struct.pack('!L', msg['ip_node']))))
 			# Assign first eNBs
 			for enb in self.controller_data['eNBs']:
 				enb.acquire_assign()
@@ -167,13 +168,14 @@ class RANControler:
 					if mobilestream == True:
 						self.enb_ips.append(msg['ip_node'])
 					enb.acquire()
-					enb.release_assign()
 					# This slave has to be a eNB
 					buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
+					print('eNB role assigned to Slave at ' + msg['ip'] + ':' + str(msg['port']))
+					enb.release_assign()
 					return
 				enb.release_assign()
-
+			print('No eNB role available for this Slave')
 			# Control Plane Only mode enabled
 			if self.cp_mode == True and msg['type'] == 'init':
 				print('New UE in Control-Plane Only mode')
@@ -198,6 +200,7 @@ class RANControler:
 				buf.append((num >> 8) & 0xFF)
 				buf.append(num & 0xFF)
 				self.sock.sendto(buf, (msg['ip'], msg['port']))
+				print('UE (Control-Plane Only) role assigned to Slave at ' + msg['ip'] + ':' + str(msg['port']))
 				return
 
 			# Get the first not assigned UE
@@ -217,6 +220,7 @@ class RANControler:
 
 					buf = ue.serialize(CODE_OK | CODE_UE_BEHAVIOUR, assoc_enb, self.multiplexer, self.epc)
 					self.sock.sendto(buf, (msg['ip'], msg['port']))
+					print('UE role assigned to Slave at ' + msg['ip'] + ':' + str(msg['port']))
 					return
 				ue.release()
 
@@ -392,7 +396,7 @@ class RANControler:
 			msg['type'] = 'cp_mode'
 			msg['ip'] = address[0]
 			msg['port'] = address[1]
-			msg['data'] = data[1:]
+			msg['ip_node'] = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
 		elif data[0] == CODE_OK | CODE_ENB_BEHAVIOUR:
 			msg['type'] = 'enb_run'
 			msg['ip'] = address[0]

@@ -637,6 +637,7 @@ void * x2_thread(void * args)
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
 	memcpy(&enb_addr.sin_addr.s_addr, get_enb_ip(enb), 4);
+	//LOCALenb_addr.sin_port = htons(0);
 	enb_addr.sin_port = htons(X2_ENB_PORT);
 	memset(&(enb_addr.sin_zero), '\0', 8);
 	/* Bind it to a specific port */
@@ -747,8 +748,11 @@ int enb_emulator_start(enb_data * data)
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
 	memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
+	//LOCALenb_addr.sin_port = htons(0);
 	enb_addr.sin_port = htons(ENB_PORT);
 	memset(&(enb_addr.sin_zero), '\0', 8);
+
+	printInfo("Binding eNB to %d.%d.%d.%d:%d\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3], ENB_PORT);
 
 	/* Binding process */
 	if(bind(sockfd, (struct sockaddr *) &enb_addr, sizeof(struct sockaddr)) == -1)
@@ -778,7 +782,7 @@ int enb_emulator_start(enb_data * data)
     /* Start X2 interface thread */
 	if (pthread_create(&x2_t, NULL, x2_thread, 0) != 0)
     {
-        perror("pthread_create enb_emulator_thread");
+        perror("pthread_create x2_thread");
         send_enb_behaviour_error(get_enb_id(enb));
         return 1;
     }

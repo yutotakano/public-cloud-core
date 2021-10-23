@@ -1049,23 +1049,12 @@ int ue_emulator_start(ue_data * data, int cp_mode)
     memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
     enb_addr.sin_port = htons(ENB_PORT);
 
-	/* Connect to eNB */
-	while(1)
-	{
-		if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
-			if (errno != ECONNREFUSED)
-			{
-				close(sockfd);
-				perror("UE connect");
-				send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
-				return 1;
-			}
-		}
-		else
-		{
-			sleep(2);
-			break;
-		}
+    printInfo("Trying to connect with eNB (%d.%d.%d.%d:%d)\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3], ENB_PORT);
+    if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
+		close(sockfd);
+		printError("UE cannot connect with eNB (%d): %s\n", errno, strerror(errno));
+		send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
+		return 1;
 	}
 
 	/* Filling buffer with the UE information */

@@ -314,7 +314,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         uint32_t num_threads;
         printInfo("Control-Plane Only Mode enabled!\n");
         num_threads = (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
-        printf("This nUE has to run %d threads.\n", num_threads);
+        printInfo("This nUE has to run %d threads.\n", num_threads);
         start_cp_mode_only((int)num_threads);
     }
     return 0;
