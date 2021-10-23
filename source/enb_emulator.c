@@ -168,8 +168,7 @@ int analyze_ue_msg(int client, uint8_t * buffer, int len, uint8_t * response, in
 		idlemsg = (idle_msg *)(buffer + 1);
 		ue = (UE *)peekElem(list, (void *)idlemsg->msin);
 		#ifdef _5G
-		//if(procedure_Deregistration_Request(enb, ue, switch_off))
-		if(procedure_Deregistration_Request(enb, ue, 1))
+		if(procedure_Deregistration_Request(enb, ue, switch_off))
 		{
 			printError("Move to Detached (UEDeregister) error\n");
 			response[0] = 0;
@@ -637,7 +636,7 @@ void * x2_thread(void * args)
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
 	memcpy(&enb_addr.sin_addr.s_addr, get_enb_ip(enb), 4);
-	//LOCALenb_addr.sin_port = htons(0);
+	//LOCAL enb_addr.sin_port = htons(0);
 	enb_addr.sin_port = htons(X2_ENB_PORT);
 	memset(&(enb_addr.sin_zero), '\0', 8);
 	/* Bind it to a specific port */
@@ -748,7 +747,7 @@ int enb_emulator_start(enb_data * data)
 	/* Setup eNB address */
 	enb_addr.sin_family = AF_INET;
 	memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
-	//LOCALenb_addr.sin_port = htons(0);
+	//LOCAL enb_addr.sin_port = htons(0);
 	enb_addr.sin_port = htons(ENB_PORT);
 	memset(&(enb_addr.sin_zero), '\0', 8);
 

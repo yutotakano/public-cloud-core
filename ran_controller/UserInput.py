@@ -141,18 +141,18 @@ class UserInput():
 			multiplexer = struct.unpack("!I", socket.inet_aton(multi_ip))[0]
 		except:
 			return False
+
 		if config:
 			file_content = config.read()
 			data = json.loads(file_content)
 		else:
 			return False
 
-		i = 1
 		for enb in data['enbs']:
-			new_enb = eNB(i, enb['enb_id'], enb['enb_mcc'], enb['enb_mnc'])
-			# Add it to the final eNB list
-			self.controller_data['eNBs'].add(new_enb)
-			i = i + 1
+			new_enb = eNB(enb['enb_num'], enb['enb_mcc'], enb['enb_mnc'])
+			if self.check_if_enb_exists(enb['enb_num']) == False:
+				# Add it to the final eNB list
+				self.controller_data['eNBs'].add(new_enb)
 
 		i = 1
 		for ue in data['ues']:
@@ -162,14 +162,27 @@ class UserInput():
 			if enb and self.validate_control_plane_actions(new_ue.get_control_plane()):
 				# Add serialized control plane to the UE
 				new_ue.set_serialized_control_plane(self.serialize_control_plane(new_ue.get_control_plane()))
-				# Add UE to the final UE list
-				self.controller_data['UEs'].add(new_ue)
-				i = i + 1
+				if self.check_if_ue_exists(ue['ue_msin']) == False:
+					# Add UE to the final UE list
+					self.controller_data['UEs'].add(new_ue)
+					i = i + 1
 
 		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted, cp_mode, num_threads)
 
 		return True
 	
+	def check_if_enb_exists(self, num):
+		for enb in self.controller_data['eNBs']:
+			if enb.get_num() == num:
+				return True
+		return False
+
+	def check_if_ue_exists(self, msin):
+		for ue in self.controller_data['UEs']:
+			if ue.get_msin() == msin:
+				return True
+		return False
+
 	def index(self):
 		if self.configuration:
 			return render_template('config.html')

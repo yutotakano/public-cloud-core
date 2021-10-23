@@ -74,6 +74,7 @@ class UE:
 		data.append(self.id & 0xFF)
 		# Add IMSI
 		imsi = self.mcc + self.mnc + self.msin
+		print('Serializing UE ' + imsi)
 		for c in imsi:
 			data.append(ord(c) & 0xFF)
 		# Add key
@@ -162,9 +163,11 @@ class UE:
 	def set_enb_id(self, enb_id):
 		self.enb_id = enb_id
 
+	def get_msin(self):
+		return self.msin
 
 	def __eq__(self, other):
 		return self.id != other.id and self.msin != other.msin
 
 	def __hash__(self):
-		return self.id
+		return int(self.msin)

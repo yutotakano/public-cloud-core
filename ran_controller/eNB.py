@@ -3,9 +3,9 @@ from threading import Lock
 
 class eNB:
 	status = -1
-	def __init__(self, enb_num, enb_id, mcc, mnc):
+	def __init__(self, enb_num, mcc, mnc):
 		self.num = enb_num
-		self.id = enb_id
+		self.id = enb_num + 14680064
 		self.mcc = mcc
 		self.mnc = mnc
 		self.status = Status()
