@@ -236,87 +236,98 @@ class RANControler:
 			# Get eNB from data
 			enb = self.get_enb_by_buffer(msg['data'])
 
-			# Save eNB address
-			enb.set_addr((msg['ip'], msg['port']))
-			enb.set_connected() # Running/Disconnected
-			enb.release()
-			print('New eNB at ' + msg['ip'] + ':' + str(msg['port']))
+			if enb is not None:
+				# Save eNB address
+				enb.set_addr((msg['ip'], msg['port']))
+				enb.set_connected() # Running/Disconnected
+				enb.release()
+				print('New eNB at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'enb_error_run':
 			# eNB slave answers with Error message
 			# Get eNB from data
 			enb = self.get_enb_by_buffer(msg['data'])
 
-			ip_node = (msg['data'][4] << 24) | (msg['data'][5] << 16) | (msg['data'][6] << 8) | msg['data'][7]
-			if mobilestream == True:
-				self.enb_ips.remove(ip_node)
+			if enb is not None:
+				ip_node = (msg['data'][4] << 24) | (msg['data'][5] << 16) | (msg['data'][6] << 8) | msg['data'][7]
+				if mobilestream == True:
+					self.enb_ips.remove(ip_node)
 
-			# Save eNB address
-			enb.set_stopped() # Stopped/Not Running
-			enb.release()
-			print('eNB error at ' + msg['ip'] + ':' + str(msg['port']))
+				# Save eNB address
+				enb.set_stopped() # Stopped/Not Running
+				enb.release()
+				print('eNB error at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_run':
 			# UE slave answers with OK message
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_addr((msg['ip'], msg['port']))
-			ue.set_traffic()
-			self.controller_data['running_ues'] = self.controller_data['running_ues'] + 1
-			print('New UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
+			if ue is not None:
+				# Save UE address
+				ue.set_addr((msg['ip'], msg['port']))
+				ue.set_traffic()
+				self.controller_data['running_ues'] = self.controller_data['running_ues'] + 1
+				print('New UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_error_run':
 			# UE slave answers with Error message
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_stopped()
-			ue.set_flag(False)
-			print('UE error at ' + msg['ip'] + ':' + str(msg['port']))
+			if ue is not None:
+				# Save UE address
+				ue.set_stopped()
+				ue.set_flag(False)
+				print('UE error at ' + msg['ip'] + ':' + str(msg['port']))
 
 		elif msg['type'] == 'ue_idle':
 			# UE slave informs that its new state is Idle
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_idle()
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Idle')
+			if ue is not None:
+				# Save UE address
+				ue.set_idle()
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Idle')
 
 		elif msg['type'] == 'ue_detached':
 			# UE slave informs that its new state is Detached
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_disconnected()
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
+			if ue is not None:
+				# Save UE address
+				ue.set_disconnected()
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Detached')
 
 		elif msg['type'] == 'ue_attached':
 			# UE slave informs that its new state is Attached/Connected
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_traffic()
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
+			if ue is not None:
+				# Save UE address
+				ue.set_traffic()
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Attached')
 
 		elif msg['type'] == 'moved_to_connected':
 			# UE slave informs that its new state is Attached/Connected
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'])
 
-			# Save UE address
-			ue.set_traffic()
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Connected')
+			if ue is not None:
+				# Save UE address
+				ue.set_traffic()
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' moved to Connected')
 
 		elif msg['type'] == 'get_enb':
 
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
+
+			if ue is None:
+				return
 
 			# Get eNB from data
 			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
@@ -350,38 +361,41 @@ class RANControler:
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
 
-			# Get eNB from data
-			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
+			if ue is not None:
+				# Get eNB from data
+				enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
 
-			# Update UE info
-			ue.set_enb_id(enb.get_num())
+				# Update UE info
+				ue.set_enb_id(enb.get_num())
 
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' X2 Handover completed to eNB ' + str(enb.get_num()))
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' X2 Handover completed to eNB ' + str(enb.get_num()))
 
 		elif msg['type'] == 'ue_attached_to_enb':
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
 
-			# Get eNB from data
-			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
+			if ue is not None:
+				# Get eNB from data
+				enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
 
-			# Update UE info
-			ue.set_enb_id(enb.get_num())
-			ue.set_traffic()
+				# Update UE info
+				ue.set_enb_id(enb.get_num())
+				ue.set_traffic()
 
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' Attached to eNB ' + str(enb.get_num()))
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' Attached to eNB ' + str(enb.get_num()))
 
 		elif msg['type'] == 's1_completed':
 			# Get UE from data
 			ue = self.get_ue_by_buffer(msg['data'][:4]) # First 4 bytes
 
-			# Get eNB from data
-			enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
+			if ue is not None:
+				# Get eNB from data
+				enb = self.get_enb(msg['data'][4:]) # Last 4 bytes
 
-			# Update UE info
-			ue.set_enb_id(enb.get_num())
+				# Update UE info
+				ue.set_enb_id(enb.get_num())
 
-			print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' S1 Handover completed to eNB ' + str(enb.get_num()))
+				print('UE (' + ue.get_imsi() + ') at ' + msg['ip'] + ':' + str(msg['port']) + ' S1 Handover completed to eNB ' + str(enb.get_num()))
 
 
 	def generate_msg(self, data, address):
