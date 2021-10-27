@@ -1,8 +1,9 @@
 #include "corekube_config.h"
+#include "db_accesses.h"
 
 #include "ngap_pdu_session_resource_setup_request_transfer.h"
 
-ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer()
+ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_t amf_ue_ngap_id)
 {
     ogs_info("Building NGAP PDU Session Resource Setup Request Transfer message");
 
@@ -57,10 +58,19 @@ ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer()
         NGAP_UPTransportLayerInformation_PR_gTPTunnel;
     UPTransportLayerInformation->choice.gTPTunnel = gTPTunnel;
 
+    pdu_session_resource_setup_request_transfer_params_t fetch_params;
+    fetch_params.amf_ue_ngap_id = amf_ue_ngap_id;
+    int fetch_result = nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(&fetch_params);
+    ogs_assert(fetch_result == OGS_OK);
+
     upf_n3_ip.ipv4 = 1;
-    OGS_HEX(COREKUBE_DEFAULT_TRANSPORT_LAYER_ADDRESS, strlen(COREKUBE_DEFAULT_TRANSPORT_LAYER_ADDRESS), &upf_n3_ip.addr);
+    memcpy(&upf_n3_ip.addr, fetch_params.pdn_ip, IP_LEN);
     ogs_asn_ip_to_BIT_STRING(&upf_n3_ip, &gTPTunnel->transportLayerAddress);
-    ogs_asn_uint32_to_OCTET_STRING(COREKUBE_DEFAULT_TEID, &gTPTunnel->gTP_TEID);
+    ogs_asn_buffer_to_OCTET_STRING(fetch_params.ue_teid, TEID_LEN, &gTPTunnel->gTP_TEID);
+
+    // free the memory from the paramaters
+    ogs_free(fetch_params.pdn_ip);
+    ogs_free(fetch_params.ue_teid);
 
     ie = CALLOC(1, sizeof(NGAP_PDUSessionResourceSetupRequestTransferIEs_t));
     ogs_assert(ie);
@@ -124,4 +134,33 @@ ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer()
 
     return ogs_asn_encode(
             &asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer, &message);
+}
+
+
+int nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(pdu_session_resource_setup_request_transfer_params_t * params) {
+    ogs_info("Fetching TEID and PDN IP from database");
+
+    ogs_assert(params);
+
+    // convert the AMF_UE_NGAP_ID to a buffer, suitable for the DB
+    OCTET_STRING_t amf_ue_ngap_id_buf;
+    ogs_asn_uint32_to_OCTET_STRING( (uint32_t) params->amf_ue_ngap_id, &amf_ue_ngap_id_buf);
+
+    // fetch the TEID and PDN IP from the database
+    corekube_db_pulls_t db_pulls;
+    int db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 2, UE_TEID, PDN_IP);
+    ogs_assert(db == OGS_OK);
+
+    // store the fetched values in the return structure
+    params->ue_teid = ogs_malloc(TEID_LEN * sizeof(uint8_t));
+    memcpy(params->ue_teid, db_pulls.ue_teid, TEID_LEN);
+    params->pdn_ip = ogs_malloc(IP_LEN * sizeof(uint8_t));
+    memcpy(params->pdn_ip, db_pulls.pdn_ip, IP_LEN);
+
+    // free the buffer used for the DB access
+    ogs_free(amf_ue_ngap_id_buf.buf);
+    // free the structures pulled from the DB
+    ogs_free(db_pulls.head);
+
+    return OGS_OK;
 }

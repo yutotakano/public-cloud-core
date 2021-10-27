@@ -96,7 +96,7 @@ int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setu
     ogs_asn_uint8_to_OCTET_STRING(CoreKube_NSSAI_sST, sST);
 
     ogs_pkbuf_t * transferBuf = NULL;
-    transferBuf = nas_build_ngap_pdu_session_resource_setup_request_transfer();
+    transferBuf = nas_build_ngap_pdu_session_resource_setup_request_transfer(params->amf_ue_ngap_id);
     ogs_assert(transferBuf);
 
     transfer = &PDUSessionItem->pDUSessionResourceSetupRequestTransfer;
