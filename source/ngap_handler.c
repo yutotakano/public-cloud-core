@@ -1,6 +1,7 @@
 #include "ngap_ng_setup_request.h"
 #include "ngap_initial_ue_message.h"
 #include "ngap_uplink_nas_transport.h"
+#include "ngap_pdu_session_resource_setup_response.h"
 
 #include "ngap_handler.h"
 
@@ -118,8 +119,7 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
             ogs_info("Received Initial Context Setup Response"); // do nothing
             break;
         case NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse:
-            ogs_info("Received PDU Session Resource Setup Response"); // do nothing
-            break;
+            return ngap_handle_pdu_session_resource_setup_response(ngap_message, response);
         case NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete:
             ogs_info("Received UE Context Release Complete"); // do nothing
             break;

@@ -17,7 +17,9 @@ typedef struct pdu_session_resource_setup_request_transfer_params {
 } pdu_session_resource_setup_request_transfer_params_t;
 
 ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_t amf_ue_ngap_id);
+int ngap_handle_pdu_session_resource_setup_response_transfer(uint64_t amf_ue_ngap_id, ogs_pkbuf_t *pkbuf);
 
 int nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(pdu_session_resource_setup_request_transfer_params_t * params);
+int nas_store_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(pdu_session_resource_setup_request_transfer_params_t * params);
 
 #endif /* __COREKUBE_NGAP_PDU_SESSION_RESOURCE_SETUP_REQUEST_TRANSFER_H__ */
