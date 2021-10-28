@@ -5,6 +5,8 @@
 #include <time.h>
 #include "user.h"
 
+#define GATEWAY_IP 0xAC100001
+
 #define UINT32_TO_ARRAY(array, u32)	\
 {					\
 	array[0] = (u32 >> 24) & 0xFF;	\
@@ -203,11 +205,13 @@ void complete_user_info(UserInfo * user)
 
 	/* This function initialize the uncompleted user information */
 	user->epc_nas_sequence_number = 0;
-	/* To simplify the process, EPC TEID, MME UE S1AP ID and TMSI are going to be equal and generated from the IMSI */
+	/* To simplify the process, EPC TEID, MME UE S1AP ID, TMSI and PDN IP are going to be equal and generated from the IMSI */
 	hash = hash_imsi_user_info(user);
 	UINT32_TO_ARRAY(user->mme_ue_s1ap_id, hash);
 	UINT32_TO_ARRAY(user->tmsi, hash);
 	UINT32_TO_ARRAY(user->epc_teid, hash);
+	UINT32_TO_ARRAY(user->epc_teid, hash);
+	UINT32_TO_ARRAY(user->pdn_ipv4, (GATEWAY_IP + (hash & 0x0000FFFF))); /* PDN IP = GATEWAY IP + IMSI */
 	/* Generate initial RAND */
 	generate_rand(user);
 }
@@ -239,6 +243,7 @@ void show_user_info(UserInfo * user)
 	printf("EPC TEID: 0x%.8x\n", epc_teid);
 	printf("TMSI: 0x%.8x\n", tmsi);
 	printf("MME-UE-S1AP-ID: 0x%.8x\n", mme_ue_s1ap_id);
+	printf("PDN IP: %d.%d.%d.%d\n", user->pdn_ipv4[0], user->pdn_ipv4[1], user->pdn_ipv4[2], user->pdn_ipv4[3]);
 }
 
 uint32_t hash_imsi(char * imsi)

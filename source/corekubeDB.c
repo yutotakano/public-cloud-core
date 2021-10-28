@@ -174,7 +174,7 @@ void process_line(char * line, ssize_t line_len)
 	}
 
 #ifdef DEBUG
-	/* show_user_info(new_user); */
+	show_user_info(new_user);
 #endif
 
 	free_user_info((void *)new_user);
@@ -359,9 +359,9 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case ENB_IP:
 				memcpy(get_user_enb_ip(user), request+offset+1, IP_LEN);
 				break;
-			case PDN_IP:
-				memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
-				break;
+			//case PDN_IP:
+			//	memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
+			//	break;
 			case EPC_NAS_SEQUENCE_NUMBER:
 				set_user_epc_nas_sequence_number(user, request[offset+6]);
 				break;
