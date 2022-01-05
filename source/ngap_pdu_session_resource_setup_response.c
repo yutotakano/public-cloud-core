@@ -1,6 +1,7 @@
 #include "nas_ngap_params.h"
 #include "nas_handler.h"
 #include "ngap_pdu_session_resource_setup_request_transfer.h"
+#include "ngap_pdu_session_resource_setup_response_transfer.h"
 
 #include "ngap_pdu_session_resource_setup_response.h"
 

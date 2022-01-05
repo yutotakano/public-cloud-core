@@ -2,7 +2,7 @@
 
 #include "nas_pdu_session_establishment_accept.h"
 
-int nas_build_pdu_session_establishment_accept(ogs_nas_5gs_message_t *message)
+int nas_build_pdu_session_establishment_accept(uint32_t pdu_ip, ogs_nas_5gs_message_t *message)
 {
     ogs_info("Building NAS GSM PDU Session Establishment Accept message");
 
@@ -125,7 +125,7 @@ int nas_build_pdu_session_establishment_accept(ogs_nas_5gs_message_t *message)
     pdu_address->pdn_type = OGS_NAS_EPS_PDN_TYPE_IPV4;
 
     if (pdu_address->pdn_type == OGS_PDU_SESSION_TYPE_IPV4) {
-        pdu_address->addr = COREKUBE_DEFAULT_PDU_ADDRESS;
+        pdu_address->addr = pdu_ip;
         pdu_address->length = OGS_NAS_PDU_ADDRESS_IPV4_LEN;
     } else {
         ogs_error("Unexpected PDN Type %u", pdu_address->pdn_type);

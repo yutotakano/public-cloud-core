@@ -13,4 +13,6 @@ extern int __corekube_log_domain;
 
 int nas_handle_pdu_session_establishment_request(ogs_nas_5gs_pdu_session_establishment_request_t *message, nas_ngap_params_t *params, message_handler_response_t * response);
 
+int nas_pdu_session_establishment_fetch_pdu_ip(uint32_t amf_ue_ngap_id, uint32_t *pdn_ip);
+
 #endif /* __COREKUBE_NAS_PDU_SESSION_ESTABLISHMENT_REQUEST_H__ */
