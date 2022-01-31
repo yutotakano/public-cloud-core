@@ -347,6 +347,9 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	/* Update user info based on the PUSH items */
 	while(request[offset] != 0) {
 		switch(request[offset]) {
+			case MME_UE_S1AP_ID:
+				memcpy(get_user_mme_ue_id(user), request+offset+1, MME_UE_S1AP_ID_LEN);
+				break;
 			case ENB_UE_S1AP_ID:
 				memcpy(get_user_enb_ue_id(user), request+offset+1, ENB_UE_S1AP_ID_LEN);
 				break;
