@@ -84,6 +84,10 @@ uint8_t * add_identifier(uint8_t * buffer, ITEM_TYPE id, uint8_t * value)
 uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 {
 	switch(item) {
+		case MME_UE_S1AP_ID:
+			buffer[0] = MME_UE_S1AP_ID;
+			memcpy(buffer+1, value, MME_UE_S1AP_ID_LEN);
+			break;
 		case ENB_UE_S1AP_ID:
 			buffer[0] = ENB_UE_S1AP_ID;
 			memcpy(buffer+1, value, ENB_UE_S1AP_ID_LEN);
