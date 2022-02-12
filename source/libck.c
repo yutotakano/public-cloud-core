@@ -151,12 +151,31 @@ int push_items(uint8_t * buffer, ITEM_TYPE id, uint8_t * id_value, int num_items
 	va_list ap;
 
 	va_start(ap, num_items);
-	ptr = add_identifier(buffer, id, id_value);
+	/* Special case where the ID is NEW_ENB */
+	if(id == NEW_ENB) {
+		ptr = buffer;
+		ptr[0] = NEW_ENB;
+		ptr += 17;
+	}
+	else {
+		ptr = add_identifier(buffer, id, id_value);
+	}
 
 	for(i = 0; i < num_items; i++) {
 		type = (ITEM_TYPE) va_arg(ap, int);
-		item = va_arg(ap, uint8_t*);
-		ptr = push_item(ptr, type, item);
+		/* Special case: NEW_ENB (arg0) + eNB_ID (arg1) + eNB_SOCK_NUM (arg2) */
+		if(type == NEW_ENB) {
+			ptr[0] = NEW_ENB;
+			item = va_arg(ap, uint8_t*); /* eNB_ID */
+			memcpy(ptr+1, item, 4);
+			item = va_arg(ap, uint8_t*); /* eNB_SOCK_NUM */
+			memcpy(ptr+5, item, 4);
+			ptr += 17;
+		}
+		else {
+			item = va_arg(ap, uint8_t*);
+			ptr = push_item(ptr, type, item);
+		}
 	}
 
 	va_end(ap);
@@ -173,7 +192,7 @@ uint8_t * pull_item(uint8_t * buffer, ITEM_TYPE item)
 int pull_items(uint8_t * buffer, int push_len, int num_items, ...)
 {
 	int i;
-	uint8_t * ptr;
+	uint8_t * ptr, * enb;
 	ITEM_TYPE item;
 	va_list ap;
 
@@ -184,6 +203,13 @@ int pull_items(uint8_t * buffer, int push_len, int num_items, ...)
 	for(i = 0; i < num_items; i++) {
 		item = (ITEM_TYPE) va_arg(ap, int);
 		ptr = pull_item(ptr, item);
+		/* Special case: GET_ENB (1Byte) + ENB_ID (4Bytes) */
+		if(item == GET_ENB) {
+			enb = va_arg(ap, uint8_t*);
+			memcpy(ptr, enb, 4);
+			ptr += 4;
+		}
+
 	}
 
 	ptr = pull_item(ptr, EOM);

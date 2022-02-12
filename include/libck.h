@@ -19,29 +19,31 @@
 
 enum ITEM_TYPE
 {
-	IMSI=1,
-	MSIN,
-	TMSI,
-	ENB_UE_S1AP_ID,
-	UE_TEID,
-	SPGW_IP,
-	ENB_IP,
-	PDN_IP,
-	UE_NAS_SEQUENCE_NUMBER,
-	EPC_NAS_SEQUENCE_NUMBER,
-	UE_NAS_SEQUENCE_NUMBER_NO_INC,
-	KEY,
-	OPC,
-	RAND,
-	RAND_UPDATE,
-	MME_UE_S1AP_ID,
-	EPC_TEID,
-	AUTH_RES,
-	ENC_KEY,
-	INT_KEY,
-	KASME_1,
-	KASME_2,
-	EOM
+	EOM=1, /* 0x01 */
+	IMSI, /* 0x02 */
+	MSIN, /* 0x03 */
+	TMSI, /* 0x04 */
+	ENB_UE_S1AP_ID, /* 0x05 */
+	UE_TEID, /* 0x06 */
+	SPGW_IP, /* 0x07 */
+	ENB_IP, /* 0x08 */
+	PDN_IP, /* 0x09 */
+	UE_NAS_SEQUENCE_NUMBER, /* 0x0A */
+	EPC_NAS_SEQUENCE_NUMBER, /* 0x0B */
+	UE_NAS_SEQUENCE_NUMBER_NO_INC, /* 0x0C */
+	KEY, /* 0x0D */
+	OPC, /* 0x0E */
+	RAND, /* 0x0F */
+	RAND_UPDATE, /* 0x10 */
+	MME_UE_S1AP_ID, /* 0x11 */
+	EPC_TEID, /* 0x12 */
+	AUTH_RES, /* 0x13 */
+	ENC_KEY, /* 0x14 */
+	INT_KEY, /* 0x15 */
+	KASME_1, /* 0x16 */
+	KASME_2, /* 0x17 */
+	NEW_ENB, /* 0x18 */
+	GET_ENB /* 0x19 */
 };
 typedef uint8_t ITEM_TYPE;
 
