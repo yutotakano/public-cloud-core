@@ -77,6 +77,35 @@ int main(int argc, char const *argv[])
 	dump_mem(buf, n);
 	printf("\n\n");
 
+
+	/*********************/
+	/* Testing HANDOVERS */
+	/*********************/
+	printf("Testing HANDOVERS\n");
+	/* Creating a new eNB with the ID and the socket number */
+	uint8_t enb_id[] = {0x00, 0x00, 0x00, 0x01};
+	uint8_t enb_sock_num[] = {0x00, 0x00, 0x00, 0x05};
+	n = push_items(buf, NEW_ENB, NULL, 1, NEW_ENB, enb_id, enb_sock_num);
+	n = pull_items(buf, n, 0);
+	printf("REQUEST (%d):", n);
+	dump_mem(buf, n);
+	send_request(sock, buf, n);
+
+	/* Requesting data of the UE and the Target eNB */
+	n = push_items(buf, MME_UE_S1AP_ID, (uint8_t *)mme_ue_id, 0);
+	n = pull_items(buf, n, 3, KEY, OPC, GET_ENB, enb_id);
+	printf("REQUEST (%d):", n);
+	dump_mem(buf, n);
+	send_request(sock, buf, n);
+	n = recv_response(sock, buf, 64);
+	printf("RESPONSE (%d):", n);
+	dump_mem(buf, n);
+	printf("\n\n");
+
+
+
+
+
 	db_disconnect(sock);
 
 

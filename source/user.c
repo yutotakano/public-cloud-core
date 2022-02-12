@@ -91,6 +91,7 @@ uint8_t * get_user_opc(UserInfo * user)
 
 uint8_t * get_user_rand(UserInfo * user)
 {
+	/* Generate a new RAND */
 	return user->rand;
 }
 

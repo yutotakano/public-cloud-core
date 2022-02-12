@@ -15,6 +15,7 @@
 #include "crypto.h"
 #include "hashmap.h"
 #include "api.h"
+#include "enb.h"
 
 #define OK 0
 #define ERROR -1
@@ -39,6 +40,7 @@ void dump_mem(uint8_t * value, int len)
 }
 
 HashMap * imsi_map;
+HashMap * eNBs;
 
 /* Global socket */
 int sock;
@@ -217,11 +219,21 @@ int init_db(const char * db_file, int hashmap_size)
 
 	}
 
+	/* eNB HashMap */
+	eNBs = init_hashmap(hashmap_size, hash_enb_info);
+	if(eNBs == NULL) {
+		printError("Error creating eNBs HashMap.\n");
+		free_hashmap(imsi_map, free);
+		return ERROR;
+
+	}
+
 	/* Read DB from file */
 	if(read_db_file(db_file) == ERROR) {
 		printError("Error reading DB file.\n");
 		/* Destroy HashMaps */
 		free_hashmap(imsi_map, free_user_info);
+		free_hashmap(eNBs, free);
 		return ERROR;
 	}
 
@@ -275,6 +287,8 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	UserInfo * user;
 	int offset = 0, res_offset = 0, i; 
 	uint8_t tmp_nas;
+	ENBInfo * new_enb;
+	int flag_enb = 0;
 
 #ifdef DEBUG	
 	printf("REQUEST (%d):", request_len);
@@ -307,6 +321,12 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 #endif
 			user = (UserInfo *) hashmap_get(imsi_map, hash_mme_ue_s1ap_id(request+1));
 			break;
+		case NEW_ENB:
+#ifdef DEBUG
+			printInfo("Accessing DB to store a new eNB\n");
+#endif
+			flag_enb = 1;
+			break;
 		default:
 #ifdef DEBUG
 			printError("Trying to access the DB with an invalid ID.\n");
@@ -324,7 +344,7 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	offset += 17;
 
 	/* Invalid user ID */
-	if(user == NULL) {
+	if(user == NULL && flag_enb == 0) {
 #ifdef DEBUG
 		printError("The requested UE does not exist\n");
 #endif
@@ -340,10 +360,17 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	}
 
 #ifdef DEBUG
-	printInfo("Requested User Info: ");
-	show_user_info(user);
+	if(flag_enb == 0) {
+		printInfo("Requested User Info: ");
+		show_user_info(user);
+	}
+	else {
+		printInfo("Storing new eNB\n");
+	}
 #endif
-
+	/********/
+	/* PUSH */
+	/********/
 	/* Update user info based on the PUSH items */
 	while(request[offset] != 0) {
 		switch(request[offset]) {
@@ -386,6 +413,22 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case KASME_2:
 				memcpy(get_user_kasme2_key(user), request+offset+1, KEY_LEN);
 				break;
+			case NEW_ENB:
+				printInfo("Creating new eNB...\n");
+				new_enb = create_enb(request+offset+1, request+offset+5);
+				/* Add new eNB */
+				if(hashmap_add(eNBs, (uint8_t *) new_enb, enb_size()) == ERROR) {
+				#ifdef DEBUG
+						printWarning("Unable to add eNB to eNBs HasMap.\n");
+				#endif
+				}
+				else {
+				#ifdef DEBUG
+					printOK("eNB added\n");
+				#endif
+				}
+				free(new_enb);
+				break;
 			default:
 				/* Undefined Item */
 				break;
@@ -396,6 +439,9 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 	/* Skip the 0 byte used to separate PUSH items from PULL items */
 	offset++;
 
+	/********/
+	/* PULL */
+	/********/
 	/* Copy the fields specified in the PULL item list */
 	while(offset < request_len && request[offset] != EOM) {
 		switch(request[offset]) {
@@ -499,6 +545,18 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case KASME_2:
 				response[res_offset] = KASME_2;
 				memcpy(response+res_offset+1, get_user_kasme2_key(user), KEY_LEN);
+				break;
+			case GET_ENB:
+				response[res_offset] = GET_ENB;
+				uint32_t enb_id = (uint32_t)((request[offset+1] << 24) | (request[offset+2] << 16) | (request[offset+3] << 8) | request[offset+4]);
+				ENBInfo * enb = hashmap_get(eNBs, enb_id);
+				if(enb == NULL) {
+					printError("eNB 0x%.2x%.2x%.2x%.2x cannot be retrieved\n", request[offset+1], request[offset+2], request[offset+3], request[offset+4]);
+				}
+				else {
+					memcpy(response+res_offset+1, enb_get_socket_number(enb), 4);
+				}
+				offset += 4;
 				break;
 		}
 		res_offset += 17;
