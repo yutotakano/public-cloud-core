@@ -29,7 +29,11 @@ enum ITEM_TYPE
 	KASME_1, /* 0x16 */
 	KASME_2, /* 0x17 */
 	NEW_ENB, /* 0x18 */
-	GET_ENB /* 0x19 */
+	GET_ENB, /* 0x19 */
+	KNH_1, /* 0x1A */
+	KNH_2, /* 0x1B */
+	Target_ENB_UE_S1AP_ID, /* 0x1C */
+	NEXT_HOP_CHAINING_COUNT /* 0x1D */
 };
 typedef uint8_t ITEM_TYPE;
 

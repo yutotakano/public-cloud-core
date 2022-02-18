@@ -32,6 +32,7 @@ struct _UserInfo
 	uint8_t opc[KEY_LEN];
 	uint8_t rand[RAND_LEN];
 	uint8_t enb_ue_s1ap_id[ENB_UE_S1AP_ID_LEN];
+	uint8_t target_enb_ue_s1ap_id[ENB_UE_S1AP_ID_LEN];
 	uint8_t mme_ue_s1ap_id[MME_UE_S1AP_ID_LEN];
 	uint8_t tmsi[TMSI_LEN]; /* Temporal ID generated from the IMSI */
 	uint8_t ue_teid[TEID_LEN]; /* Downlink */
@@ -50,6 +51,11 @@ struct _UserInfo
 
 	uint8_t epc_nas_sequence_number;
 	uint8_t ue_nas_sequence_number;
+
+	uint8_t next_hop_chaining_count;
+
+	uint8_t knh1[KEY_LEN]; /* KNH[0:16] */
+	uint8_t knh2[KEY_LEN]; /* KNH[16:32] */
 };
 
 UserInfo * new_user_info()
@@ -105,6 +111,11 @@ uint8_t * get_user_mme_ue_id(UserInfo * user)
 	return user->mme_ue_s1ap_id;
 }
 
+uint8_t * get_user_target_enb_ue_id(UserInfo * user)
+{
+	return user->target_enb_ue_s1ap_id;
+}
+
 uint8_t * get_user_tmsi(UserInfo * user)
 {
 	return user->tmsi;
@@ -155,6 +166,16 @@ void set_user_ue_nas_sequence_number(UserInfo * user, uint8_t value)
 	user->ue_nas_sequence_number = value;
 }
 
+uint8_t get_user_next_hop_chaining_count(UserInfo * user)
+{
+	return user->next_hop_chaining_count;
+}
+
+void set_user_next_hop_chaining_count(UserInfo * user, uint8_t value)
+{
+	user->next_hop_chaining_count = value;
+}
+
 uint8_t * get_user_auth_res(UserInfo * user)
 {
 	return user->auth_res;
@@ -178,6 +199,16 @@ uint8_t * get_user_kasme1_key(UserInfo * user)
 uint8_t * get_user_kasme2_key(UserInfo * user)
 {
 	return user->kasme2;
+}
+
+uint8_t * get_user_knh1_key(UserInfo * user)
+{
+	return user->knh1;
+}
+
+uint8_t * get_user_knh2_key(UserInfo * user)
+{
+	return user->knh2;
 }
 
 void generate_rand(UserInfo * user)
@@ -206,6 +237,7 @@ void complete_user_info(UserInfo * user)
 
 	/* This function initialize the uncompleted user information */
 	user->epc_nas_sequence_number = 0;
+	user->next_hop_chaining_count = 1;
 	/* To simplify the process, EPC TEID, MME UE S1AP ID, TMSI and PDN IP are going to be equal and generated from the IMSI */
 	hash = hash_imsi_user_info(user);
 	UINT32_TO_ARRAY(user->mme_ue_s1ap_id, hash);

@@ -380,6 +380,9 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case ENB_UE_S1AP_ID:
 				memcpy(get_user_enb_ue_id(user), request+offset+1, ENB_UE_S1AP_ID_LEN);
 				break;
+			case Target_ENB_UE_S1AP_ID:
+				memcpy(get_user_target_enb_ue_id(user), request+offset+1, ENB_UE_S1AP_ID_LEN);
+				break;
 			case UE_TEID:
 				memcpy(get_user_ue_teid(user), request+offset+1, TEID_LEN);
 				break;
@@ -393,10 +396,13 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			//	memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
 			//	break;
 			case EPC_NAS_SEQUENCE_NUMBER:
-				set_user_epc_nas_sequence_number(user, request[offset+6]);
+				set_user_epc_nas_sequence_number(user, request[offset+1]);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
-				set_user_ue_nas_sequence_number(user, request[offset+6]);
+				set_user_ue_nas_sequence_number(user, request[offset+1]);
+				break;
+			case NEXT_HOP_CHAINING_COUNT:
+				set_user_next_hop_chaining_count(user, request[offset+1]);
 				break;
 			case AUTH_RES:
 				memcpy(get_user_auth_res(user), request+offset+1, AUTH_RES_LEN);
@@ -412,6 +418,12 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 				break;
 			case KASME_2:
 				memcpy(get_user_kasme2_key(user), request+offset+1, KEY_LEN);
+				break;
+			case KNH_1:
+				memcpy(get_user_knh1_key(user), request+offset+1, KEY_LEN);
+				break;
+			case KNH_2:
+				memcpy(get_user_knh2_key(user), request+offset+1, KEY_LEN);
 				break;
 			case NEW_ENB:
 				printInfo("Creating new eNB...\n");
@@ -462,6 +474,10 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 				response[res_offset] = ENB_UE_S1AP_ID;
 				memcpy(response+res_offset+1, get_user_enb_ue_id(user), ENB_UE_S1AP_ID_LEN);
 				break;
+			case Target_ENB_UE_S1AP_ID:
+				response[res_offset] = Target_ENB_UE_S1AP_ID;
+				memcpy(response+res_offset+1, get_user_target_enb_ue_id(user), ENB_UE_S1AP_ID_LEN);
+				break;
 			case UE_TEID:
 				response[res_offset] = UE_TEID;
 				memcpy(response+res_offset+1, get_user_ue_teid(user), TEID_LEN);
@@ -491,14 +507,22 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
 				tmp_nas = get_user_ue_nas_sequence_number(user);
 				memset(response+res_offset+1, 0, 16);
-				response[res_offset+6] = tmp_nas;
+				response[res_offset+1] = tmp_nas;
 				set_user_ue_nas_sequence_number(user, tmp_nas+1);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER_NO_INC:
 				/* Copy the UE NAS Sequence number without incrementing it */
 				response[res_offset] = UE_NAS_SEQUENCE_NUMBER;
 				memset(response+res_offset+1, 0, 16);
-				response[res_offset+6] = get_user_ue_nas_sequence_number(user);
+				response[res_offset+1] = get_user_ue_nas_sequence_number(user);
+				break;
+			case NEXT_HOP_CHAINING_COUNT:
+				/* Copy and increase the Next Hop Chaining count */
+				response[res_offset] = NEXT_HOP_CHAINING_COUNT;
+				tmp_nas = get_user_next_hop_chaining_count(user);
+				memset(response+res_offset+1, 0, 16);
+				response[res_offset+1] = tmp_nas;
+				set_user_next_hop_chaining_count(user, tmp_nas+1);
 				break;
 			case KEY:
 				response[res_offset] = KEY;
@@ -545,6 +569,14 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case KASME_2:
 				response[res_offset] = KASME_2;
 				memcpy(response+res_offset+1, get_user_kasme2_key(user), KEY_LEN);
+				break;
+			case KNH_1:
+				response[res_offset] = KNH_1;
+				memcpy(response+res_offset+1, get_user_knh1_key(user), KEY_LEN);
+				break;
+			case KNH_2:
+				response[res_offset] = KNH_2;
+				memcpy(response+res_offset+1, get_user_knh2_key(user), KEY_LEN);
 				break;
 			case GET_ENB:
 				response[res_offset] = GET_ENB;
