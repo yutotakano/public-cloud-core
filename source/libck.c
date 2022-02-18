@@ -92,6 +92,10 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			buffer[0] = ENB_UE_S1AP_ID;
 			memcpy(buffer+1, value, ENB_UE_S1AP_ID_LEN);
 			break;
+		case Target_ENB_UE_S1AP_ID:
+			buffer[0] = Target_ENB_UE_S1AP_ID;
+			memcpy(buffer+1, value, ENB_UE_S1AP_ID_LEN);
+			break;
 		case UE_TEID:
 			buffer[0] = UE_TEID;
 			memcpy(buffer+1, value, TEID_LEN);
@@ -116,6 +120,10 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			buffer[0] = UE_NAS_SEQUENCE_NUMBER;
 			buffer[1] = *value;
 			break;
+		case NEXT_HOP_CHAINING_COUNT:
+			buffer[0] = NEXT_HOP_CHAINING_COUNT;
+			buffer[1] = *value;
+			break;
 		case AUTH_RES:
 			buffer[0] = AUTH_RES;
 			memcpy(buffer+1, value, AUTH_RES_LEN);
@@ -134,6 +142,14 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			break;
 		case KASME_2:
 			buffer[0] = KASME_2;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
+		case KNH_1:
+			buffer[0] = KNH_1;
+			memcpy(buffer+1, value, KEY_LEN);
+			break;
+		case KNH_2:
+			buffer[0] = KNH_2;
 			memcpy(buffer+1, value, KEY_LEN);
 			break;
 		default:
@@ -211,11 +227,8 @@ int pull_items(uint8_t * buffer, int push_len, int num_items, ...)
 		}
 
 	}
-
-	ptr = pull_item(ptr, EOM);
-
 	/* Add End-Of-Message byte */
-
+	ptr = pull_item(ptr, EOM);
 
 	va_end(ap);
 
