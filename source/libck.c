@@ -305,6 +305,18 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 			case KASME_2:
 				db_pulls->kasme2 = buffer+i+1;
 				break;
+			case KNH_1:
+				db_pulls->knh1 = buffer+i+1;
+				break;
+			case KNH_2:
+				db_pulls->knh2 = buffer+i+1;
+				break;
+			case NEXT_HOP_CHAINING_COUNT:
+				db_pulls->ncc = buffer+i+1;
+				break;
+			case Target_ENB_UE_S1AP_ID:
+				db_pulls->target_enb_ue_s1ap_id = buffer+i+1;
+				break;
 			default:
 				printError("Unre] item\n");
 				break;

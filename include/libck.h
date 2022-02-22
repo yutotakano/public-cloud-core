@@ -74,6 +74,10 @@ typedef struct corekubedb_pulls {
 	uint8_t *int_key;
 	uint8_t *kasme1;
 	uint8_t *kasme2;
+	uint8_t *knh1;
+	uint8_t *knh2;
+	uint8_t *ncc;
+	uint8_t *target_enb_ue_s1ap_id;
 } corekube_db_pulls_t;
 
 void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls);
