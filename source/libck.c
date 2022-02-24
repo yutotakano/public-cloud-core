@@ -317,6 +317,9 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 			case Target_ENB_UE_S1AP_ID:
 				db_pulls->target_enb_ue_s1ap_id = buffer+i+1;
 				break;
+			case GET_ENB:
+				db_pulls->get_enb = buffer+1;
+				break;
 			default:
 				printError("Unre] item\n");
 				break;
