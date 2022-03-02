@@ -16,10 +16,11 @@ typedef struct _ue_data
 	uint8_t local_ip[4];
 	uint8_t ue_ip[4];
 	uint16_t spgw_port;
+	int thread_id;
 	uint16_t control_plane_len;
 	uint8_t * control_plane;
 } ue_data;
 
-int ue_emulator_start(ue_data * data, int cp_mode);
+int ue_emulator_start(ue_data * data);
 
 #endif

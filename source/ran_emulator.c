@@ -94,6 +94,11 @@ void * control_plane_only_mode(void * args)
 {
     uint8_t code_send[5];
     int thread_sock_controller;
+    int thread_id;
+
+    /* args contains the thread_id */
+    thread_id = *((int *)args);
+
     /* Create a controller socket for this thread */
     if ( (thread_sock_controller =  socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
@@ -111,13 +116,14 @@ void * control_plane_only_mode(void * args)
     while(1)
     {
         /* Receive Controller instructions */
-        receive_controller(thread_sock_controller, 1);
+        receive_controller(thread_sock_controller, thread_id);
     }
 }
 
 void start_cp_mode_only(int num_threads)
 {
     int i;
+    int * thread_id;
     /* Allocate memory for the threads*/
     cp_mode_threads = (pthread_t *) malloc(num_threads*sizeof(pthread_t));
     if(cp_mode_threads == NULL){
@@ -125,12 +131,15 @@ void start_cp_mode_only(int num_threads)
         /* TODO: Send error to controller */
         return;
     }
+
     /* Create num_threads */
     for(i = 0; i < (num_threads); i++)
     {
-        //sleep(5);
+        sleep(1);
+        thread_id = (int *) malloc(sizeof(int));
+        *thread_id = i+1;
         printInfo("Creating Control-Plane thread %d\n", i);
-        if (pthread_create(cp_mode_threads+i, NULL, control_plane_only_mode, 0) != 0)
+        if (pthread_create(cp_mode_threads+i, NULL, control_plane_only_mode, (void *) thread_id) != 0)
         {
             perror("pthread_create Control-Plane Only mode\n");
         }
@@ -229,9 +238,14 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         memcpy(data.control_plane, buffer + offset, data.control_plane_len);
         offset += data.control_plane_len;
 
+        /* Copy to thread_id the ID in cp_mode */
+        /* For no CP Mode, the value is 0 */
+        data.thread_id = cp_mode;
+        offset += 4;
+
 
         /* Error control */
-        if(offset > len)
+        if(offset > len+4)
         {
             //TODO: remove this
             /* Wrong data format */
@@ -246,7 +260,7 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
         /* Copy Local IP to ue_data structure */
         memcpy(data.local_ip, local_ip, 4);
         
-        ret = ue_emulator_start(&data, cp_mode);
+        ret = ue_emulator_start(&data);
         
         if(ret != 0)
         {

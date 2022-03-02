@@ -70,8 +70,7 @@ void send_ue_behaviour_error(uint32_t ue_id);
 
 
 
-/* eNB control plane variables */ 
-struct sockaddr_in enb_addr;
+
 
 void dKey(uint8_t * pointer, int len)
 {
@@ -127,6 +126,13 @@ int send_ue_context_release(ue_data * ue)
     	perror("UE socket");
         return 1;
     }
+
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	while(1)
@@ -199,6 +205,13 @@ int send_ue_detach(uint8_t switch_off, uint8_t traffic_flag, ue_data * ue)
         return 1;
     }
 
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
+
 	/* Connect to eNB */
 	while(1)
 	{
@@ -268,6 +281,13 @@ int send_ue_attach(ue_data * ue)
     	perror("UE socket");
         return 1;
     }
+
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	while(1)
@@ -363,6 +383,13 @@ int send_move_to_connect(ue_data * ue)
     	perror("UE socket");
         return 1;
     }
+
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	while(1)
@@ -492,6 +519,13 @@ int send_x2_handover(uint8_t * enb_num, ue_data * ue)
         return 1;
     }
 
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
+
     /* Connect to eNB */
 	while(1)
 	{
@@ -540,14 +574,13 @@ int send_x2_handover(uint8_t * enb_num, ue_data * ue)
 	}
 	printOK("X2 Handover-Setup done\n");
 
-
 	/*****/
 	/* 3 */
 	/*****/
 	/* Request Target-eNB a Path Switch Request (Handover-Request) */
 	printInfo("Starting X2 Handover-Request...\n");
 	/* Update serving eNB IP with Target-eNB IP */
-	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+	memcpy(ue->enb_ip, enb_ip, 4);
 
 	/* Socket create */
 	enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -658,6 +691,13 @@ int send_s1_handover(uint8_t * enb_num, ue_data * ue)
         return 1;
     }
 
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
+
 	/* Connect to eNB */
 	while(1)
 	{
@@ -707,7 +747,7 @@ int send_s1_handover(uint8_t * enb_num, ue_data * ue)
 	printOK("S1 Handover done\n");
 
 	/* Update serving eNB IP with Target-eNB IP */
-	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+	memcpy(ue->enb_ip, enb_ip, 4);
 
 	/* Update Controller */
 	send_s1_handover_complete((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
@@ -739,7 +779,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 	/*****/
 	/* Generate eNB num */
 	enb_n = (enb_num[0] << 16) | (enb_num[1] << 8) | enb_num[2];
-	printInfo("Staring X2 Handover to eNB %d...\n", enb_n);
+	printInfo("Attaching to eNB %d...\n", enb_n);
 	printInfo("Getting Target-eNB IP...\n");
 	enb_ret = (int)send_get_enb_ip((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3], enb_n);
 	if(enb_ret == -1)
@@ -762,13 +802,20 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 	/* 2 */
 	/*****/
 	/* Request Source-eNB a UE transfer to Target-eNB (UE Transfer)*/
-	printInfo("Starting UE Transfer...\n");
+	printInfo("Starting UE Attach...\n");
 	/* Socket create */
     enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (enb_sockfd == -1) {
     	perror("UE socket");
         return 1;
     }
+
+    /* Configure eNB address */
+    struct sockaddr_in enb_addr;
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	while(1)
@@ -824,8 +871,6 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 	/*****/
 	/* Request Target-eNB an Attach Request (UEAttach) */
 	printInfo("Starting Attach Request with eNB %d...\n", enb_n);
-	/* Update serving eNB IP with Target-eNB IP */
-	memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
 
 	/* Socket create */
     enb_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -833,6 +878,12 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
     	perror("UE socket");
         return 1;
     }
+
+    /* Configure eNB address */
+    bzero(&enb_addr, sizeof(enb_addr));
+    enb_addr.sin_family = AF_INET;
+    memcpy(&enb_addr.sin_addr.s_addr, enb_ip, 4);
+    enb_addr.sin_port = htons(ENB_PORT);
 
 	/* Connect to eNB */
 	while(1)
@@ -852,7 +903,7 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 		}
 	}
 
-    /* Build eNB message (IDLE_CODE + MSIN) */
+    /* Build eNB message (ATTACH + MSIN) */
     bzero(buffer, 256);
     buffer[0] = UE_ATTACH;
     imsg = (idle_msg *)(buffer+1);
@@ -877,6 +928,9 @@ int send_ue_attach_to_enb(uint8_t * enb_num, ue_data * ue)
 		return 1;
 	}
 	printOK("UE Attached (UEAttach)\n");
+
+	/* Update serving eNB IP with Target-eNB IP */
+	memcpy(ue->enb_ip, enb_ip, 4);
 
 	/* Checking CP mode */
 	if(CONTROL_PLANE_ONLY == 0)
@@ -995,7 +1049,7 @@ void * control_plane(void * args)
 	}
 }
 
-int ue_emulator_start(ue_data * data, int cp_mode)
+int ue_emulator_start(ue_data * data)
 {
 	int sockfd;
 	uint8_t buffer[1024];
@@ -1006,9 +1060,6 @@ int ue_emulator_start(ue_data * data, int cp_mode)
 	int ret;
 	pthread_t control_plane_thread;
 	ue_data * ue;
-
-	/* Set Control Plane mode */
-	CONTROL_PLANE_ONLY = cp_mode;
 
     /* Print UE data */
 	printf("ID: %d\n", (data->id[0] << 24) | (data->id[1] << 16) | (data->id[2] << 8) | data->id[3] );
@@ -1028,6 +1079,10 @@ int ue_emulator_start(ue_data * data, int cp_mode)
 	for(i = 0; i < data->control_plane_len; i++)
 		printf("%.2x ", data->control_plane[i]);
 	printf("\n");
+	printf("Control Plane Only Mode ID: %d\n", data->thread_id);
+
+	/* Set Control Plane mode ID */
+	CONTROL_PLANE_ONLY = data->thread_id;
 
 	/* Allocate memory for a ue_data structure */
 	ue = (ue_data *) malloc(sizeof(ue_data));
@@ -1044,17 +1099,18 @@ int ue_emulator_start(ue_data * data, int cp_mode)
     }   
   
     /* Configure eNB address */
+    struct sockaddr_in enb_addr;
     bzero(&enb_addr, sizeof(enb_addr));
     enb_addr.sin_family = AF_INET;
-    memcpy(&enb_addr.sin_addr.s_addr, data->enb_ip, 4);
+    memcpy(&enb_addr.sin_addr.s_addr, ue->enb_ip, 4);
     enb_addr.sin_port = htons(ENB_PORT);
 
     printInfo("Trying to connect with eNB (%d.%d.%d.%d:%d)\n", data->enb_ip[0], data->enb_ip[1], data->enb_ip[2], data->enb_ip[3], ENB_PORT);
     if (connect(sockfd, (struct sockaddr *) &enb_addr, sizeof(enb_addr)) != 0) {
-		close(sockfd);
-		printError("UE cannot connect with eNB (%d): %s\n", errno, strerror(errno));
-		send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
-		return 1;
+    	close(sockfd);
+        printError("UE cannot connect with eNB (%d): %s\n", errno, strerror(errno));
+        send_ue_behaviour_error((ue->id[0] << 24) | (ue->id[1] << 16) | (ue->id[2] << 8) | ue->id[3]);
+        return 1;
 	}
 
 	/* Filling buffer with the UE information */

@@ -31,7 +31,7 @@ class UserInput():
 		's1handover': [0, 8],
 	}
 
-	def __init__(self, set_data_func, restart):
+	def __init__(self, set_data_func, restart, check_pods):
 		self.app = Flask(__name__)
 		# Disable Flask logs
 		#log = logging.getLogger('werkzeug')
@@ -40,6 +40,7 @@ class UserInput():
 
 		self.configuration = True
 		self.restarted = False
+		self.num_of_running_pods = 0
 		self.set_data_func = set_data_func
 		self.restart = restart
 		# Async socket
@@ -48,6 +49,7 @@ class UserInput():
 		self.update_t = Thread()
 		self.thread_stop_event = Event()
 		self.refresh_time = 5 # Default refresh time
+		self.check_pods = check_pods
 
 	def validate_control_plane_actions(self, actions_string):
 		a_s = actions_string.split('-')
@@ -184,6 +186,15 @@ class UserInput():
 		return False
 
 	def index(self):
+		# If there is a Slave pod running, print an error
+		if self.num_of_running_pods > 0:
+			print('Error: There are ' + str(self.num_of_running_pods) + ' Slave pods running. Redirecting to the configuration panel')
+			errorMessage = {
+				'onload': 'onload="alertSlaves()"',
+				'code': '<script>function alertSlaves(){alert("There are ' + str(self.num_of_running_pods) + ' Pods running from previous experiments. Please wait until the automatic deletion.");}</script>'
+			}
+			return render_template('config.html', **errorMessage)
+
 		if self.configuration:
 			return render_template('config.html')
 		else:
@@ -214,6 +225,9 @@ class UserInput():
 			if cp_mode == True:
 				print('Control-Plane Only mode: ' + str(num_threads) + ' threads per container')
 			self.refresh_time = int(request.form['refresh_time'])
+			# Get the number of Slave pods
+			self.num_of_running_pods = self.check_pods()
+			# If the data has been validated
 			if self.generate_data(config, docker_image, mme_ip, multi_ip, cp_mode, num_threads):
 				self.configuration = False
 		return redirect(url_for('index'))
