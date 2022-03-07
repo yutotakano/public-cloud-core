@@ -396,10 +396,10 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			//	memcpy(get_user_pdn_ipv4(user), request+offset+1, IP_LEN);
 			//	break;
 			case EPC_NAS_SEQUENCE_NUMBER:
-				set_user_epc_nas_sequence_number(user, request[offset+1]);
+				set_user_epc_nas_sequence_number(user, request[offset+6]);
 				break;
 			case UE_NAS_SEQUENCE_NUMBER:
-				set_user_ue_nas_sequence_number(user, request[offset+1]);
+				set_user_ue_nas_sequence_number(user, request[offset+6]);
 				break;
 			case NEXT_HOP_CHAINING_COUNT:
 				set_user_next_hop_chaining_count(user, request[offset+1]);
