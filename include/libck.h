@@ -47,7 +47,9 @@ enum ITEM_TYPE
 	KNH_1, /* 0x1A */
 	KNH_2, /* 0x1B */
 	Target_ENB_UE_S1AP_ID, /* 0x1C */
-	NEXT_HOP_CHAINING_COUNT /* 0x1D */
+	NEXT_HOP_CHAINING_COUNT, /* 0x1D */
+	ENB_SOURCE_SOCKET, /* 0x1E */
+	ENB_TARGET_SOCKET /* 0x1F */
 };
 typedef uint8_t ITEM_TYPE;
 

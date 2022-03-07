@@ -152,6 +152,14 @@ uint8_t * push_item(uint8_t * buffer, ITEM_TYPE item, uint8_t * value)
 			buffer[0] = KNH_2;
 			memcpy(buffer+1, value, KEY_LEN);
 			break;
+		case ENB_SOURCE_SOCKET:
+			buffer[0] = ENB_SOURCE_SOCKET;
+			memcpy(buffer+1, value, 4);
+			break;
+		case ENB_TARGET_SOCKET:
+			buffer[0] = ENB_TARGET_SOCKET;
+			memcpy(buffer+1, value, 4);
+			break;
 		default:
 			/* Undefined Item */
 			return buffer;
