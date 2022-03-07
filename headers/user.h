@@ -11,6 +11,7 @@
 #define TEID_LEN 4
 #define RAND_LEN 16
 #define AUTH_RES_LEN 8
+#define SOCKET_LEN 4
 
 typedef struct _UserInfo UserInfo;
 
@@ -45,6 +46,8 @@ uint8_t * get_user_kasme1_key(UserInfo * user);
 uint8_t * get_user_kasme2_key(UserInfo * user);
 uint8_t * get_user_knh1_key(UserInfo * user);
 uint8_t * get_user_knh2_key(UserInfo * user);
+uint8_t * get_user_enb_source_socket(UserInfo * user);
+uint8_t * get_user_enb_target_socket(UserInfo * user);
 void generate_rand(UserInfo * user);
 void complete_user_info(UserInfo * user);
 void show_user_info(UserInfo * user);

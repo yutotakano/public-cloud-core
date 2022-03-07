@@ -56,6 +56,9 @@ struct _UserInfo
 
 	uint8_t knh1[KEY_LEN]; /* KNH[0:16] */
 	uint8_t knh2[KEY_LEN]; /* KNH[16:32] */
+
+	uint8_t enb_source_socket[SOCKET_LEN];
+	uint8_t enb_target_socket[SOCKET_LEN];
 };
 
 UserInfo * new_user_info()
@@ -209,6 +212,16 @@ uint8_t * get_user_knh1_key(UserInfo * user)
 uint8_t * get_user_knh2_key(UserInfo * user)
 {
 	return user->knh2;
+}
+
+uint8_t * get_user_enb_source_socket(UserInfo * user)
+{
+	return user->enb_source_socket;
+}
+
+uint8_t * get_user_enb_target_socket(UserInfo * user)
+{
+	return user->enb_target_socket;
 }
 
 void generate_rand(UserInfo * user)

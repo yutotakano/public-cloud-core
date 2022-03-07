@@ -425,6 +425,12 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case KNH_2:
 				memcpy(get_user_knh2_key(user), request+offset+1, KEY_LEN);
 				break;
+			case ENB_SOURCE_SOCKET:
+				memcpy(get_user_enb_source_socket(user), request+offset+1, SOCKET_LEN);
+				break;
+			case ENB_TARGET_SOCKET:
+				memcpy(get_user_enb_target_socket(user), request+offset+1, SOCKET_LEN);
+				break;
 			case NEW_ENB:
 				printInfo("Creating new eNB...\n");
 				new_enb = create_enb(request+offset+1, request+offset+5);
@@ -577,6 +583,14 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 			case KNH_2:
 				response[res_offset] = KNH_2;
 				memcpy(response+res_offset+1, get_user_knh2_key(user), KEY_LEN);
+				break;
+			case ENB_SOURCE_SOCKET:
+				response[res_offset] = ENB_SOURCE_SOCKET;
+				memcpy(response+res_offset+1, get_user_enb_source_socket(user), KEY_LEN);
+				break;
+			case ENB_TARGET_SOCKET:
+				response[res_offset] = ENB_TARGET_SOCKET;
+				memcpy(response+res_offset+1, get_user_enb_target_socket(user), KEY_LEN);
 				break;
 			case GET_ENB:
 				response[res_offset] = GET_ENB;
