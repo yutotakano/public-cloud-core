@@ -283,6 +283,14 @@ int configure_network(const char * ip_address, int port)
 	return OK;
 }
 
+void dump_kasme(uint8_t * k, int id)
+{
+	printf("Kasme%d: ", id);
+	for(int i = 0; i < KEY_LEN; i++)
+		printf("%.2x ", k[i]);
+	printf("\n");
+}
+
 int analyze_request(uint8_t * request, int request_len, uint8_t * response, int * response_len) {
 	UserInfo * user;
 	int offset = 0, res_offset = 0, i; 
@@ -414,10 +422,16 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 				memcpy(get_user_int_key(user), request+offset+1, KEY_LEN);
 				break;
 			case KASME_1:
+				printf("Storing Kasme 1...\n");
 				memcpy(get_user_kasme1_key(user), request+offset+1, KEY_LEN);
+				dump_kasme(request+offset+1, 1);
+				dump_kasme(get_user_kasme1_key(user), 1);
 				break;
 			case KASME_2:
+				printf("Storing Kasme 2...\n");
 				memcpy(get_user_kasme2_key(user), request+offset+1, KEY_LEN);
+				dump_kasme(request+offset+1, 2);
+				dump_kasme(get_user_kasme2_key(user), 2);
 				break;
 			case KNH_1:
 				memcpy(get_user_knh1_key(user), request+offset+1, KEY_LEN);
@@ -569,12 +583,18 @@ int analyze_request(uint8_t * request, int request_len, uint8_t * response, int 
 				memcpy(response+res_offset+1, get_user_int_key(user), KEY_LEN);
 				break;
 			case KASME_1:
+				printf("Getting Kasme 1...\n");
 				response[res_offset] = KASME_1;
 				memcpy(response+res_offset+1, get_user_kasme1_key(user), KEY_LEN);
+				dump_kasme(get_user_kasme1_key(user), 1);
+				dump_kasme(response+res_offset+1, 1);
 				break;
 			case KASME_2:
+				printf("Getting Kasme 2...\n");
 				response[res_offset] = KASME_2;
 				memcpy(response+res_offset+1, get_user_kasme2_key(user), KEY_LEN);
+				dump_kasme(get_user_kasme2_key(user), 2);
+				dump_kasme(response+res_offset+1, 2);
 				break;
 			case KNH_1:
 				response[res_offset] = KNH_1;
