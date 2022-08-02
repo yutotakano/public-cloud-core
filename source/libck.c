@@ -335,7 +335,7 @@ void extract_db_values(uint8_t *buffer, int n, corekube_db_pulls_t *db_pulls) {
 				db_pulls->enb_target_socket = buffer+i+1;
 				break;
 			default:
-				printError("Unre] item\n");
+				printError("Unrecognised item: %d\n", buffer[i]);
 				break;
 		}
 	}
