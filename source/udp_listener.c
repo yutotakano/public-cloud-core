@@ -66,6 +66,16 @@ void *process_message(void *raw_args) {
 	memcpy(buffer, args->buffer, args->num_bytes_received);
 	ogs_free(args->buffer);
 
+        // hack to fix the invalid message from Nervion
+        if (buffer[5] == 46 && args->num_bytes_received == 70) {
+                ogs_info("Found an invalid message.");
+                if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
+                        ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
+                ogs_free(args->client_addr);
+                ogs_free(args);
+                return NULL;
+        }
+
 	ogs_info("New SCTP message received.");
 	if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
