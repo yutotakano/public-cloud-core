@@ -75,8 +75,10 @@ int nas_store_ngap_pdu_session_resource_setup_response_transfer_fetch_prerequisi
     ogs_asn_uint32_to_OCTET_STRING( (uint32_t) params->amf_ue_ngap_id, &amf_ue_ngap_id_buf);
 
     // store the UE_TEID and ENB_IP into the database
-    int db = db_access(NULL, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 2, 0, UE_TEID, params->ue_teid, ENB_IP, params->enb_ip);
+    corekube_db_pulls_t dbp;
+    int db = db_access(&dbp, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 2, 1, UE_TEID, params->ue_teid, ENB_IP, params->enb_ip, PDN_IP);
     ogs_assert(db == OGS_OK);
+    ogs_free(dbp.head);
 
     // free the buffer used for the DB access
     ogs_free(amf_ue_ngap_id_buf.buf);
