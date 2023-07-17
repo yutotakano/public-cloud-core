@@ -62,6 +62,7 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
 
     // free the structures pulled from the DB
     ogs_free(db_pulls.head);
+    ogs_free(db_pulls2.head);
 
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_nas_5gs_message_t));
