@@ -12,7 +12,13 @@ int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_re
 
     // Decode the incoming message
     int b_to_m = bytes_to_message(incoming, incoming_len, &incoming_ngap);
-    ogs_assert(b_to_m == OGS_OK); // Failed to decode incoming NGAP message
+    if (b_to_m != OGS_OK) {
+        // Failed to decode incoming NGAP message
+        // Print the message and continue
+        ogs_error("Found an invalid message.");
+        ogs_log_hexdump(OGS_LOG_ERROR, incoming, incoming_len);
+        return OGS_OK;
+    }
 
     // Handle the decoded message
     int message_handle = ngap_message_handler(&incoming_ngap, response);
@@ -43,9 +49,8 @@ int bytes_to_message(void *payload, int payload_len, ogs_ngap_message_t *message
 
     int decode_result = ogs_ngap_decode(message, pkbuf);
     ogs_pkbuf_free(pkbuf);
-    ogs_assert(decode_result == OGS_OK); // Failed to decode bytes
 
-    return OGS_OK;
+    return decode_result;
 }
 
 int message_to_bytes(ogs_ngap_message_t *message, ogs_pkbuf_t **out)
