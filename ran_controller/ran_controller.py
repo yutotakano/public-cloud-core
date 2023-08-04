@@ -68,6 +68,7 @@ class RANControler:
 			'spec': {
 				'containers': [{
 					'image': 'j0lama/ran_slave:latest',
+					'imagePullPolicy': 'IfNotPresent',
 					'name': 'name',
 					'env': [{'name': 'NODE_IP',
 								'valueFrom': {'fieldRef': {'fieldPath': 'status.hostIP'}}},
