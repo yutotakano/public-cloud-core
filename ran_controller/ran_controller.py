@@ -68,6 +68,7 @@ class RANControler:
 			'spec': {
 				'containers': [{
 					'image': 'j0lama/ran_slave:latest',
+					'imagePullPolicy': 'IfNotPresent',
 					'name': 'name',
 					'env': [{'name': 'NODE_IP',
 								'valueFrom': {'fieldRef': {'fieldPath': 'status.hostIP'}}},
@@ -104,20 +105,28 @@ class RANControler:
 
 		
 
-	def start_controller(self, controller_data, docker_image, epc, multiplexer, restart, cp_mode, num_threads):
+	def start_controller(self, controller_data, docker_image, epc, multiplexer, restart, cp_mode, num_threads, scale_minutes):
 		self.controller_data = controller_data
 		self.docker_image = docker_image
 		self.epc = epc
 		self.multiplexer = multiplexer
 		self.cp_mode = cp_mode
 		self.num_threads = num_threads
+		self.scale_over_minutes = scale_minutes
 		self.num_ues = len(self.controller_data['UEs'])
 		self.enb_ips = []
+
+		# used to notify old kubernetes threads to stop scaling when restarting,
+		# so they don't keep incrementally adding pods. This flag defaults to
+		# SET/ON, and is only turned off when restarting.
+		self.should_keep_scaling = threading.Event() 
+		self.should_keep_scaling.set()
+
 		if restart == False:
 			self.execute()
 		else:
-			kubernetes_t = threading.Thread(target=self.kubernetes_thread)
-			kubernetes_t.start()
+			self.kubernetes_t = threading.Thread(target=self.kubernetes_thread)
+			self.kubernetes_t.start()
 
 	def execute(self):
 		# Create a socket
@@ -130,12 +139,12 @@ class RANControler:
 		#Create 3 threads
 		receive_t = threading.Thread(target=self.receive_thread)
 		send_t = threading.Thread(target=self.send_thread)
-		kubernetes_t = threading.Thread(target=self.kubernetes_thread)
+		self.kubernetes_t = threading.Thread(target=self.kubernetes_thread)
 
 		#Start threads
 		receive_t.start()
 		send_t.start()
-		kubernetes_t.start()
+		self.kubernetes_t.start()
 
 	def get_enb_by_buffer(self, data):
 		num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
@@ -523,29 +532,63 @@ class RANControler:
 		# Wait 2 seconds to the rest of the threads
 		time.sleep(2)
 
-		if self.cp_mode == True:
-			tot_len = len(self.controller_data['eNBs']) + math.ceil(len(self.controller_data['UEs']) / self.num_threads)
-		else:
-			tot_len = len(self.controller_data['UEs']) + len(self.controller_data['eNBs'])
+		enb_pods = len(self.controller_data['eNBs'])
+		ue_pods = math.ceil(len(self.controller_data['UEs']) / self.num_threads) if self.cp_mode else len(self.controller_data['UEs'])
 
-		print('Staring Slave Pods...')
+		if not k8s:
+			print('Kubernetes not enabled')
+			return
 
 		# Init Kubernetes API connection
-		if k8s == True:
-			v1 = client.CoreV1Api()
+		v1 = client.CoreV1Api()
 
-		for i in range(tot_len):
+		print('Staring eNB Slave Pods...')
+		for i in range(enb_pods):
 			# Configure POD Manifest for each slave
 			self.pod_manifest['metadata']['name'] = 'slave-' + str(i)
 			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
 			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
 			# Create a POD
-			if k8s == True:
-				v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+
+		print('Staring UE Slave Pods...')
+		# Scale incrementally if required
+		for i in range(enb_pods, enb_pods + ue_pods):
+			if not self.should_keep_scaling.is_set():
+				# Stop creating pods anymore if the experiment is restarted.
+				# Promptly exit the thread
+				break
+
+			# Configure POD Manifest for each slave
+			self.pod_manifest['metadata']['name'] = 'slave-' + str(i)
+			self.pod_manifest['spec']['containers'][0]['image'] = self.docker_image
+			self.pod_manifest['spec']['containers'][0]['name'] = 'slave-' + str(i)
+			# Create a POD
+			v1.create_namespaced_pod(body=self.pod_manifest, namespace='default')
+
+			# Wait for the next increment if required
+			if self.scale_over_minutes != 0:
+				time.sleep(self.scale_over_minutes * 60 / ue_pods)
+
+		self.should_keep_scaling.set()
 		print('Slave pods started!')
 		return
 
 	def kubernetes_restart(self):
+		if hasattr(self, 'kubernetes_t') and self.kubernetes_t.is_alive():
+			# If still scaling previous one, stop it
+			self.should_keep_scaling.clear()
+
+			# Wait until the thread notices and resets the signal, so we can start
+			# deleting the pods without any new ones popping up
+			self.should_keep_scaling.wait()
+		else:
+			# The scaling thread is not running, it's finished scaling. So we
+			# can proceed to delete all the pods. It might not be necessary
+			# but we'll reset the signal to ON just in case so the next run will
+			# scale properly
+			self.should_keep_scaling.set()
+
 		# Remove all eNB IPs
 		self.enb_ips = []
 		if self.cp_mode == True:
@@ -558,7 +601,10 @@ class RANControler:
 			delete_options = client.V1DeleteOptions()
 			print('Removing Slave Pods')
 			for i in range(tot_len):
-				core_v1.delete_namespaced_pod(name='slave-' + str(i), namespace='default', body=delete_options)
+				try:
+					core_v1.delete_namespaced_pod(name='slave-' + str(i), namespace='default', body=delete_options)
+				except Exception as e:
+					print('Error removing slave-' + str(i) + ' pod, supressing (stack trace):' + str(e))
 		print('Pods removed!')
 		return
 

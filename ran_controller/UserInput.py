@@ -6,7 +6,7 @@ import socket
 from UE import UE
 from eNB import eNB
 from threading import Thread, Event
-import logging
+import datetime
 
 class UserInput():
 
@@ -49,6 +49,7 @@ class UserInput():
 		self.update_t = Thread()
 		self.thread_stop_event = Event()
 		self.refresh_time = 5 # Default refresh time
+		self.scale_minutes = 0 # By default, start all UEs immediately
 		self.check_pods = check_pods
 
 	def validate_control_plane_actions(self, actions_string):
@@ -133,11 +134,13 @@ class UserInput():
 		return None
 
 
-	def generate_data(self, config, docker_image, epc_ip, multi_ip, cp_mode, num_threads):
+	def generate_data(self, config, docker_image, epc_ip, multi_ip, cp_mode, num_threads, scale_minutes):
 		data = []
 		self.epc_ip = epc_ip
 		self.multi_ip = multi_ip
 		self.docker_image = docker_image
+		self.scale_minutes = scale_minutes
+		self.scale_end_time = datetime.datetime.now() + datetime.timedelta(minutes=self.scale_minutes)
 		try:
 			epc = struct.unpack("!I", socket.inet_aton(epc_ip))[0]
 			multiplexer = struct.unpack("!I", socket.inet_aton(multi_ip))[0]
@@ -169,7 +172,7 @@ class UserInput():
 					self.controller_data['UEs'].add(new_ue)
 					i = i + 1
 
-		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted, cp_mode, num_threads)
+		self.set_data_func(self.controller_data, self.docker_image, epc, multiplexer, self.restarted, cp_mode, num_threads, scale_minutes)
 
 		return True
 	
@@ -224,11 +227,12 @@ class UserInput():
 			num_threads = int(request.form['threads'])
 			if cp_mode == True:
 				print('Control-Plane Only mode: ' + str(num_threads) + ' threads per container')
+			scale_minutes = int(request.form['scale_minutes'])
 			self.refresh_time = int(request.form['refresh_time'])
 			# Get the number of Slave pods
 			self.num_of_running_pods = self.check_pods()
 			# If the data has been validated
-			if self.generate_data(config, docker_image, mme_ip, multi_ip, cp_mode, num_threads):
+			if self.generate_data(config, docker_image, mme_ip, multi_ip, cp_mode, num_threads, scale_minutes):
 				self.configuration = False
 		return redirect(url_for('index'))
 
@@ -247,6 +251,7 @@ class UserInput():
 		while not self.thread_stop_event.isSet():
 			# Generate data
 			data = '<h4> Number of UEs running: ' + str(self.controller_data['running_ues']) + ' </h4>'
+			data += '<h4> Incremental Scaling Target: ' + str(len(self.controller_data['UEs'])) + ' UEs @ ' + self.scale_end_time.strftime("%H:%M") +'UTC</h4>'
 			data += '<h3>UEs</h3>'
 			data += self.ues_to_html()
 			data += '<h3>eNBs/gNBs</h3>'
