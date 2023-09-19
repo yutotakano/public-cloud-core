@@ -7,7 +7,9 @@ FROM ubuntu:bionic
 RUN apt-get update
 RUN apt-get -y install git libsctp-dev build-essential libssl-dev python3 python3-pip net-tools iputils-ping nano
 
+RUN pip3 install --upgrade pip
 # Install Python dependencies
+RUN pip3 install MarkupSafe==2.0.0
 RUN pip3 install Flask
 RUN pip3 install kubernetes
 # Install engineio and socketio manually to avoid version errors
