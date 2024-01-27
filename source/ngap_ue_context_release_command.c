@@ -43,10 +43,10 @@ int ngap_build_ue_context_release_command(ngap_ue_context_release_command_params
 
     Cause = &ie->value.choice.Cause;
 
-    if (params->ran_ue_ngap_id) {
+    if (! params->ran_ue_ngap_id) {
         UE_NGAP_IDs->present = NGAP_UE_NGAP_IDs_PR_aMF_UE_NGAP_ID;
         asn_uint642INTEGER(
-                &UE_NGAP_IDs->choice.aMF_UE_NGAP_ID, *params->ran_ue_ngap_id);
+                &UE_NGAP_IDs->choice.aMF_UE_NGAP_ID, params->amf_ue_ngap_id);
     } else {
         UE_NGAP_IDs->present = NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair;
         UE_NGAP_IDs->choice.uE_NGAP_ID_pair = 
