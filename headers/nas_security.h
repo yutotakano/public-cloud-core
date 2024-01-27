@@ -21,7 +21,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
 
 int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_type_t security_header_type, ogs_pkbuf_t *pkbuf);
 
-int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * opc, uint8_t * key, uint8_t * rand, uint8_t * autn, uint8_t * kamf);
+int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * opc, uint8_t * key, uint8_t * rand, uint8_t * sqn, uint8_t * autn, uint8_t * kamf);
 
 int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts);
 

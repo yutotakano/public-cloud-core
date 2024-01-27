@@ -33,8 +33,6 @@
 
 #define CoreKube_AMF_Field {0x80, 0x00}
 
-#define CoreKube_SQN_Value {0x00, 0x00, 0x00, 0x00, 0x00, 0x40};
-
 #define CoreKube_NGKSI_TSC 0
 #define CoreKube_NGKSI_Value 0
 

@@ -12,19 +12,24 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     // check the required parameters are present
     ogs_assert(params->ran_ue_ngap_id);
 
-    // convert the RAN_UE_NGAP_ID to a buffer, suitable for the DB
-    OCTET_STRING_t ran_ue_ngap_id_buf;
-    ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *params->ran_ue_ngap_id, &ran_ue_ngap_id_buf);
-
     // fetch the IMSI from the NAS message
     char imsi[OGS_MAX_IMSI_BCD_LEN];
     ogs_nas_5gs_mobile_identity_t mob_ident = message->mobile_identity;
     ogs_nas_5gs_imsi_to_bcd(&mob_ident, imsi);
 
-    // store the RAN_UE_NGAP_ID in the DB,
+    // convert the RAN_UE_NGAP_ID to a buffer, suitable for the DB
+    OCTET_STRING_t ran_ue_ngap_id_buf;
+    ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *params->ran_ue_ngap_id, &ran_ue_ngap_id_buf);
+
+    // store the RAN_UE_NGAP_ID and MOB_IDENT in the DB,
     // whilst also fetching the AMF_UE_NGAP_ID, RAND, KEY and OPC
+    ogs_assert(mob_ident.length <= 14); // TODO: can be removed once we have a better DB (with variable length fields)
+    uint8_t mob_ident_buffer[16];
+    memcpy(mob_ident_buffer, &(mob_ident.length), 2);
+    memcpy(mob_ident_buffer+2, mob_ident.buffer, mob_ident.length);
     corekube_db_pulls_t db_pulls;
-    int db = db_access(&db_pulls, IMSI, (uint8_t *) imsi, 1, 4, ENB_UE_S1AP_ID, ran_ue_ngap_id_buf.buf, MME_UE_S1AP_ID, RAND, KEY, OPC);
+    // TODO: we are using the KNH_1 for the MOB_IDENT
+    int db = db_access(&db_pulls, IMSI, (uint8_t *) imsi, 2, 4, ENB_UE_S1AP_ID, ran_ue_ngap_id_buf.buf, KNH_1, mob_ident_buffer, MME_UE_S1AP_ID, RAND, KEY, OPC);
     ogs_assert(db == OGS_OK);
 
     // free the RAN_UE_NGAP_ID buffer
@@ -39,9 +44,11 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     ogs_asn_OCTET_STRING_to_uint32(&amf_ue_ngap_id_buf, (uint32_t *) params->amf_ue_ngap_id);
 
     // generate the authentication and security parameters
+    // TODO fetch SQN from the DB
+    uint8_t sqn[OGS_SQN_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     uint8_t autn[OGS_AUTN_LEN];
     uint8_t kamf[OGS_SHA256_DIGEST_SIZE];
-    int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls.opc, db_pulls.key, db_pulls.rand, autn, kamf);
+    int key_gen = nas_5gs_generate_keys(&mob_ident, db_pulls.opc, db_pulls.key, db_pulls.rand, sqn, autn, kamf);
     ogs_assert(key_gen == OGS_OK);
 
     // store the KAMF in the DB, and set the NAS UL / DL counts to zero

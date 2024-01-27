@@ -179,12 +179,11 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
 }
 
 
-int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * opc, uint8_t * key, uint8_t * rand, uint8_t * autn, uint8_t * kamf) {
+int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * opc, uint8_t * key, uint8_t * rand, uint8_t * sqn, uint8_t * autn, uint8_t * kamf) {
     ogs_info("Generating NAS Security keys");
 
     // generate the authentication parameters from RAND, Key and OPC
     uint8_t amf[OGS_AMF_LEN] = CoreKube_AMF_Field;
-    uint8_t sqn[OGS_SQN_LEN] = CoreKube_SQN_Value;
     uint8_t ik[16];
     uint8_t ck[16];
     uint8_t ak[6];

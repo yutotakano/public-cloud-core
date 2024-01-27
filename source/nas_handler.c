@@ -1,5 +1,6 @@
 #include "nas_registration_request.h"
 #include "nas_authentication_response.h"
+#include "nas_authentication_failure.h"
 #include "nas_security_mode_complete.h"
 #include "nas_ul_nas_transport.h"
 #include "nas_pdu_session_establishment_request.h"
@@ -68,6 +69,9 @@ int nas_5gmm_handler(ogs_nas_5gmm_message_t *nasMessage, nas_ngap_params_t *para
             break;
         case OGS_NAS_5GS_AUTHENTICATION_RESPONSE:
             build_response = nas_handle_authentication_response(&nasMessage->authentication_response, params, response);
+            break;
+        case OGS_NAS_5GS_AUTHENTICATION_FAILURE:
+            build_response = nas_handle_authentication_failure(&nasMessage->authentication_failure, params, response);
             break;
         case OGS_NAS_5GS_SECURITY_MODE_COMPLETE:
             build_response = nas_handle_security_mode_complete(&nasMessage->security_mode_complete, params, response);
