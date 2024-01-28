@@ -1,6 +1,7 @@
 import socket
 import threading
 import logging
+import time
 
 from prometheus_client import Summary
 
@@ -16,6 +17,7 @@ def start_server(metrics: dict[bytes, Summary]):
 
     while True:
         client_socket = None
+        time.sleep(0.001)
         try:
             client_socket, address = server_socket.accept()
             logger.info(f"New connection from {address[0]}:{address[1]}")
@@ -39,8 +41,9 @@ def start_server(metrics: dict[bytes, Summary]):
 def handle_client(client_socket: socket.socket, metrics: dict[bytes, Summary]):
     message_buffer = b""
     while True:
-        data = client_socket.recv(1024)
+        data = client_socket.recv(256)
         if not data:
+            time.sleep(0.001)
             break
         message_buffer += data
 
@@ -64,9 +67,6 @@ def handle_message(message: bytes, metrics: dict[bytes, Summary]):
     for key in metrics.keys():
         if key in collected_metrics:
             metrics[key].labels(
-                ran_ue_ngap_id=collected_metrics[b"ran_ue_ngap_id"],
-                amf_ue_ngap_id=collected_metrics[b"amf_ue_ngap_id"],
+                ue_id=collected_metrics[b"ue_id"],
                 message_type=collected_metrics[b"message_type"],
             ).observe(int(collected_metrics[key]))
-
-    logger.info(f"Metrics: {metrics}")
