@@ -226,6 +226,7 @@ int main(int argc, char const *argv[])
 
 	// connecto to the metrics server
 	metrics_sock = metrics_connect((char *)argv[5], 0);
+	ogs_assert(metrics_sock != -1);
 
 	// setup the DB IP address
 	//db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));

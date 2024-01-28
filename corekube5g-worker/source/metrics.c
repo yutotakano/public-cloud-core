@@ -19,18 +19,8 @@ int metrics_connect(char * host, int port)
 	int sock;
 	int res;
 
-  // /* Resolve hostname */
-  // struct addrinfo* result;
-  // int error = getaddrinfo(host, NULL, NULL, &result);
-  // if (error != 0) {
-  //   ogs_error("Error resolving metrics hostname %s\n", host);
-  //   return -1;
-  // }
-
 	/* Configure Metrics connection values */
 	metrics_addr.sin_family = AF_INET;
-	// struct sockaddr_in* internet_addr = (struct sockaddr_in*)result->ai_addr;
-	// metrics_addr.sin_addr.s_addr = inet_addr(result->ai_addr->sa_data);
 	metrics_addr.sin_addr.s_addr = inet_addr(host);
 	if(port == 0)
 		metrics_addr.sin_port = htons(DEFAULT_METRICS_PORT);
@@ -41,7 +31,6 @@ int metrics_connect(char * host, int port)
 	/* Create socket */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock == -1) {
-    // freeaddrinfo(result);
 		return -1;
   }
 
@@ -50,19 +39,15 @@ int metrics_connect(char * host, int port)
 	if(res < 0) {
 		ogs_error("Error disabling Nagle's algorithm\n");
 		close(sock);
-    // freeaddrinfo(result);
 		return -1;
 	}
 
 	/* Connect with Metrics server */
 	if(connect(sock, (struct sockaddr *)&metrics_addr, sizeof(struct sockaddr)) == -1) {
-		// ogs_error("Unable to connect with %s (%s):%d. Error Code: %i\n", host, inet_ntoa(internet_addr->sin_addr), port == 0 ? DEFAULT_METRICS_PORT : port, errno);
-		ogs_error("Unable to connect with %s:%d.\n", host, port);
+		ogs_error("Unable to connect with %s:%d. Error Code: %i\n", host, port == 0 ? DEFAULT_METRICS_PORT : port, errno);
 		close(sock);
-    // freeaddrinfo(result);
 		return -1;
 	}
-  // freeaddrinfo(result);
 	return sock;
 }
 
