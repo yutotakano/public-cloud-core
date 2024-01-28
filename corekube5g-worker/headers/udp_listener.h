@@ -15,11 +15,12 @@ typedef struct process_message_args {
 	struct sockaddr_in *client_addr;
 	uint8_t *buffer;
 	int num_bytes_received;
+	int metrics_sock;
 } process_message_args_t;
 
 void *process_message(void *raw_args);
 
-void start_listener(char * mme_ip_address, int use_threads);
+void start_listener(char * mme_ip_address, int metrics_sock, int use_threads);
 
 int main(int argc, char const *argv[]);
 

@@ -11,9 +11,11 @@
 #include <pthread.h>
 
 #include "udp_listener.h"
+#include "metrics.h"
 
 int __corekube_log_domain;
 int db_sock;
+int metrics_sock;
 pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
@@ -71,10 +73,12 @@ void *process_message(void *raw_args) {
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	message_handler_response_t response;
+	worker_stats_t stats;
 
 	// initialise the default response values
 	response.num_responses = 0;
 	response.responses = ogs_malloc(sizeof(void *) * MAX_NUM_RESPONSES);
+	// response.stats = &stats;
 
 	int outcome = ngap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
@@ -92,7 +96,7 @@ void *process_message(void *raw_args) {
 		memcpy(response_out, buffer, 4);
 		response_out[4] = response.sctpStreamID;
 		memcpy(response_out+5, responseBuffer->data, responseBuffer->len);
-		
+
 		int ret = sendto(args->sock_udp, (void *)response_out, responseBuffer->len + 5,
 			MSG_CONFIRM, (const struct sockaddr *) args->client_addr,
 			args->from_len);
@@ -101,6 +105,12 @@ void *process_message(void *raw_args) {
 
 		ogs_assert(ret != -1); // Failed to send UDP message
 		ogs_info("Send %d bytes over UDP", ret);
+	}
+
+	// If there is an IP to send metrics to, send them to args->metrics_addr
+	int error = metrics_send(metrics_sock, response.stats);
+	if (error != 0) {
+		ogs_warn("Error sending metrics data, error code %d", error);
 	}
 
 	// free the dynamically-allocated structures
@@ -114,7 +124,7 @@ void *process_message(void *raw_args) {
 }
 
 
-void start_listener(char * mme_ip_address, int use_threads)
+void start_listener(char * mme_ip_address, int metrics_sock, int use_threads)
 {
 	int sock_udp;
 	int n;
@@ -155,6 +165,7 @@ void start_listener(char * mme_ip_address, int use_threads)
 		args->from_len = from_len;
 		args->num_bytes_received = n;
 		args->sock_udp = sock_udp;
+		args->metrics_sock = metrics_sock;
 
 		if (use_threads) {
 			pthread_t thread;
@@ -176,8 +187,8 @@ void start_listener(char * mme_ip_address, int use_threads)
 
 int main(int argc, char const *argv[])
 {
-	if(argc < 3 || argc > 5) {
-		printf("RUN: ./corekube_udp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS> [LOG_LEVEL=4] [THREADS=1]\n");
+	if(argc < 3 || argc > 6) {
+		printf("RUN: ./corekube_udp_listener <WORKER_IP_ADDRESS> <DB_IP_ADDRESS> [LOG_LEVEL=4] [THREADS=1] [METRICS_IP_ADDRESS]\n");
 		return 1;
 	}
 
@@ -213,15 +224,19 @@ int main(int argc, char const *argv[])
 	// initialise the pkbuf pools with the above config
 	ogs_pkbuf_default_create(&config);
 
+	// connecto to the metrics server
+	metrics_sock = metrics_connect((char *)argv[5], 0);
+
 	// setup the DB IP address
 	//db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));
 	//memcpy(db_ip_address, (char *)argv[2], strlen((char *)argv[2]));
 	db_sock = db_connect((char *)argv[2], 0);
 	ogs_assert(db_sock != -1);
 
-	start_listener((char *)argv[1], use_threads);
+	start_listener((char *)argv[1], metrics_sock, use_threads);
 
 	db_disconnect(db_sock);
+	metrics_disconnect(metrics_sock);
 
 	// delete the pkbuf pools
 	ogs_pkbuf_default_destroy();
