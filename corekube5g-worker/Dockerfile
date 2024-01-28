@@ -30,7 +30,12 @@ RUN meson build --prefix=`pwd`/install && \
 WORKDIR ../
 
 # Copy the corekube_worker
-COPY ./ corekube_worker/
+RUN mkdir corekube_worker
+COPY ./open5gs-corekube/ corekube_worker/open5gs-corekube/
+COPY ./source/ corekube_worker/source/
+COPY ./headers/ corekube_worker/headers/
+COPY ./lib /corekube_worker/lib/
+COPY ./libck /corekube_worker/libck/
 
 # Copy the libraries to the worker directory
 RUN mkdir corekube_worker/bin
@@ -38,13 +43,15 @@ RUN LIBS=`find open5gs-corekube/build/lib/ -type f -name "libogs*.so.2.3.0"` && 
     for lib in $LIBS; do mv $lib corekube_worker/bin/$(basename "$lib" .3.0) ; done
 RUN cp libck/libck.so corekube_worker/bin/
 
+COPY ./Makefile corekube_worker/Makefile
+
 # Build corekube_worker
 WORKDIR corekube_worker/
 RUN make
 
 
 
-FROM busybox:glibc
+FROM ubuntu:bionic
 
 COPY --from=build /corekube_worker/corekube_udp_worker /
 COPY --from=build /corekube_worker/bin /bin/
