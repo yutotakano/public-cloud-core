@@ -56,15 +56,33 @@ void metrics_disconnect(int sock)
 	close(sock);
 }
 
-int metrics_send(int sock, worker_stats_t *stats)
+unsigned long long get_microtime()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (unsigned long long)(tv.tv_sec) * 1000000 + (unsigned long long)(tv.tv_usec);
+}
+
+int metrics_send(int sock, worker_metrics_t *stats)
 {
   int res;
-  char buffer[1024];
+  char buffer[256];
   int buffer_len = 0;
-  ogs_debug("Sending metrics data\n");
+  ogs_debug("Creating metrics byte buffer\n");
 
-  buffer_len += sprintf(buffer, "num_imsi_pulls:%d\n", stats->num_imsi_pulls);
+  buffer_len += sprintf(buffer + buffer_len, "start_time:%llu|", stats->start_time);
+	buffer_len += sprintf(buffer + buffer_len, "amf_ue_ngap_id:%ld|", stats->amf_ue_ngap_id);
+	buffer_len += sprintf(buffer + buffer_len, "ran_ue_ngap_id:%ld|", stats->ran_ue_ngap_id);
+	buffer_len += sprintf(buffer + buffer_len, "message_type:%d|", stats->message_type);
+	buffer_len += sprintf(buffer + buffer_len, "invalid:%d|", stats->invalid);
+	buffer_len += sprintf(buffer + buffer_len, "latency:%d|", stats->latency);
+	buffer_len += sprintf(buffer + buffer_len, "handle_latency:%d|", stats->handle_latency);
+	buffer_len += sprintf(buffer + buffer_len, "decode_latency:%d|", stats->decode_latency);
+	buffer_len += sprintf(buffer + buffer_len, "encode_latency:%d|", stats->encode_latency);
+	buffer_len += sprintf(buffer + buffer_len, "send_latency:%d|", stats->send_latency);
+	buffer_len += sprintf(buffer + buffer_len, "end_time:%llu\n", stats->end_time);
 
+	ogs_trace("Sending metrics data: %s", buffer);
   res = send(sock, buffer, buffer_len, 0);
   if (res < 0) {
     ogs_error("Error sending metrics data\n");

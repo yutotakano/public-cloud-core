@@ -22,7 +22,7 @@ typedef struct message_handler_response {
     // the SCTP stream ID differs depending on whether
     // this is a S1Setup message or a UE message
     uint8_t sctpStreamID;
-    worker_stats_t *stats;
+    worker_metrics_t *stats;
 } message_handler_response_t;
 
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response);

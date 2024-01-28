@@ -11,24 +11,31 @@ int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_re
     ogs_ngap_message_t incoming_ngap;
 
     // Decode the incoming message
+    unsigned long long decode_start = get_microtime();
     int b_to_m = bytes_to_message(incoming, incoming_len, &incoming_ngap);
     if (b_to_m != OGS_OK) {
         // Failed to decode incoming NGAP message
         // Print the message and continue
         ogs_error("Found an invalid message.");
+        response->stats->invalid = 1;
         ogs_log_hexdump(OGS_LOG_ERROR, incoming, incoming_len);
         return OGS_OK;
     }
+    unsigned long long decode_end = get_microtime();
+    response->stats->decode_latency = (int)(decode_end - decode_start);
 
     // Handle the decoded message
     int message_handle = ngap_message_handler(&incoming_ngap, response);
     ogs_assert(message_handle == OGS_OK); // Failed to handle NGAP message
+    unsigned long long handle_end = get_microtime();
+    response->stats->handle_latency = (int)(get_microtime() - decode_end);
 
     // handle the outgoing messages, if there are any
     for (int i = 0; i < response->num_responses; i++) {
         int m_to_b = message_to_bytes(response->responses[i], (ogs_pkbuf_t **) &response->responses[i]);
         ogs_assert(m_to_b == OGS_OK); // Failed to encode outgoing NGAP message
     }
+    response->stats->encode_latency = (int)(get_microtime() - handle_end);
 
     // Free up memory
     ogs_ngap_free(&incoming_ngap);
@@ -96,6 +103,8 @@ int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, messag
     ogs_info("Handling NGAP message of type InitiatingMessage");
 
     NGAP_InitiatingMessage__value_PR messageType = initiatingMessage->choice.initiatingMessage->value.present;
+    response->stats->message_type = (int)messageType;
+
     switch (messageType) {
         case NGAP_InitiatingMessage__value_PR_NGSetupRequest:
             return ngap_handle_ng_setup_request(initiatingMessage, response);
@@ -118,6 +127,8 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
 
     // all successful outcomes have no response
     response->num_responses = 0;
+
+    response->stats->message_type = (int)successfulOutcome->value.present;
 
     switch (successfulOutcome->value.present) {
         case NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:

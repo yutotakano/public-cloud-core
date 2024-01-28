@@ -73,16 +73,19 @@ void *process_message(void *raw_args) {
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	message_handler_response_t response;
-	worker_stats_t stats;
+	worker_metrics_t stats = {0};
 
 	// initialise the default response values
 	response.num_responses = 0;
 	response.responses = ogs_malloc(sizeof(void *) * MAX_NUM_RESPONSES);
-	// response.stats = &stats;
+	response.stats = &stats;
+	stats.start_time = get_microtime();
 
 	int outcome = ngap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
+	unsigned long long send_start = get_microtime();
+	stats.num_responses = response.num_responses;
 	if (response.num_responses == 0)
 		ogs_info("Finished handling NO_RESPONSE message");
 
@@ -107,11 +110,18 @@ void *process_message(void *raw_args) {
 		ogs_info("Send %d bytes over UDP", ret);
 	}
 
+	unsigned long long send_end = get_microtime();
+	stats.send_latency = (int)(send_end - send_start);
+	stats.end_time = send_end;
+	stats.latency = (int)(stats.end_time - stats.start_time);
+
+	ogs_trace("Finished handling message, sending metrics data");
 	// If there is an IP to send metrics to, send them to args->metrics_addr
 	int error = metrics_send(metrics_sock, response.stats);
 	if (error != 0) {
 		ogs_warn("Error sending metrics data, error code %d", error);
 	}
+	ogs_trace("Finished sending metrics data");
 
 	// free the dynamically-allocated structures
 	ogs_free(args->client_addr);
