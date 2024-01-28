@@ -69,8 +69,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     response_params.num_of_s_nssai = 0;
 
     // set metric ue ids
-    response->stats->amf_ue_ngap_id = response_params.amf_ue_ngap_id;
-    response->stats->ran_ue_ngap_id = response_params.ran_ue_ngap_id;
+    response->stats->ue_id = response_params.amf_ue_ngap_id;
 
     // free the dynamically-allocated AMF_UE_NGAP_ID
     ogs_free(nas_params.amf_ue_ngap_id);

@@ -7,8 +7,7 @@
 // This will be sent to a UDP endpoint at the very end of the message handling.
 typedef struct worker_metrics {
     unsigned long long start_time;
-    uint64_t ran_ue_ngap_id;
-    uint64_t amf_ue_ngap_id;
+    uint64_t ue_id;
     int message_type;
     int invalid;
     int latency;

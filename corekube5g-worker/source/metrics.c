@@ -71,8 +71,7 @@ int metrics_send(int sock, worker_metrics_t *stats)
   ogs_debug("Creating metrics byte buffer\n");
 
   buffer_len += sprintf(buffer + buffer_len, "start_time:%llu|", stats->start_time);
-	buffer_len += sprintf(buffer + buffer_len, "amf_ue_ngap_id:%ld|", stats->amf_ue_ngap_id);
-	buffer_len += sprintf(buffer + buffer_len, "ran_ue_ngap_id:%ld|", stats->ran_ue_ngap_id);
+	buffer_len += sprintf(buffer + buffer_len, "ue_id:%ld|", stats->ue_id);
 	buffer_len += sprintf(buffer + buffer_len, "message_type:%d|", stats->message_type);
 	buffer_len += sprintf(buffer + buffer_len, "invalid:%d|", stats->invalid);
 	buffer_len += sprintf(buffer + buffer_len, "latency:%d|", stats->latency);

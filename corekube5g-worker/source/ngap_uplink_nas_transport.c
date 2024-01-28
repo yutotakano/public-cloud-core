@@ -64,8 +64,7 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
     nas_params.amf_ue_ngap_id = &amf_ue_ngap_id;
 
     // set metric ue ids
-    response->stats->amf_ue_ngap_id = nas_params.amf_ue_ngap_id;
-    response->stats->ran_ue_ngap_id = nas_params.ran_ue_ngap_id;
+    response->stats->ue_id = *nas_params.amf_ue_ngap_id;
 
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
     ogs_assert(handle_nas == OGS_OK);
