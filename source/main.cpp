@@ -1,9 +1,16 @@
 #include <iostream>
-#include "argparse.hpp"
+#include "argparse/argparse.hpp"
 #include "deploy.h"
+#include "quill/Quill.h"
 
 int main(int argc, char** argv)
 {
+  quill::start();
+
+  quill::Logger* logger = quill::get_logger();
+  logger->set_log_level(quill::LogLevel::TraceL3);
+  LOG_INFO(logger, "This is a log info example {}", 5);
+
   // Setup the command line parser
   argparse::ArgumentParser program("publicore", "0.0.1");
 
