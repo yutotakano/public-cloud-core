@@ -11,10 +11,10 @@ make
 To run:
 
 ```shell
-./main --help
+./publicore --help
 ```
 
-To clean:
+To clean, use either of:
 
 ```shell
 make clean # clean only project build artifacts

@@ -7,12 +7,12 @@ LDLIBS := -lpthread -lquill -lsubprocess
 SRC_DIR := source
 OBJ_DIR := objects
 
-EXE := main
+EXE := publicore
 
 SRC_LIST := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_LIST := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_LIST))
 
-# Cross-platform command-line tools, use them like $(call RM, file)
+# Cross-platform command-line tools, use them like so: $(call RM, file)
 ifeq ($(OS), Windows_NT)
 		RM = del /Q $(1) > nul 2>&1 || (exit 0)
 		RMDIR = rmdir /S /Q $(subst /,\,$(1)) > nul 2>&1 || (exit 0)
@@ -60,7 +60,9 @@ external/quill_install:
 		@$(call MKDIR, external/quill/cmake_build)
 # The install prefix is set to the external/quill_install dir -- this will
 # install the library to external/quill_install/lib and the headers to
-# external/quill_install/include
+# external/quill_install/include.
+# The -G "Unix Makefiles" flag is used to generate GNU Makefiles even on Windows,
+# because the default generator on Windows is the Visual Studio generator.
 		cd external/quill/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../quill_install/ -G "Unix Makefiles" ..
 		cd external/quill/cmake_build && make install
 
@@ -72,6 +74,8 @@ external/subprocess_install:
 # subprocess library has a bug when compiling with MinGW where it tries to
 # define a macro that happens to already be defined by the compiler in recent
 # versions of MinGW.
+# The -G "Unix Makefiles" flag is used to generate GNU Makefiles even on Windows,
+# because the default generator on Windows is the Visual Studio generator.
 		cd external/subprocess/cmake_build && cmake -DCMAKE_CXX_FLAGS=-U__MINGW32__ -G "Unix Makefiles" ..
 		cd external/subprocess/cmake_build && make subprocess
 # The subprocess library doesn't have an install target, so we'll just copy
@@ -83,7 +87,8 @@ external/subprocess_install:
 
 clean:
 		@$(call RMDIR, $(OBJ_DIR))
+		@$(call RM, $(EXE))
+		@$(call RM, $(EXE).exe)
 
 clean_all: clean
 		@$(call RMDIR, external)
-		@$(call RM, $(EXE))
