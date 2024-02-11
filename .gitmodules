@@ -1,0 +1,3 @@
+[submodule "lib/quill"]
+	path = lib/quill
+	url = git@github.com:odygrd/quill.git
