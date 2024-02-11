@@ -1,13 +1,13 @@
-#include <iostream>
 #include "argparse/argparse.hpp"
 #include "deploy.h"
 #include "quill/Quill.h"
+#include <iostream>
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   quill::start();
 
-  quill::Logger* logger = quill::get_logger();
+  quill::Logger *logger = quill::get_logger();
   logger->set_log_level(quill::LogLevel::TraceL3);
   LOG_INFO(logger, "This is a log info example {}", 5);
 
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
   {
     program.parse_args(argc, argv);
   }
-  catch (const std::exception& err)
+  catch (const std::exception &err)
   {
     std::cerr << err.what() << std::endl;
     return 1;

@@ -1,0 +1,28 @@
+﻿---
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveMacros: 'true'
+AlignConsecutiveAssignments: 'false'
+AlignConsecutiveDeclarations: 'false'
+AlignEscapedNewlines: Right
+AlignOperands: 'false'
+AlignTrailingComments: 'false'
+AllowAllArgumentsOnNextLine: 'false'
+AllowAllConstructorInitializersOnNextLine: 'false'
+AllowAllParametersOfDeclarationOnNextLine: 'false'
+AllowShortBlocksOnASingleLine: 'true'
+AllowShortCaseLabelsOnASingleLine: 'true'
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+BinPackArguments: 'false'
+BinPackParameters: 'false'
+BreakBeforeBraces: Allman
+ColumnLimit: '80'
+ContinuationIndentWidth: '2'
+Cpp11BracedListStyle: 'true'
+FixNamespaceComments: 'true'
+Language: Cpp
+Standard: Cpp11
+TabWidth: '2'
+UseTab: Never
+
+...
