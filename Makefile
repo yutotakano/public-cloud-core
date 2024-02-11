@@ -1,16 +1,20 @@
 CC := g++
-CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/subprocess_install/include
+CPPFLAGS := -Iinclude -Iexternal/quill_install/include
 CFLAGS := -Wall
-LDFLAGS := -Lexternal/quill_install/lib -Lexternal/subprocess_install/lib
-LDLIBS := -lpthread -lquill -lsubprocess
+LDFLAGS := -Lexternal/quill_install/lib
+LDLIBS := -lpthread -lquill
 
 SRC_DIR := source
 OBJ_DIR := objects
 
-EXE := publicore
-
 SRC_LIST := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_LIST := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_LIST))
+
+ifeq ($(OS), Windows_NT)
+		EXE := publicore.exe
+else
+		EXE := publicore
+endif
 
 # Cross-platform command-line tools, use them like so: $(call RM, file)
 ifeq ($(OS), Windows_NT)
@@ -51,7 +55,7 @@ $(EXE): $(OBJ_LIST)
 		$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # If dependencies are needed, install them
-external: external/quill_install external/subprocess_install
+external: external/quill_install
 
 # If quill isn't present as an installed library, clone and install it
 external/quill_install:
