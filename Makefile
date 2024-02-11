@@ -1,7 +1,8 @@
-CC=g++
-CPPFLAGS=-Iinclude
-CFLAGS=-Wall
-OBJ = source/main.o
+CC := g++
+CPPFLAGS := -Iinclude -Iexternal_include
+CFLAGS := -Wall
+LDFLAGS := -Llib
+LDLIBS := -lpthread
 
 SRC_DIR := source
 OBJ_DIR := objects
@@ -25,7 +26,7 @@ $(OBJ_DIR):
 
 # Linking the object files, $^ is the list of all prerequisites
 $(EXE): $(OBJ_LIST)
-		$(CC) $^ -o $@
+		$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:
-		@rm -rf $(OBJ_DIR) $(EXE)
+		@rm -rf $(OBJ_DIR)
