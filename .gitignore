@@ -1,5 +1,6 @@
 .DS_Store
 main
+main.exe
 objects
 .vscode
 external
