@@ -15,26 +15,13 @@ ExecutingProcess Executor::run(std::string command)
 
   LOG_DEBUG(logger, "Running command: {}", command);
 
-  // Find shell (bash or cmd.exe) and command prefix (-c or /c)
-  // to use for running the command -- this allows us to run commands including
-  // pipes and other shell features without having to worry *too much* about the
-  // differences between bash and cmd.exe
-  char *shell = "/bin/bash";
-  char *command_prefix;
-  if (char *env_shell = std::getenv("SHELL"))
-  {
-    shell = env_shell;
-    command_prefix = "-c";
-  }
-  else if (char *env_comspec = std::getenv("COMSPEC"))
-  {
-    shell = env_comspec;
-    command_prefix = "/c";
-  }
-
-  LOG_DEBUG(logger, "Raw command: \"{}\"", command);
-
+  // Split the command by spaces, since subprocess_create takes an array
   std::vector<std::string> command_parts = Utils::split(command, ' ');
+  LOG_DEBUG(logger, "Raw command: \"{}\"", command_parts);
+
+  // Convert the command parts to a C-style array of C-style strings by
+  // iterating over the vector and pushing the c_str() of each string into a
+  // reserved vector of char pointers.
   std::vector<char *> cstr_command_parts;
   cstr_command_parts.reserve(command_parts.size());
 
@@ -42,19 +29,30 @@ ExecutingProcess Executor::run(std::string command)
   {
     cstr_command_parts.push_back(const_cast<char *>(command_parts[i].c_str()));
   }
+  // Push NULL at the end since subprocess_create requires it to know when the
+  // array ends.
   cstr_command_parts.push_back(nullptr);
 
+  // Create the subprocess struct that will contain the process handles - make
+  // it shared as it will be used in the future (in the async lambda below) and
+  // we want to keep it alive until the future is done.
   std::shared_ptr<subprocess_s> process = std::make_shared<subprocess_s>();
   int process_result = subprocess_create(
     &cstr_command_parts[0],
+    // enable_async is required to use the subprocess_read_stdout and
+    // subprocess_read_stderr functions, which are used to stream the output of
+    // the process instead of waiting for the process to end.
     subprocess_option_enable_async | subprocess_option_inherit_environment,
     process.get()
   );
+
+  // Sanity check the result of subprocess_create
   if (process_result != 0)
   {
     LOG_ERROR(logger, "Error creating subprocess: {}", process_result);
   }
 
+  // Create the ExecutingProcess struct that will be returned to the caller
   auto result = ExecutingProcess();
   result.command = command;
   result.subprocess = process.get();
@@ -88,6 +86,8 @@ ExecutingProcess Executor::run(std::string command)
 
         error += err_buffer;
       }
+      // Log the error here, since the future will return only the stdout for
+      // convenience.
       LOG_ERROR(logger, "Error: {}", error);
 
       return output;
