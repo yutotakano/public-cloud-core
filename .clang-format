@@ -19,8 +19,11 @@ BreakBeforeBraces: Allman
 ColumnLimit: '80'
 ContinuationIndentWidth: '2'
 Cpp11BracedListStyle: 'true'
+EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: 'true'
 Language: Cpp
+LineEnding: DeriveLF
+PenaltyIndentedWhitespace: 1
 Standard: Cpp11
 TabWidth: '2'
 UseTab: Never

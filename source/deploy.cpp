@@ -113,40 +113,42 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   // Create a nodegroup to attach to the cluster - this is for the frontend
   // and database.
-  auto ng_future = executor
-                     .run(
-                       {"eksctl",
-                        "create",
-                        "nodegroup",
-                        "--cluster=corekube-aws-cluster",
-                        "--name=ng-corekube",
-                        "--node-ami-family=AmazonLinux2",
-                        "--node-type=t3.small",
-                        "--nodes=1",
-                        "--nodes-min=1",
-                        "--nodes-max=1",
-                        "--node-volume-size=20",
-                        "--ssh-access",
-                        "--ssh-public-key=" + public_key_path,
-                        "--managed",
-                        "--asg-access"}
-                     )
-                     .future;
+  auto ng_future =
+    executor
+      .run(
+        {"eksctl",
+         "create",
+         "nodegroup",
+         "--cluster=corekube-aws-cluster",
+         "--name=ng-corekube",
+         "--node-ami-family=AmazonLinux2",
+         "--node-type=t3.small",
+         "--nodes=1",
+         "--nodes-min=1",
+         "--nodes-max=1",
+         "--node-volume-size=20",
+         "--ssh-access",
+         "--ssh-public-key=" + public_key_path,
+         "--managed",
+         "--asg-access"}
+      )
+      .future;
 
   // Create a Fargate profile to attach to the cluster, for the backend
-  auto fp_future = executor
-                     .run(
-                       {"eksctl",
-                        "create",
-                        "fargateprofile",
-                        "--namespace=default",
-                        "--namespace=kube-system",
-                        "--namespace=grafana",
-                        "--namespace=prometheus",
-                        "--cluster=corekube-aws-cluster",
-                        "--name=fp-corekube"}
-                     )
-                     .future;
+  auto fp_future =
+    executor
+      .run(
+        {"eksctl",
+         "create",
+         "fargateprofile",
+         "--namespace=default",
+         "--namespace=kube-system",
+         "--namespace=grafana",
+         "--namespace=prometheus",
+         "--cluster=corekube-aws-cluster",
+         "--name=fp-corekube"}
+      )
+      .future;
 
   // Wait for the nodegroup and Fargate profile to be created
   ng_future.get();
