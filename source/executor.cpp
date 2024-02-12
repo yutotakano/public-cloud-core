@@ -69,20 +69,23 @@ ExecutingProcess Executor::run(std::string command)
         // Sleep for a bit to avoid busy-waiting
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+        // Zero out the buffers before reading into them
+        std::fill(std::begin(out_buffer), std::end(out_buffer), 0);
+        std::fill(std::begin(err_buffer), std::end(err_buffer), 0);
+
         bread = subprocess_read_stdout(process.get(), out_buffer, 1024);
         if (bread > 0)
         {
           LOG_TRACE_L3(logger, "{} bytes read from stdout", bread);
-          LOG_TRACE_L3(logger, "Output: {}", out_buffer);
         }
 
         output += out_buffer;
+        std::cout << out_buffer;
 
         bread = subprocess_read_stderr(process.get(), err_buffer, 1024);
         if (bread > 0)
         {
           LOG_TRACE_L3(logger, "{} bytes read from stderr", bread);
-          LOG_TRACE_L3(logger, "Output: {}", err_buffer);
         }
 
         error += err_buffer;
