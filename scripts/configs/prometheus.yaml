@@ -37,6 +37,22 @@ spec:
     targetPort: 9090
     protocol: TCP
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: prometheus
+  name: corekube-prometheus-loadbalancer
+  labels:
+    app: corekube-prometheus
+spec:
+  type: LoadBalancer
+  selector:
+    app: corekube-prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
