@@ -21,7 +21,16 @@ ExecutingProcess Executor::run(std::string command, bool stream_cout)
 ExecutingProcess
 Executor::run(std::vector<std::string> command_parts, bool stream_cout)
 {
-  LOG_DEBUG(logger, "Running command: {}", command_parts);
+  // If streaming to stdout, we want to make sure the command is visible, but
+  // otherwise the user doesn't need to see it unless they are debugging.
+  if (stream_cout)
+  {
+    LOG_INFO(logger, "Running command: {}", command_parts);
+  }
+  else
+  {
+    LOG_DEBUG(logger, "Running command: {}", command_parts);
+  }
 
   // Convert the command parts to a C-style array of C-style strings by
   // iterating over the vector and pushing the c_str() of each string into a
