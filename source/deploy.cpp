@@ -492,7 +492,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
   LOG_INFO(logger, "CoreKube deployed successfully!");
   LOG_INFO(logger, "IP (within VPC) of CK frontend node: {}", frontend_ip);
   LOG_INFO(logger, "Grafana: http://{}:3000", ck_grafana_public_dns);
-  LOG_INFO(logger, "Nervion: http://{}:3000", nervion_controller_public_dns);
+  LOG_INFO(logger, "Nervion: http://{}:8080", nervion_controller_public_dns);
   LOG_INFO(logger, "Current cluster: nervion-aws-cluster");
 }
 
