@@ -23,15 +23,47 @@ std::unique_ptr<argparse::ArgumentParser> DeployApp::deploy_arg_parser()
     .default_value(std::string{""})
     .help("SSH key to use for the deployment");
 
+  deploy_command->add_argument("--versions")
+    .default_value(false)
+    .implicit_value(true)
+    .help("Print the versions of the tools used by the executor");
+
+  deploy_command->add_argument("--teardown")
+    .default_value(false)
+    .implicit_value(true)
+    .help("Teardown the previous deployment before deploying");
+
+  deploy_command->add_argument("--no-deploy")
+    .default_value(false)
+    .implicit_value(true)
+    .help("Don't deploy anything, just teardown the previous deployment");
+
   return deploy_command;
 }
 
 void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
 {
-  LOG_INFO(logger, "Deploying CoreKube on the public cloud...");
+  if (parser.get<bool>("--versions"))
+  {
+    LOG_TRACE_L3(logger, "Printing tool versions");
+    executor.print_versions();
+    return;
+  }
+
+  bool teardown = parser.get<bool>("--teardown");
+  bool no_setup = parser.get<bool>("--no-deploy");
+
+  LOG_TRACE_L3(logger, "Teardown: {}", teardown);
+  LOG_TRACE_L3(logger, "No setup: {}", no_setup);
+  LOG_TRACE_L3(logger, "Type: {}", parser.get<std::string>("--type"));
 
   if (parser.get<std::string>("--type") == "aws-eks-fargate")
   {
+    if (teardown)
+      teardown_aws_eks_fargate();
+    if (no_setup)
+      return;
+
     std::string public_key_path = parser.get<std::string>("--ssh-key");
     if (public_key_path.empty())
       public_key_path = get_public_key_path();
@@ -40,14 +72,26 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
   }
   else if (parser.get<std::string>("--type") == "aws-eks-ec2")
   {
+    if (teardown)
+      teardown_aws_eks_ec2();
+    if (no_setup)
+      return;
     deploy_aws_eks_ec2();
   }
   else if (parser.get<std::string>("--type") == "aws-eks-ec2-spot")
   {
+    if (teardown)
+      teardown_aws_eks_ec2_spot();
+    if (no_setup)
+      return;
     deploy_aws_eks_ec2_spot();
   }
   else if (parser.get<std::string>("--type") == "aws-ec2")
   {
+    if (teardown)
+      teardown_aws_ec2();
+    if (no_setup)
+      return;
     deploy_aws_ec2();
   }
   else
@@ -91,8 +135,6 @@ std::string DeployApp::get_public_key_path()
 void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 {
   LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
-
-  executor.print_versions();
 
   // Create the EKS cluster (bootstrapped with private+public VPC subnets and
   // no nodegroup)
@@ -166,18 +208,169 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "Name=tag:alpha.eksctl.io/cluster-name,Values=corekube-aws-cluster",
          "Name=tag:aws:cloudformation:logical-id,Values=SubnetPublic*",
          "--query",
-         "Subnets[*].SubnetId"},
+         "Subnets[*].SubnetId",
+         "--output",
+         "text"},
         false
       )
       .future.get();
 
-  LOG_INFO(logger, "Public subnets: {}", public_subnets_tab);
+  // The output from above is tab-separated so we replace tabs with commas
+  std::string public_subnets_comma = public_subnets_tab;
+  std::replace(
+    public_subnets_comma.begin(),
+    public_subnets_comma.end(),
+    '\t',
+    ','
+  );
+
+  LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
 }
 
+std::string
+DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
+{
+  return executor
+    .run(
+      {"aws",
+       "cloudformation",
+       "describe-stack-events",
+       "--stack-name=eksctl-corekube-aws-cluster-fargate",
+       "--query",
+       "StackEvents[0].EventId",
+       "--output",
+       "text"}
+    )
+    .future.get();
+}
+
+void DeployApp::teardown_aws_eks_fargate()
+{
+  LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
+
+  // Delete the Fargate profile and the nodegroups for both clusters
+  auto cfp_future =
+    executor
+      .run({
+        "eksctl",
+        "delete",
+        "fargateprofile",
+        "--cluster=corekube-aws-cluster",
+        "--name=fp-corekube",
+        //  "--wait"
+      })
+      .future.get();
+
+  auto cng_future =
+    executor
+      .run({
+        "eksctl",
+        "delete",
+        "nodegroup",
+        "--cluster=corekube-aws-cluster",
+        "--name=ng-corekube",
+        //  "--wait"
+      })
+      .future.get();
+
+  auto nng_future =
+    executor
+      .run({
+        "eksctl",
+        "delete",
+        "nodegroup",
+        "--cluster=nervion-aws-cluster",
+        "--name=ng-nervion",
+        //  "--wait"
+      })
+      .future.get();
+
+  // The above futures will complete immediately because we don't use --wait.
+  // We choose to do so because we can get more detailed information about the
+  // deletion process by querying the events directly.
+  bool cfp_deleted = false;
+  bool cng_deleted = false;
+  bool nng_deleted = false;
+  while (cfp_deleted || cng_deleted || nng_deleted)
+  {
+    if (!cfp_deleted)
+    {
+      try
+      {
+        auto most_recent_cfp_log = get_most_recent_cloudformation_event(
+          "eksctl-corekube-aws-cluster-fargate"
+        );
+        LOG_INFO(logger, "Deleting Fargate Profile: {}", most_recent_cfp_log);
+      }
+      catch (const std::exception &e)
+      {
+        cfp_deleted = true;
+      }
+    }
+
+    if (!cng_deleted)
+    {
+      try
+      {
+        auto most_recent_cng_log = get_most_recent_cloudformation_event(
+          "eksctl-corekube-aws-cluster-nodegroup-ng-corekube"
+        );
+        LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_cng_log);
+      }
+      catch (const std::exception &e)
+      {
+        cng_deleted = true;
+      }
+    }
+
+    if (!nng_deleted)
+    {
+      try
+      {
+        auto most_recent_nng_log = get_most_recent_cloudformation_event(
+          "eksctl-nervion-aws-cluster-nodegroup-ng-nervion"
+        );
+        LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_nng_log);
+      }
+      catch (const std::exception &e)
+      {
+        nng_deleted = true;
+      }
+    }
+  }
+
+  // Deleting the CoreKube cluster will require nothing uses its subnets and
+  // security groups, so we need to wait for the above two futures to complete
+  // before we can delete the cluster
+  // cfp_future.get();
+  // nng_future.get();
+  // cng_future.get();
+
+  // Delete the Nervion cluster first (as it doesn't depend on anything else)
+  executor
+    .run({"eksctl", "delete", "cluster", "--name=nervion-aws-cluster", "--wait"}
+    )
+    .future.get();
+
+  executor
+    .run(
+      {"eksctl", "delete", "cluster", "--name=corekube-aws-cluster", "--wait"}
+    )
+    .future.get();
+
+  LOG_INFO(logger, "CoreKube tore down successfully!");
+}
+
 void DeployApp::deploy_aws_eks_ec2() { return; }
+
+void DeployApp::teardown_aws_eks_ec2() { return; }
 
 void DeployApp::deploy_aws_eks_ec2_spot() { return; }
 
+void DeployApp::teardown_aws_eks_ec2_spot() { return; }
+
 void DeployApp::deploy_aws_ec2() { return; }
+
+void DeployApp::teardown_aws_ec2() { return; }

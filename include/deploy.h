@@ -14,15 +14,21 @@ public:
 
   std::string get_public_key_path();
   void deploy_command_handler(argparse::ArgumentParser &parser);
+  void teardown_aws_eks_fargate();
+  void teardown_aws_eks_ec2();
+  void teardown_aws_eks_ec2_spot();
+  void teardown_aws_ec2();
 
   void deploy_aws_eks_fargate(std::string public_key_path);
   void deploy_aws_eks_ec2();
   void deploy_aws_eks_ec2_spot();
   void deploy_aws_ec2();
 
+  std::string get_most_recent_cloudformation_event(std::string stack_name);
+
 private:
   quill::Logger *logger;
   Executor executor;
 };
 
-#endif
+#endif // DEPLOY_H
