@@ -29,6 +29,11 @@ public:
    */
   ExecutingProcess run(std::string command);
 
+  /**
+   * @brief Print the versions of the tools used by the executor.
+   */
+  void print_versions();
+
 private:
   quill::Logger *logger;
 };

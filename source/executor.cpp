@@ -97,3 +97,24 @@ ExecutingProcess Executor::run(std::string command)
   TRACE_FUNCTION_EXIT(logger);
   return result;
 }
+
+void Executor::print_versions()
+{
+  TRACE_FUNCTION_ENTER(logger);
+
+  LOG_INFO(logger, "Printing versions...");
+
+  auto docker_version = run("docker --version").future.get();
+  LOG_INFO(logger, "Docker version: {}", docker_version);
+
+  auto kubectl_version = run("kubectl version --client").future.get();
+  LOG_INFO(logger, "Kubectl version: {}", kubectl_version);
+
+  auto aws_version = run("aws --version").future.get();
+  LOG_INFO(logger, "AWS version: {}", aws_version);
+
+  auto eksctl_version = run("eksctl version").future.get();
+  LOG_INFO(logger, "Eksctl version: {}", eksctl_version);
+
+  TRACE_FUNCTION_EXIT(logger);
+}
