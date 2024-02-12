@@ -434,7 +434,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "--node-type=t3.small",
        "--nodes=2",
        "--nodes-min=2",
-       "--nodes-max=2",
+       "--nodes-max=10",
        "--node-volume-size=20",
        "--ssh-access",
        "--ssh-public-key=" + public_key_path,
@@ -496,6 +496,12 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
   // Apply Nervion deployment
   executor.run({"kubectl", "apply", "-f", "scripts/configs/nervion.yaml"})
     .future.get();
+
+  // Apply metrics server deployment
+  executor
+    .run({"kubectl", "apply", "-f", "scripts/configs/metrics-server.yaml"})
+    .future.get();
+
   executor
     .run(
       {"kubectl",
