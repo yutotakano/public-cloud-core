@@ -1,7 +1,6 @@
 #include "argparse/argparse.hpp"
 #include "deploy.h"
 #include "quill/Quill.h"
-#include "trace.h"
 #include <iostream>
 
 int main(int argc, char **argv)

@@ -2,7 +2,6 @@
 #include "argparse/argparse.hpp"
 #include "executor.h"
 #include "quill/Quill.h"
-#include "trace.h"
 
 DeployApp::DeployApp()
 {
@@ -29,8 +28,6 @@ std::unique_ptr<argparse::ArgumentParser> DeployApp::deploy_arg_parser()
 
 void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
 {
-  TRACE_FUNCTION_ENTER(logger);
-
   LOG_INFO(logger, "Deploying CoreKube on the public cloud...");
 
   if (parser.get<std::string>("--type") == "aws-eks-fargate")
@@ -57,14 +54,10 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
   {
     LOG_ERROR(logger, "Invalid deployment type specified");
   }
-
-  TRACE_FUNCTION_EXIT(logger);
 }
 
 std::string DeployApp::get_public_key_path()
 {
-  TRACE_FUNCTION_ENTER(logger);
-
   char *home = std::getenv("HOME");
 #ifdef _WIN32
   home = std::getenv("USERPROFILE");
@@ -92,14 +85,11 @@ std::string DeployApp::get_public_key_path()
   }
 
   LOG_ERROR(logger, "No public key found in $HOME/.ssh");
-  TRACE_FUNCTION_EXIT(logger);
   return "";
 }
 
 void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 {
-  TRACE_FUNCTION_ENTER(logger);
-
   LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
 
   executor.print_versions();
@@ -124,8 +114,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     .future.get();
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
-
-  TRACE_FUNCTION_EXIT(logger);
 }
 
 void DeployApp::deploy_aws_eks_ec2() { return; }

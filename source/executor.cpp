@@ -1,7 +1,6 @@
 #include "executor.h"
 #include "quill/Quill.h"
 #include "subprocess/subprocess.h"
-#include "trace.h"
 #include "utils.h"
 #include <future>
 #include <iostream>
@@ -11,8 +10,6 @@ Executor::Executor() { logger = quill::get_logger(); }
 
 ExecutingProcess Executor::run(std::string command)
 {
-  TRACE_FUNCTION_ENTER(logger);
-
   LOG_DEBUG(logger, "Running command: {}", command);
 
   // Split the command by spaces, since subprocess_create takes an array
@@ -94,14 +91,11 @@ ExecutingProcess Executor::run(std::string command)
     }
   );
 
-  TRACE_FUNCTION_EXIT(logger);
   return result;
 }
 
 void Executor::print_versions()
 {
-  TRACE_FUNCTION_ENTER(logger);
-
   LOG_INFO(logger, "Printing versions...");
 
   auto docker_version = run("docker --version").future.get();
@@ -115,6 +109,4 @@ void Executor::print_versions()
 
   auto eksctl_version = run("eksctl version").future.get();
   LOG_INFO(logger, "Eksctl version: {}", eksctl_version);
-
-  TRACE_FUNCTION_EXIT(logger);
 }
