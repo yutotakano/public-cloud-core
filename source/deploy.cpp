@@ -226,7 +226,259 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
 
+  // Collect pivate subnets for the Fargate profile
+  auto private_subnets_tab =
+    executor
+      .run(
+        {"aws",
+         "ec2",
+         "describe-subnets",
+         "--filter",
+         "Name=tag:alpha.eksctl.io/cluster-name,Values=corekube-aws-cluster",
+         "Name=tag:aws:cloudformation:logical-id,Values=SubnetPrivate*",
+         "--query",
+         "Subnets[*].SubnetId",
+         "--output",
+         "text"},
+        false
+      )
+      .future.get();
+
+  // The output from above is tab-separated so we replace tabs with commas
+  std::string private_subnets_comma = private_subnets_tab;
+  std::replace(
+    private_subnets_comma.begin(),
+    private_subnets_comma.end(),
+    '\t',
+    ','
+  );
+
+  LOG_INFO(logger, "Private subnets: {}", private_subnets_comma);
+
+  // Get the VPC-internal IP of the frontend node
+  auto frontend_ip =
+    executor
+      .run(
+        {"kubectl",
+         "get",
+         "nodes",
+         "-o",
+         "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
+         "address}",
+         "-l",
+         "alpha.eksctl.io/nodegroup-name=ng-corekube"}
+      )
+      .future.get();
+
+  // Apply metrics server deployment
+  executor
+    .run({"kubectl", "apply", "-f", "scripts/configs/metrics-server.yaml"})
+    .future.get();
+
+  // Apply the CoreKube workers and frontend deployments
+  executor
+    .run(
+      {"kubectl",
+       "apply",
+       "-f",
+       "scripts/configs/5G/corekube-worker-and-db.yaml"}
+    )
+    .future.get();
+
+  executor
+    .run({"kubectl", "apply", "-f", "scripts/configs/5G/corekube-frontend.yaml"}
+    )
+    .future.get();
+
+  // Apply prometheus
+  executor.run({"kubectl", "apply", "-f", "scripts/configs/prometheus.yaml"})
+    .future.get();
+
+  // Apply opencost
+  executor.run({"kubectl", "apply", "-f", "scripts/configs/opencost.yaml"})
+    .future.get();
+
+  // Apply grafana
+  executor.run({"kubectl", "apply", "-f", "scripts/configs/grafana.yaml"})
+    .future.get();
+  executor
+    .run(
+      {"kubectl",
+       "create",
+       "configmap",
+       "corekube-grafana-dashboards",
+       "--namespace=grafana",
+       "--from-file=scripts/configs/dashboards/"}
+    )
+    .future.get();
+  executor
+    .run(
+      {"kubectl",
+       "wait",
+       "-n",
+       "grafana",
+       "--for=condition=ready",
+       "pod",
+       "--all",
+       "--timeout=10m"}
+    )
+    .future.get();
+  // executor
+  //   .run(
+  //     {"kubectl",
+  //      "port-forward",
+  //      "services/corekube-grafana",
+  //      "-n",
+  //      "grafana",
+  //      "12345:3000"}
+  //   )
+  //   .future.get();
+
+  // Get the CoreKube cluster security group id
+  auto ck_security_group_id =
+    executor
+      .run(
+        {"aws",
+         "ec2",
+         "describe-instances",
+         "--filters",
+         "Name=tag:eks:cluster-name,Values=corekube-aws-cluster",
+         "--query",
+         "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
+         "`eks-`)].GroupId | [0]",
+         "--output",
+         "text"}
+      )
+      .future.get();
+
+  // # Add a new rule to the security group which allows all incoming traffic
+  executor
+    .run(
+      {"aws",
+       "ec2",
+       "authorize-security-group-ingress",
+       "--group-id",
+       ck_security_group_id,
+       "--protocol",
+       "all",
+       "--cidr",
+       "0.0.0.0/0"}
+    )
+    .future.get();
+
+  // don't create nodegroup automatically, we'll set a specific size and use
+  // that also use the same subnet as the corekube because otherwise I had
+  // massive problems with trying to reach the other cluster over public
+  // internet
+  executor
+    .run(
+      {"eksctl",
+       "create",
+       "cluster",
+       "--name=nervion-aws-cluster",
+       "--region=eu-north-1",
+       "--version=1.28",
+       "--without-nodegroup",
+       "--node-private-networking",
+       "--vpc-public-subnets",
+       public_subnets_comma,
+       "--vpc-private-subnets",
+       private_subnets_comma}
+    )
+    .future.get();
+
+  // eksctl create nodegroup --cluster nervion-aws-cluster --name ng-nervion
+  executor
+    .run(
+      {"eksctl",
+       "create",
+       "nodegroup",
+       "--cluster=nervion-aws-cluster",
+       "--name=ng-nervion",
+       "--node-ami-family=AmazonLinux2",
+       "--node-type=t3.small",
+       "--nodes=2",
+       "--nodes-min=2",
+       "--nodes-max=2",
+       "--node-volume-size=20",
+       "--ssh-access",
+       "--ssh-public-key=" + public_key_path,
+       "--managed",
+       "--asg-access"}
+    )
+    .future.get();
+
+  // Verify that we can ping the frontend node from the Nervion cluster
+  executor
+    .run(
+      {"kubectl",
+       "run",
+       "-i",
+       "--tty",
+       "--rm",
+       "debug",
+       "--image=alpine",
+       "--restart=Never",
+       "--",
+       "sh",
+       "-c",
+       "apk add --no-cache iputils && ping -c 1 " + frontend_ip}
+    )
+    .future.get();
+
+  // Get Nervion cluster security group id
+  auto nervion_security_group_id =
+    executor
+      .run(
+        {"aws",
+         "ec2",
+         "describe-instances",
+         "--filters",
+         "Name=tag:eks:cluster-name,Values=nervion-aws-cluster",
+         "--query",
+         "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
+         "`eks-`)].GroupId | [0]",
+         "--output",
+         "text"}
+      )
+      .future.get();
+
+  // Add a new rule to the security group which allows all incoming traffic
+  executor
+    .run(
+      {"aws",
+       "ec2",
+       "authorize-security-group-ingress",
+       "--group-id",
+       nervion_security_group_id,
+       "--protocol",
+       "all",
+       "--cidr",
+       "0.0.0.0/0"}
+    )
+    .future.get();
+
+  // Apply Nervion deployment
+  executor.run({"kubectl", "apply", "-f", "scripts/configs/nervion.yaml"})
+    .future.get();
+  executor
+    .run(
+      {"kubectl",
+       "wait",
+       "--for=condition=ready",
+       "pod",
+       "--all",
+       "--timeout=10m"}
+    )
+    .future.get();
+
   LOG_INFO(logger, "CoreKube deployed successfully!");
+  LOG_INFO(logger, "IP (within VPC) of CK frontend node: {}", frontend_ip);
+  LOG_INFO(
+    logger,
+    "Port-forward not yet implemented, use kubectl port-forward"
+  );
+  LOG_INFO(logger, "Current cluster: nervion-aws-cluster");
 }
 
 std::string
@@ -251,45 +503,69 @@ void DeployApp::teardown_aws_eks_fargate()
   LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
 
   // Delete the Fargate profile and the nodegroups for both clusters
-  auto cfp_future =
-    executor
-      .run({
-        "eksctl",
-        "delete",
-        "fargateprofile",
-        "--cluster=corekube-aws-cluster",
-        "--name=fp-corekube",
-        //  "--wait"
-      })
-      .future.get();
+  try
+  {
+    auto cfp_future =
+      executor
+        .run({
+          "eksctl",
+          "delete",
+          "fargateprofile",
+          "--cluster=corekube-aws-cluster",
+          "--name=fp-corekube",
+          //  "--wait"
+        })
+        .future.get();
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to delete Fargate profile: {}", e.what());
+  }
 
-  auto cng_future =
-    executor
-      .run({
-        "eksctl",
-        "delete",
-        "nodegroup",
-        "--cluster=corekube-aws-cluster",
-        "--name=ng-corekube",
-        //  "--wait"
-      })
-      .future.get();
+  try
+  {
+    auto cng_future =
+      executor
+        .run({
+          "eksctl",
+          "delete",
+          "nodegroup",
+          "--cluster=corekube-aws-cluster",
+          "--name=ng-corekube",
+          //  "--wait"
+        })
+        .future.get();
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to delete CoreKube nodegroup: {}", e.what());
+  }
 
-  auto nng_future =
-    executor
-      .run({
-        "eksctl",
-        "delete",
-        "nodegroup",
-        "--cluster=nervion-aws-cluster",
-        "--name=ng-nervion",
-        //  "--wait"
-      })
-      .future.get();
+  try
+  {
+    auto nng_future =
+      executor
+        .run({
+          "eksctl",
+          "delete",
+          "nodegroup",
+          "--cluster=nervion-aws-cluster",
+          "--name=ng-nervion",
+          //  "--wait"
+        })
+        .future.get();
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to delete Nervion nodegroup: {}", e.what());
+  }
 
   // The above futures will complete immediately because we don't use --wait.
   // We choose to do so because we can get more detailed information about the
   // deletion process by querying the events directly.
+
+  // The above ones (nodegroups + fargate profile) need to be deleted before
+  // attempting to delete clusters, since they have a dependency.
   bool cfp_deleted = false;
   bool cng_deleted = false;
   bool nng_deleted = false;
@@ -341,24 +617,32 @@ void DeployApp::teardown_aws_eks_fargate()
     }
   }
 
-  // Deleting the CoreKube cluster will require nothing uses its subnets and
-  // security groups, so we need to wait for the above two futures to complete
-  // before we can delete the cluster
-  // cfp_future.get();
-  // nng_future.get();
-  // cng_future.get();
-
   // Delete the Nervion cluster first (as it doesn't depend on anything else)
-  executor
-    .run({"eksctl", "delete", "cluster", "--name=nervion-aws-cluster", "--wait"}
-    )
-    .future.get();
+  try
+  {
+    executor
+      .run(
+        {"eksctl", "delete", "cluster", "--name=nervion-aws-cluster", "--wait"}
+      )
+      .future.get();
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
+  }
 
-  executor
-    .run(
-      {"eksctl", "delete", "cluster", "--name=corekube-aws-cluster", "--wait"}
-    )
-    .future.get();
+  try
+  {
+    executor
+      .run(
+        {"eksctl", "delete", "cluster", "--name=corekube-aws-cluster", "--wait"}
+      )
+      .future.get();
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
+  }
 
   LOG_INFO(logger, "CoreKube tore down successfully!");
 }
