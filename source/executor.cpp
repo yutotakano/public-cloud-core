@@ -1,7 +1,6 @@
 #include "executor.h"
 #include "exithandler.h"
 #include "quill/Quill.h"
-#include "subprocess/subprocess.h"
 #include "subprocess_error.h"
 #include "utils.h"
 #include <future>

@@ -2,7 +2,10 @@
 #define EXECUTOR_H
 
 #include "quill/Quill.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion-null"
 #include "subprocess/subprocess.h"
+#pragma GCC diagnostic pop
 #include <future>
 #include <string>
 
