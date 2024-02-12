@@ -189,11 +189,23 @@ spec:
       #           path: cloud-integration.json
 ---
 
-# Expose the cost model with a service
-#
-# Without a Prometheus endpoint configured in the deployment,
-# only opencost/metrics will have useful data as it is intended
-# to be used as only an exporter.
+# Expose internally for Prometheus to scrape
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencost
+  namespace: opencost
+spec:
+  type: ClusterIP
+  selector:
+    app: opencost
+  ports:
+    - name: opencost
+      port: 9003
+      targetPort: 9003
+---
+
+# Expose both the cost model and UI externally
 kind: Service
 apiVersion: v1
 metadata:
@@ -202,7 +214,7 @@ metadata:
 spec:
   selector:
     app: opencost
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - name: opencost
       port: 9003

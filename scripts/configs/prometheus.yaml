@@ -19,7 +19,7 @@ data:
     scrape_configs:
       - job_name: corekube-metrics-monitor
         static_configs:
-        - targets: ['corekube-metrics-export-service.corekube-frontend.svc.cluster.local:5050'] # Kubernetes DNS will resolve this to the corresponding service
+        - targets: ['corekube-metrics-export-service.corekube-frontend.svc.cluster.local:5050', 'opencost.opencost.svc.cluster.local:9003'] # Kubernetes DNS will resolve this to the corresponding service
 ---
 apiVersion: v1
 kind: Service
