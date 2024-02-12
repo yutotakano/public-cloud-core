@@ -124,10 +124,11 @@ ExecutingProcess Executor::run(
       subprocess_join(process.get(), &exit_code);
       LOG_DEBUG(logger, "Process exited with code: {}", exit_code);
 
-      if (exit_code != 0 && !suppress_err)
+      if (exit_code != 0)
       {
         // Throw an exception and abort if the process exited badly
-        LOG_ERROR(logger, "Error: {}", error);
+        if (!suppress_err)
+          LOG_ERROR(logger, "Error: {}", error);
         throw SubprocessError("Subprocess exited with non-zero code");
       }
       else if (!error.empty() && !suppress_err)
