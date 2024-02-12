@@ -494,6 +494,7 @@ DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
        "--stack-name=" + stack_name,
        "--query",
        "StackEvents[0].[ResourceType, ResourceStatus, LogicalResourceId]",
+       "--no-paginate",
        "--output=text"},
       false
     )
@@ -546,7 +547,7 @@ std::future<void> DeployApp::eksctl_deletion_details(std::string stack_name)
           // Only log if the event is new
           if (log_entry != last_log_entry)
           {
-            LOG_INFO(logger, "Deleting Fargate Profile: {}", log_entry);
+            LOG_INFO(logger, "Deleting CloudFormation Stack: {}", log_entry);
             last_log_entry = log_entry;
           }
         }
