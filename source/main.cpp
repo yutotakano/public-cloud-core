@@ -1,6 +1,7 @@
 #include "argparse/argparse.hpp"
 #include "deploy.h"
 #include "exithandler.h"
+#include "info.h"
 #include "quill/Quill.h"
 #include <iostream>
 
@@ -45,6 +46,10 @@ int main(int argc, char **argv)
   auto deploy_parser = deploy_app.deploy_arg_parser();
   program.add_subparser(*deploy_parser);
 
+  InfoApp info_app;
+  auto info_parser = info_app.info_arg_parser();
+  program.add_subparser(*info_parser);
+
   // Parse the command line arguments
   try
   {
@@ -76,6 +81,10 @@ int main(int argc, char **argv)
   if (program.is_subcommand_used(*deploy_parser))
   {
     deploy_app.deploy_command_handler(*deploy_parser);
+  }
+  else if (program.is_subcommand_used(*info_parser))
+  {
+    info_app.info_command_handler(*info_parser);
   }
   return 0;
 }
