@@ -477,7 +477,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "text"}
       )
       .future.get();
-  nervion_security_group_id.pop_back(); // remove trailing newline
 
   // Add a new rule to the security group which allows all incoming traffic
   executor
