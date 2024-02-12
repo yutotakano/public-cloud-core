@@ -155,6 +155,20 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
+  // Enable prefix delegation on the cluster before we create nodes to increase
+  // the number of possible pods & IP addresses
+  executor
+    .run(
+      {"kubectl",
+       "set",
+       "env",
+       "daemonset",
+       "aws-node",
+       "-n=kube-system",
+       "ENABLE_PREFIX_DELEGATION=true"}
+    )
+    .future.get();
+
   // Create a nodegroup to attach to the cluster - this is for the frontend
   // and database.
   auto ng_future =
@@ -388,6 +402,23 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        public_subnets_comma,
        "--vpc-private-subnets",
        private_subnets_comma}
+    )
+    .future.get();
+
+  // Enable prefix delegation on the cluster before we create nodes to increase
+  // the number of possible pods & IP addresses -- using t3.small, up to 146
+  // pods per node instead of default 11 pods per node.
+  // default: (3 enis x (4 max ip per eni - 1) + 2)
+  // prefix delegated: (3 enis x (4 max ip per eni - 1) x 16 + 2)
+  executor
+    .run(
+      {"kubectl",
+       "set",
+       "env",
+       "daemonset",
+       "aws-node",
+       "-n=kube-system",
+       "ENABLE_PREFIX_DELEGATION=true"}
     )
     .future.get();
 
