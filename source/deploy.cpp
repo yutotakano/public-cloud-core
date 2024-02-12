@@ -2,6 +2,7 @@
 #include "argparse/argparse.hpp"
 #include "executor.h"
 #include "quill/Quill.h"
+#include "subprocess_error.h"
 
 DeployApp::DeployApp()
 {
@@ -517,7 +518,7 @@ void DeployApp::teardown_aws_eks_fargate()
         })
         .future.get();
   }
-  catch (const std::exception &e)
+  catch (const SubprocessError &e)
   {
     LOG_ERROR(logger, "Failed to delete Fargate profile: {}", e.what());
   }
@@ -536,7 +537,7 @@ void DeployApp::teardown_aws_eks_fargate()
         })
         .future.get();
   }
-  catch (const std::exception &e)
+  catch (const SubprocessError &e)
   {
     LOG_ERROR(logger, "Failed to delete CoreKube nodegroup: {}", e.what());
   }
@@ -555,7 +556,7 @@ void DeployApp::teardown_aws_eks_fargate()
         })
         .future.get();
   }
-  catch (const std::exception &e)
+  catch (const SubprocessError &e)
   {
     LOG_ERROR(logger, "Failed to delete Nervion nodegroup: {}", e.what());
   }
@@ -580,7 +581,7 @@ void DeployApp::teardown_aws_eks_fargate()
         );
         LOG_INFO(logger, "Deleting Fargate Profile: {}", most_recent_cfp_log);
       }
-      catch (const std::exception &e)
+      catch (const SubprocessError &e)
       {
         cfp_deleted = true;
       }
@@ -595,7 +596,7 @@ void DeployApp::teardown_aws_eks_fargate()
         );
         LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_cng_log);
       }
-      catch (const std::exception &e)
+      catch (const SubprocessError &e)
       {
         cng_deleted = true;
       }
@@ -610,7 +611,7 @@ void DeployApp::teardown_aws_eks_fargate()
         );
         LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_nng_log);
       }
-      catch (const std::exception &e)
+      catch (const SubprocessError &e)
       {
         nng_deleted = true;
       }
@@ -626,7 +627,7 @@ void DeployApp::teardown_aws_eks_fargate()
       )
       .future.get();
   }
-  catch (const std::exception &e)
+  catch (const SubprocessError &e)
   {
     LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
   }
@@ -639,7 +640,7 @@ void DeployApp::teardown_aws_eks_fargate()
       )
       .future.get();
   }
-  catch (const std::exception &e)
+  catch (const SubprocessError &e)
   {
     LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
   }

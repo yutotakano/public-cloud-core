@@ -7,7 +7,10 @@ LDLIBS := -lpthread -lquill
 SRC_DIR := source
 OBJ_DIR := objects
 
-SRC_LIST := $(wildcard $(SRC_DIR)/*.cpp)
+# Recursive wildcard (cross-platform alternative to using shell find)
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+SRC_LIST := $(call rwildcard, $(SRC_DIR), *.cpp)
 OBJ_LIST := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_LIST))
 
 ifeq ($(OS), Windows_NT)
@@ -42,8 +45,10 @@ all: external $(EXE)
  # Prevents make from doing something with a file with the same name as the target
 .PHONY: all clean clean_all
 
-# Compiling the source files, $< is the first prerequisite, $@ is the target
+# Compiling the source files, $< is the first prerequisite, $@ is the target.
+# Create parent subdirectories first if necessary since the compile can't.
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+		@$(call MKDIR, $(dir $@))
 		$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Create the objects directory

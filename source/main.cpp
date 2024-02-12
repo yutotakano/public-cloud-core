@@ -1,10 +1,14 @@
 #include "argparse/argparse.hpp"
 #include "deploy.h"
+#include "exithandler.h"
 #include "quill/Quill.h"
 #include <iostream>
 
 int main(int argc, char **argv)
 {
+  // Register Ctrl-C handler
+  ExitHandler::create_handlers();
+
   // Get the stdout file handler that the default root logger uses.
   // We'll use this to configure the format pattern based on verbosity.
   std::shared_ptr<quill::Handler> file_handler = quill::stdout_handler();

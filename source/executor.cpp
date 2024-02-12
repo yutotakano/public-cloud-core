@@ -1,6 +1,8 @@
 #include "executor.h"
+#include "exithandler.h"
 #include "quill/Quill.h"
 #include "subprocess/subprocess.h"
+#include "subprocess_error.h"
 #include "utils.h"
 #include <future>
 #include <iostream>
@@ -71,8 +73,16 @@ Executor::run(std::vector<std::string> command_parts, bool stream_cout)
 
       while (subprocess_alive(process.get()))
       {
-        // Sleep for a bit to avoid busy-waiting
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // Check if program has received Ctrl-C, since we are in another thread
+        // and won't receive it. Wait up to 100ms to prevent busy-waiting on the
+        // subprocess. Note that the runtime error here will stop this thread,
+        // but not the main thread directly, unless .get() is used on the
+        // future.
+        if (ExitHandler::exit_condition_met(100))
+        {
+          LOG_INFO(logger, "Aborting subprocess due to exit condition");
+          throw SubprocessUserAbort("Aborting due to user interrupt");
+        }
 
         // Zero out the buffers before reading into them
         std::fill(std::begin(out_buffer), std::end(out_buffer), 0);
@@ -106,7 +116,7 @@ Executor::run(std::vector<std::string> command_parts, bool stream_cout)
       {
         // Throw an exception and abort if the process exited badly
         LOG_ERROR(logger, "Error: {}", error);
-        throw std::runtime_error("Subprocess exited with non-zero code");
+        throw SubprocessError("Subprocess exited with non-zero code");
       }
       else if (!error.empty())
       {
