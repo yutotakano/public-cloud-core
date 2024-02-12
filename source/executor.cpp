@@ -8,13 +8,19 @@
 
 Executor::Executor() { logger = quill::get_logger(); }
 
-ExecutingProcess Executor::run(std::string command)
+ExecutingProcess Executor::run(std::string command, bool stream_cout)
 {
   LOG_DEBUG(logger, "Running command: {}", command);
 
   // Split the command by spaces, since subprocess_create takes an array
   std::vector<std::string> command_parts = Utils::split(command, ' ');
-  LOG_DEBUG(logger, "Raw command: \"{}\"", command_parts);
+
+  return run(command_parts, stream_cout);
+}
+ExecutingProcess
+Executor::run(std::vector<std::string> command_parts, bool stream_cout)
+{
+  LOG_DEBUG(logger, "Running command: {}", command_parts);
 
   // Convert the command parts to a C-style array of C-style strings by
   // iterating over the vector and pushing the c_str() of each string into a
@@ -51,10 +57,9 @@ ExecutingProcess Executor::run(std::string command)
 
   // Create the ExecutingProcess struct that will be returned to the caller
   auto result = ExecutingProcess();
-  result.command = command;
   result.subprocess = process.get();
   result.future = std::async(
-    [this, process]()
+    [this, stream_cout, process]()
     {
       // Stream the output of the process stdout to a small buffer that gets
       // processed into the output string
@@ -80,7 +85,8 @@ ExecutingProcess Executor::run(std::string command)
         }
 
         output += out_buffer;
-        std::cout << out_buffer;
+        if (stream_cout)
+          std::cout << out_buffer;
 
         bread = subprocess_read_stderr(process.get(), err_buffer, 1024);
         if (bread > 0)
@@ -91,11 +97,22 @@ ExecutingProcess Executor::run(std::string command)
         error += err_buffer;
       }
 
-      // Log the error here, since the future will return only the stdout for
-      // convenience.
-      if (!error.empty())
+      // Get exit code and log it
+      int exit_code;
+      subprocess_join(process.get(), &exit_code);
+      LOG_DEBUG(logger, "Process exited with code: {}", exit_code);
+
+      if (exit_code != 0)
       {
+        // Throw an exception and abort if the process exited badly
         LOG_ERROR(logger, "Error: {}", error);
+        throw std::runtime_error("Subprocess exited with non-zero code");
+      }
+      else if (!error.empty())
+      {
+        // Log the errors here, since the future will return only the stdout for
+        // convenience.
+        LOG_WARNING(logger, "Warning: {}", error);
       }
 
       return output;
@@ -109,15 +126,15 @@ void Executor::print_versions()
 {
   LOG_INFO(logger, "Printing versions...");
 
-  auto docker_version = run("docker --version").future.get();
+  auto docker_version = run("docker --version", false).future.get();
   LOG_INFO(logger, "Docker version: {}", docker_version);
 
-  auto kubectl_version = run("kubectl version --client").future.get();
+  auto kubectl_version = run("kubectl version --client", false).future.get();
   LOG_INFO(logger, "Kubectl version: {}", kubectl_version);
 
-  auto aws_version = run("aws --version").future.get();
+  auto aws_version = run("aws --version", false).future.get();
   LOG_INFO(logger, "AWS version: {}", aws_version);
 
-  auto eksctl_version = run("eksctl version").future.get();
+  auto eksctl_version = run("eksctl version", false).future.get();
   LOG_INFO(logger, "Eksctl version: {}", eksctl_version);
 }

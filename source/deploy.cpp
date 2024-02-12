@@ -94,24 +94,82 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   executor.print_versions();
 
+  // Create the EKS cluster (bootstrapped with private+public VPC subnets and
+  // no nodegroup)
   executor
     .run(
-      "eksctl create cluster --name corekube-aws-cluster --region eu-north-1 "
-      "--version 1.28 --without-nodegroup --node-private-networking "
-      "--ssh-access --ssh-public-key " +
-      public_key_path
+      {"eksctl",
+       "create",
+       "cluster",
+       "--name=corekube-aws-cluster",
+       "--region=eu-north-1",
+       "--version=1.28",
+       "--without-nodegroup",
+       "--node-private-networking",
+       "--ssh-access",
+       "--ssh-public-key=" + public_key_path}
     )
     .future.get();
 
-  executor
-    .run(
-      "eksctl create nodegroup --cluster corekube-aws-cluster --name "
-      "ng-corekube --node-ami-family AmazonLinux2 --node-type t3.small --nodes "
-      "1 --nodes-min 1 --nodes-max 1 --node-volume-size 20 --ssh-access "
-      "--ssh-public-key " +
-      public_key_path + " --managed --asg-access"
-    )
-    .future.get();
+  // Create a nodegroup to attach to the cluster - this is for the frontend
+  // and database.
+  auto ng_future = executor
+                     .run(
+                       {"eksctl",
+                        "create",
+                        "nodegroup",
+                        "--cluster=corekube-aws-cluster",
+                        "--name=ng-corekube",
+                        "--node-ami-family=AmazonLinux2",
+                        "--node-type=t3.small",
+                        "--nodes=1",
+                        "--nodes-min=1",
+                        "--nodes-max=1",
+                        "--node-volume-size=20",
+                        "--ssh-access",
+                        "--ssh-public-key=" + public_key_path,
+                        "--managed",
+                        "--asg-access"}
+                     )
+                     .future;
+
+  // Create a Fargate profile to attach to the cluster, for the backend
+  auto fp_future = executor
+                     .run(
+                       {"eksctl",
+                        "create",
+                        "fargateprofile",
+                        "--namespace=default",
+                        "--namespace=kube-system",
+                        "--namespace=grafana",
+                        "--namespace=prometheus",
+                        "--cluster=corekube-aws-cluster",
+                        "--name=fp-corekube"}
+                     )
+                     .future;
+
+  // Wait for the nodegroup and Fargate profile to be created
+  ng_future.get();
+  fp_future.get();
+
+  // Collect the public subnets for the Fargate profile, which we will use later
+  // to attach Nervion
+  auto public_subnets_tab =
+    executor
+      .run(
+        {"aws",
+         "ec2",
+         "describe-subnets",
+         "--filter",
+         "Name=tag:alpha.eksctl.io/cluster-name,Values=corekube-aws-cluster",
+         "Name=tag:aws:cloudformation:logical-id,Values=SubnetPublic*",
+         "--query",
+         "Subnets[*].SubnetId"},
+        false
+      )
+      .future.get();
+
+  LOG_INFO(logger, "Public subnets: {}", public_subnets_tab);
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
 }
