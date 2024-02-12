@@ -539,7 +539,8 @@ DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
        "StackEvents[0].[ResourceType, ResourceStatus, LogicalResourceId]",
        "--no-paginate",
        "--output=text"},
-      false
+      false,
+      true
     )
     .future.get();
 }
