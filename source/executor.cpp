@@ -9,17 +9,21 @@
 
 Executor::Executor() { logger = quill::get_logger(); }
 
-ExecutingProcess Executor::run(std::string command, bool stream_cout)
+ExecutingProcess
+Executor::run(std::string command, bool stream_cout, bool suppress_err)
 {
   LOG_DEBUG(logger, "Running command: {}", command);
 
   // Split the command by spaces, since subprocess_create takes an array
   std::vector<std::string> command_parts = Utils::split(command, ' ');
 
-  return run(command_parts, stream_cout);
+  return run(command_parts, stream_cout, suppress_err);
 }
-ExecutingProcess
-Executor::run(std::vector<std::string> command_parts, bool stream_cout)
+ExecutingProcess Executor::run(
+  std::vector<std::string> command_parts,
+  bool stream_cout,
+  bool suppress_err
+)
 {
   // If streaming to stdout, we want to make sure the command is visible, but
   // otherwise the user doesn't need to see it unless they are debugging.
@@ -69,7 +73,7 @@ Executor::run(std::vector<std::string> command_parts, bool stream_cout)
   auto result = ExecutingProcess();
   result.subprocess = process.get();
   result.future = std::async(
-    [this, stream_cout, process]()
+    [this, process, stream_cout, suppress_err]()
     {
       // Stream the output of the process stdout to a small buffer that gets
       // processed into the output string
@@ -120,13 +124,13 @@ Executor::run(std::vector<std::string> command_parts, bool stream_cout)
       subprocess_join(process.get(), &exit_code);
       LOG_DEBUG(logger, "Process exited with code: {}", exit_code);
 
-      if (exit_code != 0)
+      if (exit_code != 0 && !suppress_err)
       {
         // Throw an exception and abort if the process exited badly
         LOG_ERROR(logger, "Error: {}", error);
         throw SubprocessError("Subprocess exited with non-zero code");
       }
-      else if (!error.empty())
+      else if (!error.empty() && !suppress_err)
       {
         // Log the errors here, since the future will return only the stdout for
         // convenience.

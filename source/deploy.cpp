@@ -391,7 +391,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
-  // eksctl create nodegroup --cluster nervion-aws-cluster --name ng-nervion
+  // Create the nodegroup for the Nervion cluster
   executor
     .run(
       {"eksctl",
@@ -525,7 +525,7 @@ std::future<std::string> DeployApp::eksctl_delete_resource(
   // Check that the resource exists
   try
   {
-    executor.run(full_args, false).future.get();
+    executor.run(full_args, false, true).future.get();
   }
   catch (const SubprocessError &e)
   {

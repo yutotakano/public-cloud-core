@@ -30,7 +30,7 @@ public:
    * @param stream_cout Whether to stream the stdout of the command
    * @return ExecutingProcess
    */
-  ExecutingProcess run(std::string command, bool stream_cout = true);
+  ExecutingProcess run(std::string command, bool stream_cout = true, bool suppress_err = false);
 
   /**
    * @brief Run a command, optionally passing a pipe or string to stdin. Will
@@ -43,7 +43,7 @@ public:
    * @return ExecutingProcess
    */
   ExecutingProcess
-  run(std::vector<std::string> command_parts, bool stream_cout = true);
+  run(std::vector<std::string> command_parts, bool stream_cout = true, bool suppress_err = false);
 
   /**
    * @brief Print the versions of the tools used by the executor.
