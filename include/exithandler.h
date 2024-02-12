@@ -26,5 +26,9 @@ private:
 
   static inline std::mutex exit_condition_mutex;
   static inline std::condition_variable exit_condition;
+
+  // The condition variable only acts as an event notifier, so we need some
+  // persistent method of knowing whether the program is exiting.
+  static inline bool exiting = false;
 };
 #endif

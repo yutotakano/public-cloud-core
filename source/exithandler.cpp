@@ -9,17 +9,24 @@ void ExitHandler::create_handlers()
   if (initialized)
     return;
 
+  initialized = true;
+
   unsigned int handler_id = CtrlCLibrary::SetCtrlCHandler(
     [](enum CtrlCLibrary::CtrlSignal event) -> bool
     {
       switch (event)
       {
       case CtrlCLibrary::kCtrlCSignal:
-        std::cout << "Caught Ctrl+C signal" << std::endl;
-
         // Get a lock for modifying the exit_condition, then wake all .wait()s
         // on that condition
         std::lock_guard<std::mutex> locker(exit_condition_mutex);
+        std::cout << "Caught Ctrl+C signal" << std::endl;
+        exiting = true;
+
+        // Allow threads to clean up (hopefully). If they raise any exceptions,
+        // they won't be seen since the main thread is currently here, and will
+        // exit with an exception in the next line before any calls of .get()
+        // have a chance to run and re-throw child thread exceptions.
         exit_condition.notify_all();
 
         throw std::runtime_error("Aborting main thread due to user interrupt");
@@ -34,7 +41,6 @@ void ExitHandler::create_handlers()
                  "Ctrl+C or SIGTERM"
               << std::endl;
   }
-  initialized = true;
 }
 
 bool ExitHandler::exit_condition_met(int timeout)
@@ -42,5 +48,5 @@ bool ExitHandler::exit_condition_met(int timeout)
   std::unique_lock<std::mutex> locker(exit_condition_mutex);
   auto status =
     exit_condition.wait_for(locker, std::chrono::milliseconds(timeout));
-  return status == std::cv_status::no_timeout;
+  return status == std::cv_status::no_timeout || exiting == true;
 }
