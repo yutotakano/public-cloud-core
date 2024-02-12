@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "trace.h"
 #include <sstream>
 #include <string>
 #include <vector>
