@@ -133,7 +133,7 @@ Executor::run(std::vector<std::string> command_parts, bool stream_cout)
         LOG_WARNING(logger, "Warning: {}", error);
       }
 
-      return output;
+      return Utils::trim(output);
     }
   );
 

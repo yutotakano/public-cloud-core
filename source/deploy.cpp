@@ -225,7 +225,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
-  Utils::trim(public_subnets_comma); // remove trailing newline
 
   LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
 
@@ -255,7 +254,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
-  Utils::trim(private_subnets_comma); // remove trailing newline
 
   LOG_INFO(logger, "Private subnets: {}", private_subnets_comma);
 
@@ -273,7 +271,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "alpha.eksctl.io/nodegroup-name=ng-corekube"}
       )
       .future.get();
-  Utils::trim(frontend_ip); // remove trailing newline
 
   // Apply metrics server deployment
   executor
@@ -362,7 +359,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "ec2",
        "authorize-security-group-ingress",
        "--group-id",
-       Utils::trim(ck_security_group_id),
+       ck_security_group_id,
        "--protocol",
        "all",
        "--cidr",
@@ -455,7 +452,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "ec2",
        "authorize-security-group-ingress",
        "--group-id",
-       Utils::trim(nervion_security_group_id),
+       nervion_security_group_id,
        "--protocol",
        "all",
        "--cidr",
