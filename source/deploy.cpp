@@ -496,7 +496,8 @@ DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
        "cloudformation",
        "describe-stack-events",
        "--stack-name=" + stack_name,
-       "--query=\"StackEvents[0].[ResourceType, ResourceStatus]\"",
+       "--query",
+       "StackEvents[0].[ResourceType, ResourceStatus, LogicalResourceId]",
        "--output=text"},
       false
     )
