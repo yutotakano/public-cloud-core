@@ -224,6 +224,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
+  public_subnets_comma.pop_back(); // remove trailing newline
 
   LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
 
@@ -253,6 +254,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
+  private_subnets_comma.pop_back(); // remove trailing newline
 
   LOG_INFO(logger, "Private subnets: {}", private_subnets_comma);
 
@@ -270,6 +272,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "alpha.eksctl.io/nodegroup-name=ng-corekube"}
       )
       .future.get();
+  frontend_ip.pop_back(); // remove trailing newline
 
   // Apply metrics server deployment
   executor
@@ -346,11 +349,12 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "Name=tag:eks:cluster-name,Values=corekube-aws-cluster",
          "--query",
          "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
-         "`eks-`)].GroupId | [0]",
+         "`eks-`)][][].GroupId | [0]",
          "--output",
          "text"}
       )
       .future.get();
+  ck_security_group_id.pop_back(); // remove trailing newline
 
   // # Add a new rule to the security group which allows all incoming traffic
   executor
@@ -438,11 +442,12 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "Name=tag:eks:cluster-name,Values=nervion-aws-cluster",
          "--query",
          "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
-         "`eks-`)].GroupId | [0]",
+         "`eks-`)][][].GroupId | [0]",
          "--output",
          "text"}
       )
       .future.get();
+  nervion_security_group_id.pop_back(); // remove trailing newline
 
   // Add a new rule to the security group which allows all incoming traffic
   executor
@@ -490,7 +495,7 @@ DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
       {"aws",
        "cloudformation",
        "describe-stack-events",
-       "--stack-name=eksctl-corekube-aws-cluster-fargate",
+       "--stack-name=" + stack_name,
        "--query",
        "StackEvents[0].EventId",
        "--output",
