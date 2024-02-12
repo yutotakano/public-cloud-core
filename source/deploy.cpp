@@ -533,6 +533,7 @@ void DeployApp::teardown_aws_eks_fargate()
           "nodegroup",
           "--cluster=corekube-aws-cluster",
           "--name=ng-corekube",
+          "--disable-eviction",
           //  "--wait"
         })
         .future.get();
@@ -552,6 +553,7 @@ void DeployApp::teardown_aws_eks_fargate()
           "nodegroup",
           "--cluster=nervion-aws-cluster",
           "--name=ng-nervion",
+          "--disable-eviction",
           //  "--wait"
         })
         .future.get();
