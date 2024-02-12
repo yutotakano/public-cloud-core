@@ -15,8 +15,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 3000 # kubernetes-internal port
-      nodePort: 30010 # public port
+    - port: 3000 # accessible port for the service
+      targetPort: 3000 # container port
       protocol: TCP
   selector:
     app: corekube-grafana # selects the deployment by this match label
