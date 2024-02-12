@@ -325,16 +325,19 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "--timeout=10m"}
     )
     .future.get();
-  // executor
-  //   .run(
-  //     {"kubectl",
-  //      "port-forward",
-  //      "services/corekube-grafana",
-  //      "-n",
-  //      "grafana",
-  //      "12345:3000"}
-  //   )
-  //   .future.get();
+
+  // Get the public DNS of the Grafana service. This is available only because
+  // we're using a LoadBalancer service type.
+  auto ck_grafana_public_dns =
+    executor
+      .run(
+        {"kubectl",
+         "get",
+         "services/corekube-grafana",
+         "-n=grafana",
+         "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"}
+      )
+      .future.get();
 
   // Get the CoreKube cluster security group id
   auto ck_security_group_id =
@@ -474,12 +477,22 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
+  // Get the public DNS of Nervion: This is available only because
+  // we're using a LoadBalancer service type.
+  auto nervion_controller_public_dns =
+    executor
+      .run(
+        {"kubectl",
+         "get",
+         "services/ran-emulator",
+         "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"}
+      )
+      .future.get();
+
   LOG_INFO(logger, "CoreKube deployed successfully!");
   LOG_INFO(logger, "IP (within VPC) of CK frontend node: {}", frontend_ip);
-  LOG_INFO(
-    logger,
-    "Port-forward not yet implemented, use kubectl port-forward"
-  );
+  LOG_INFO(logger, "Grafana: http://{}:3000", ck_grafana_public_dns);
+  LOG_INFO(logger, "Nervion: http://{}:3000", nervion_controller_public_dns);
   LOG_INFO(logger, "Current cluster: nervion-aws-cluster");
 }
 
