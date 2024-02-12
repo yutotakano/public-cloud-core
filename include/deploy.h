@@ -28,6 +28,11 @@ private:
   void deploy_aws_ec2();
 
   std::string get_most_recent_cloudformation_event(std::string stack_name);
+  std::future<void> eksctl_deletion_details(std::string stack_name);
+  std::future<std::string> eksctl_delete_resource(
+    std::string resource_type,
+    std::vector<std::string> args
+  );
 
   quill::Logger *logger;
   Executor executor;

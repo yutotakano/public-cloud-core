@@ -496,12 +496,64 @@ DeployApp::get_most_recent_cloudformation_event(std::string stack_name)
        "cloudformation",
        "describe-stack-events",
        "--stack-name=" + stack_name,
-       "--query",
-       "StackEvents[0].EventId",
-       "--output",
-       "text"}
+       "--query=\"StackEvents[0].[ResourceType, ResourceStatus]\"",
+       "--output=text"},
+      false
     )
     .future.get();
+}
+
+std::future<std::string> DeployApp::eksctl_delete_resource(
+  std::string resource_type,
+  std::vector<std::string> args
+)
+{
+  std::vector<std::string> full_args = {"eksctl", "get", resource_type};
+  full_args.insert(full_args.end(), args.begin(), args.end());
+
+  // Check that the resource exists
+  try
+  {
+    executor.run(full_args, false).future.get();
+  }
+  catch (const SubprocessError &e)
+  {
+    LOG_INFO(logger, "Resource does not exist - skipping");
+    return std::async([]() { return std::string(); });
+  }
+
+  // Delete - eksctl has same syntax for get and delete for the most part
+  full_args.at(1) = "delete";
+
+  // If resource is nodegroup, we have to disable eviction:
+  // https://github.com/eksctl-io/eksctl/issues/6287
+  if (resource_type == "nodegroup")
+  {
+    full_args.emplace_back("--disable-eviction");
+  }
+  return executor.run(full_args, true).future;
+}
+
+std::future<void> DeployApp::eksctl_deletion_details(std::string stack_name)
+{
+  return std::async(
+    [this, &stack_name]()
+    {
+      bool deleted = false;
+      while (!deleted)
+      {
+        try
+        {
+          auto log_entry = get_most_recent_cloudformation_event(stack_name);
+          LOG_INFO(logger, "Deleting Fargate Profile: {}", log_entry);
+        }
+        catch (const SubprocessError &e)
+        {
+          deleted = true;
+        }
+      }
+    }
+  );
 }
 
 void DeployApp::teardown_aws_eks_fargate()
@@ -509,64 +561,30 @@ void DeployApp::teardown_aws_eks_fargate()
   LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
 
   // Delete the Fargate profile and the nodegroups for both clusters
-  try
-  {
-    auto cfp_future =
-      executor
-        .run({
-          "eksctl",
-          "delete",
-          "fargateprofile",
-          "--cluster=corekube-aws-cluster",
-          "--name=fp-corekube",
-          //  "--wait"
-        })
-        .future.get();
-  }
-  catch (const SubprocessError &e)
-  {
-    LOG_ERROR(logger, "Failed to delete Fargate profile: {}", e.what());
-  }
+  eksctl_delete_resource(
+    "fargateprofile",
+    {
+      "--cluster=corekube-aws-cluster",
+      "--name=fp-corekube",
+    }
+  )
+    .get();
 
-  try
-  {
-    auto cng_future =
-      executor
-        .run({
-          "eksctl",
-          "delete",
-          "nodegroup",
-          "--cluster=corekube-aws-cluster",
-          "--name=ng-corekube",
-          "--disable-eviction",
-          //  "--wait"
-        })
-        .future.get();
-  }
-  catch (const SubprocessError &e)
-  {
-    LOG_ERROR(logger, "Failed to delete CoreKube nodegroup: {}", e.what());
-  }
+  eksctl_delete_resource(
+    "nodegroup",
+    {
+      "--cluster=corekube-aws-cluster",
+      "--name=ng-corekube",
+    }
+  );
 
-  try
-  {
-    auto nng_future =
-      executor
-        .run({
-          "eksctl",
-          "delete",
-          "nodegroup",
-          "--cluster=nervion-aws-cluster",
-          "--name=ng-nervion",
-          "--disable-eviction",
-          //  "--wait"
-        })
-        .future.get();
-  }
-  catch (const SubprocessError &e)
-  {
-    LOG_ERROR(logger, "Failed to delete Nervion nodegroup: {}", e.what());
-  }
+  eksctl_delete_resource(
+    "nodegroup",
+    {
+      "--cluster=nervion-aws-cluster",
+      "--name=ng-nervion",
+    }
+  );
 
   // The above futures will complete immediately because we don't use --wait.
   // We choose to do so because we can get more detailed information about the
@@ -574,83 +592,18 @@ void DeployApp::teardown_aws_eks_fargate()
 
   // The above ones (nodegroups + fargate profile) need to be deleted before
   // attempting to delete clusters, since they have a dependency.
-  bool cfp_deleted = false;
-  bool cng_deleted = false;
-  bool nng_deleted = false;
-  while (cfp_deleted || cng_deleted || nng_deleted)
-  {
-    if (!cfp_deleted)
-    {
-      try
-      {
-        auto most_recent_cfp_log = get_most_recent_cloudformation_event(
-          "eksctl-corekube-aws-cluster-fargate"
-        );
-        LOG_INFO(logger, "Deleting Fargate Profile: {}", most_recent_cfp_log);
-      }
-      catch (const SubprocessError &e)
-      {
-        cfp_deleted = true;
-      }
-    }
-
-    if (!cng_deleted)
-    {
-      try
-      {
-        auto most_recent_cng_log = get_most_recent_cloudformation_event(
-          "eksctl-corekube-aws-cluster-nodegroup-ng-corekube"
-        );
-        LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_cng_log);
-      }
-      catch (const SubprocessError &e)
-      {
-        cng_deleted = true;
-      }
-    }
-
-    if (!nng_deleted)
-    {
-      try
-      {
-        auto most_recent_nng_log = get_most_recent_cloudformation_event(
-          "eksctl-nervion-aws-cluster-nodegroup-ng-nervion"
-        );
-        LOG_INFO(logger, "Deleting Nodegroup: {}", most_recent_nng_log);
-      }
-      catch (const SubprocessError &e)
-      {
-        nng_deleted = true;
-      }
-    }
-  }
+  eksctl_deletion_details("eksctl-corekube-aws-cluster-fargate").get();
+  eksctl_deletion_details("eksctl-corekube-aws-cluster-nodegroup-ng-corekube")
+    .get();
+  eksctl_deletion_details("eksctl-nervion-aws-cluster-nodegroup-ng-nervion")
+    .get();
 
   // Delete the Nervion cluster first (as it doesn't depend on anything else)
-  try
-  {
-    executor
-      .run(
-        {"eksctl", "delete", "cluster", "--name=nervion-aws-cluster", "--wait"}
-      )
-      .future.get();
-  }
-  catch (const SubprocessError &e)
-  {
-    LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
-  }
+  eksctl_delete_resource("cluster", {"--name=nervion-aws-cluster"});
+  eksctl_delete_resource("cluster", {"--name=corekube-aws-cluster"});
 
-  try
-  {
-    executor
-      .run(
-        {"eksctl", "delete", "cluster", "--name=corekube-aws-cluster", "--wait"}
-      )
-      .future.get();
-  }
-  catch (const SubprocessError &e)
-  {
-    LOG_ERROR(logger, "Failed to delete cluster: {}", e.what());
-  }
+  eksctl_deletion_details("eksctl-nervion-aws-cluster-cluster").get();
+  eksctl_deletion_details("eksctl-corekube-aws-cluster-cluster").get();
 
   LOG_INFO(logger, "CoreKube tore down successfully!");
 }
