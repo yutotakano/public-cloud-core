@@ -3,6 +3,7 @@
 #include "executor.h"
 #include "quill/Quill.h"
 #include "subprocess_error.h"
+#include "utils.h"
 
 DeployApp::DeployApp()
 {
@@ -224,7 +225,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
-  public_subnets_comma.pop_back(); // remove trailing newline
+  Utils::trim(public_subnets_comma); // remove trailing newline
 
   LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
 
@@ -254,7 +255,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     '\t',
     ','
   );
-  private_subnets_comma.pop_back(); // remove trailing newline
+  Utils::trim(private_subnets_comma); // remove trailing newline
 
   LOG_INFO(logger, "Private subnets: {}", private_subnets_comma);
 
@@ -272,7 +273,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "alpha.eksctl.io/nodegroup-name=ng-corekube"}
       )
       .future.get();
-  frontend_ip.pop_back(); // remove trailing newline
+  Utils::trim(frontend_ip); // remove trailing newline
 
   // Apply metrics server deployment
   executor
@@ -350,11 +351,9 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
          "--query",
          "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
          "`eks-`)][][].GroupId | [0]",
-         "--output",
-         "text"}
+         "--output=text"}
       )
       .future.get();
-  ck_security_group_id.pop_back(); // remove trailing newline
 
   // # Add a new rule to the security group which allows all incoming traffic
   executor
@@ -363,7 +362,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "ec2",
        "authorize-security-group-ingress",
        "--group-id",
-       ck_security_group_id,
+       Utils::trim(ck_security_group_id),
        "--protocol",
        "all",
        "--cidr",
@@ -456,7 +455,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "ec2",
        "authorize-security-group-ingress",
        "--group-id",
-       nervion_security_group_id,
+       Utils::trim(nervion_security_group_id),
        "--protocol",
        "all",
        "--cidr",
