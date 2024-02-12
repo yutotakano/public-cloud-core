@@ -537,12 +537,18 @@ std::future<void> DeployApp::eksctl_deletion_details(std::string stack_name)
     [this, &stack_name]()
     {
       bool deleted = false;
+      std::string last_log_entry;
       while (!deleted)
       {
         try
         {
           auto log_entry = get_most_recent_cloudformation_event(stack_name);
-          LOG_INFO(logger, "Deleting Fargate Profile: {}", log_entry);
+          // Only log if the event is new
+          if (log_entry != last_log_entry)
+          {
+            LOG_INFO(logger, "Deleting Fargate Profile: {}", log_entry);
+            last_log_entry = log_entry;
+          }
         }
         catch (const SubprocessError &e)
         {
