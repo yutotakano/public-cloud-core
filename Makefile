@@ -1,6 +1,6 @@
 CC := g++
 CPPFLAGS := -Iinclude -Iexternal/quill_install/include
-CFLAGS := -Wall
+CFLAGS := -Wall -std=c++17
 LDFLAGS := -Lexternal/quill_install/lib
 LDLIBS := -lpthread -lquill
 
