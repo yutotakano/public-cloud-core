@@ -59,7 +59,7 @@ std::future<void> LoadTestApp::stop_nervion_controller(
 )
 {
   return std::async(
-    [&, contexts]()
+    [&, info, contexts]()
     {
       // Send the file to the Nervion controller via libcurl
       CURL *curl = curl_easy_init();
@@ -87,6 +87,7 @@ std::future<void> LoadTestApp::stop_nervion_controller(
           "curl_easy_perform() failed: {}",
           curl_easy_strerror(res)
         );
+        return;
       }
 
       curl_easy_cleanup(curl);
