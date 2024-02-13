@@ -1,6 +1,7 @@
 #include "argparse/argparse.hpp"
 #include "curl/curl.h"
 #include "deploy.h"
+#include "env.h"
 #include "exithandler.h"
 #include "info.h"
 #include "loadtest.h"
@@ -59,6 +60,10 @@ int main(int argc, char **argv)
   auto loadtest_parser = loadtest_app.loadtest_arg_parser();
   program.add_subparser(*loadtest_parser);
 
+  EnvApp env_app;
+  auto env_parser = env_app.env_arg_parser();
+  program.add_subparser(*env_parser);
+
   // Parse the command line arguments
   try
   {
@@ -98,6 +103,15 @@ int main(int argc, char **argv)
   else if (program.is_subcommand_used(*loadtest_parser))
   {
     loadtest_app.loadtest_command_handler(*loadtest_parser);
+  }
+  else if (program.is_subcommand_used(*env_parser))
+  {
+    env_app.env_command_handler(*env_parser);
+  }
+  else
+  {
+    std::cerr << "No subcommand used" << std::endl;
+    return 1;
   }
 
   // Cleanup
