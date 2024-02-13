@@ -27,12 +27,12 @@ spec:
     spec:
       containers:
       - name: corekube-worker
-        image: andrewferguson/corekube-worker5g:latest
+        image: yutotakano/corekube5g-worker-metrics:latest
         ports:
         - containerPort: 5566
           protocol: UDP
           name: worker-s1ap
-        command: ["./corekube_udp_worker", "$(THIS_POD_IP)", "$(COREKUBE_DB_SERVICE_HOST)", "6", "1"]
+        command: ["./corekube_udp_worker", "$(THIS_POD_IP)", "$(COREKUBE_DB_SERVICE_HOST)", "6", "1", "$(CORE_METRICS_AGGREGATOR_SERVICE_HOST)"]
         env:
         - name: THIS_POD_IP
           valueFrom:
@@ -101,3 +101,46 @@ spec:
             fieldRef:
               fieldPath: status.podIP
 
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-metrics-aggregator
+spec:
+  ports:
+  - name: prometheus-scrape-port
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics-receive-port
+    port: 7799
+    targetPort: 7799
+    protocol: TCP
+  selector:
+    app: core-metrics-aggregator
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-metrics-aggregator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-metrics-aggregator
+  template:
+    metadata:
+      labels:
+        app: core-metrics-aggregator
+    spec:
+      containers:
+      - name: core-metrics-aggregator
+        image: yutotakano/core-metrics-aggregator:cpp-latest
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 7799
+          protocol: TCP
+        command: ["./core-metrics-aggregator"]

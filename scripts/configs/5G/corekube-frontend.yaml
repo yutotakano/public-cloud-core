@@ -64,7 +64,6 @@ spec:
         securityContext:
           privileged: false # Required to access the Kubernetes API
 
-
 ---
 
 # Create a Service Account to be used by the Core Monitor when querying the Kubernetes API
