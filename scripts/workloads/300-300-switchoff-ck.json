@@ -1,0 +1,5106 @@
+{
+    "enbs": [
+        {
+            "enb_num": 1,
+            "enb_id": 14680064,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 2,
+            "enb_id": 14680065,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 3,
+            "enb_id": 14680066,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 4,
+            "enb_id": 14680067,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 5,
+            "enb_id": 14680068,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 6,
+            "enb_id": 14680069,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 7,
+            "enb_id": 14680070,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 8,
+            "enb_id": 14680071,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 9,
+            "enb_id": 14680072,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 10,
+            "enb_id": 14680073,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 11,
+            "enb_id": 14680074,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 12,
+            "enb_id": 14680075,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 13,
+            "enb_id": 14680076,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 14,
+            "enb_id": 14680077,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 15,
+            "enb_id": 14680078,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 16,
+            "enb_id": 14680079,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 17,
+            "enb_id": 14680080,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 18,
+            "enb_id": 14680081,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 19,
+            "enb_id": 14680082,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 20,
+            "enb_id": 14680083,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 21,
+            "enb_id": 14680084,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 22,
+            "enb_id": 14680085,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 23,
+            "enb_id": 14680086,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 24,
+            "enb_id": 14680087,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 25,
+            "enb_id": 14680088,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 26,
+            "enb_id": 14680089,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 27,
+            "enb_id": 14680090,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 28,
+            "enb_id": 14680091,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 29,
+            "enb_id": 14680092,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 30,
+            "enb_id": 14680093,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 31,
+            "enb_id": 14680094,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 32,
+            "enb_id": 14680095,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 33,
+            "enb_id": 14680096,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 34,
+            "enb_id": 14680097,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 35,
+            "enb_id": 14680098,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 36,
+            "enb_id": 14680099,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 37,
+            "enb_id": 14680100,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 38,
+            "enb_id": 14680101,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 39,
+            "enb_id": 14680102,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 40,
+            "enb_id": 14680103,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 41,
+            "enb_id": 14680104,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 42,
+            "enb_id": 14680105,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 43,
+            "enb_id": 14680106,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 44,
+            "enb_id": 14680107,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 45,
+            "enb_id": 14680108,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 46,
+            "enb_id": 14680109,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 47,
+            "enb_id": 14680110,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 48,
+            "enb_id": 14680111,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 49,
+            "enb_id": 14680112,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 50,
+            "enb_id": 14680113,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 51,
+            "enb_id": 14680114,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 52,
+            "enb_id": 14680115,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 53,
+            "enb_id": 14680116,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 54,
+            "enb_id": 14680117,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 55,
+            "enb_id": 14680118,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 56,
+            "enb_id": 14680119,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 57,
+            "enb_id": 14680120,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 58,
+            "enb_id": 14680121,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 59,
+            "enb_id": 14680122,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 60,
+            "enb_id": 14680123,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 61,
+            "enb_id": 14680124,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 62,
+            "enb_id": 14680125,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 63,
+            "enb_id": 14680126,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 64,
+            "enb_id": 14680127,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 65,
+            "enb_id": 14680128,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 66,
+            "enb_id": 14680129,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 67,
+            "enb_id": 14680130,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 68,
+            "enb_id": 14680131,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 69,
+            "enb_id": 14680132,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 70,
+            "enb_id": 14680133,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 71,
+            "enb_id": 14680134,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 72,
+            "enb_id": 14680135,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 73,
+            "enb_id": 14680136,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 74,
+            "enb_id": 14680137,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 75,
+            "enb_id": 14680138,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 76,
+            "enb_id": 14680139,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 77,
+            "enb_id": 14680140,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 78,
+            "enb_id": 14680141,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 79,
+            "enb_id": 14680142,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 80,
+            "enb_id": 14680143,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 81,
+            "enb_id": 14680144,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 82,
+            "enb_id": 14680145,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 83,
+            "enb_id": 14680146,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 84,
+            "enb_id": 14680147,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 85,
+            "enb_id": 14680148,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 86,
+            "enb_id": 14680149,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 87,
+            "enb_id": 14680150,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 88,
+            "enb_id": 14680151,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 89,
+            "enb_id": 14680152,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 90,
+            "enb_id": 14680153,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 91,
+            "enb_id": 14680154,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 92,
+            "enb_id": 14680155,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 93,
+            "enb_id": 14680156,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 94,
+            "enb_id": 14680157,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 95,
+            "enb_id": 14680158,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 96,
+            "enb_id": 14680159,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 97,
+            "enb_id": 14680160,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 98,
+            "enb_id": 14680161,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 99,
+            "enb_id": 14680162,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 100,
+            "enb_id": 14680163,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 101,
+            "enb_id": 14680164,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 102,
+            "enb_id": 14680165,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 103,
+            "enb_id": 14680166,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 104,
+            "enb_id": 14680167,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 105,
+            "enb_id": 14680168,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 106,
+            "enb_id": 14680169,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 107,
+            "enb_id": 14680170,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 108,
+            "enb_id": 14680171,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 109,
+            "enb_id": 14680172,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 110,
+            "enb_id": 14680173,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 111,
+            "enb_id": 14680174,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 112,
+            "enb_id": 14680175,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 113,
+            "enb_id": 14680176,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 114,
+            "enb_id": 14680177,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 115,
+            "enb_id": 14680178,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 116,
+            "enb_id": 14680179,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 117,
+            "enb_id": 14680180,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 118,
+            "enb_id": 14680181,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 119,
+            "enb_id": 14680182,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 120,
+            "enb_id": 14680183,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 121,
+            "enb_id": 14680184,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 122,
+            "enb_id": 14680185,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 123,
+            "enb_id": 14680186,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 124,
+            "enb_id": 14680187,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 125,
+            "enb_id": 14680188,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 126,
+            "enb_id": 14680189,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 127,
+            "enb_id": 14680190,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 128,
+            "enb_id": 14680191,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 129,
+            "enb_id": 14680192,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 130,
+            "enb_id": 14680193,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 131,
+            "enb_id": 14680194,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 132,
+            "enb_id": 14680195,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 133,
+            "enb_id": 14680196,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 134,
+            "enb_id": 14680197,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 135,
+            "enb_id": 14680198,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 136,
+            "enb_id": 14680199,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 137,
+            "enb_id": 14680200,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 138,
+            "enb_id": 14680201,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 139,
+            "enb_id": 14680202,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 140,
+            "enb_id": 14680203,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 141,
+            "enb_id": 14680204,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 142,
+            "enb_id": 14680205,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 143,
+            "enb_id": 14680206,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 144,
+            "enb_id": 14680207,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 145,
+            "enb_id": 14680208,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 146,
+            "enb_id": 14680209,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 147,
+            "enb_id": 14680210,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 148,
+            "enb_id": 14680211,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 149,
+            "enb_id": 14680212,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 150,
+            "enb_id": 14680213,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 151,
+            "enb_id": 14680214,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 152,
+            "enb_id": 14680215,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 153,
+            "enb_id": 14680216,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 154,
+            "enb_id": 14680217,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 155,
+            "enb_id": 14680218,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 156,
+            "enb_id": 14680219,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 157,
+            "enb_id": 14680220,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 158,
+            "enb_id": 14680221,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 159,
+            "enb_id": 14680222,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 160,
+            "enb_id": 14680223,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 161,
+            "enb_id": 14680224,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 162,
+            "enb_id": 14680225,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 163,
+            "enb_id": 14680226,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 164,
+            "enb_id": 14680227,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 165,
+            "enb_id": 14680228,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 166,
+            "enb_id": 14680229,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 167,
+            "enb_id": 14680230,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 168,
+            "enb_id": 14680231,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 169,
+            "enb_id": 14680232,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 170,
+            "enb_id": 14680233,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 171,
+            "enb_id": 14680234,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 172,
+            "enb_id": 14680235,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 173,
+            "enb_id": 14680236,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 174,
+            "enb_id": 14680237,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 175,
+            "enb_id": 14680238,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 176,
+            "enb_id": 14680239,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 177,
+            "enb_id": 14680240,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 178,
+            "enb_id": 14680241,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 179,
+            "enb_id": 14680242,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 180,
+            "enb_id": 14680243,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 181,
+            "enb_id": 14680244,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 182,
+            "enb_id": 14680245,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 183,
+            "enb_id": 14680246,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 184,
+            "enb_id": 14680247,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 185,
+            "enb_id": 14680248,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 186,
+            "enb_id": 14680249,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 187,
+            "enb_id": 14680250,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 188,
+            "enb_id": 14680251,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 189,
+            "enb_id": 14680252,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 190,
+            "enb_id": 14680253,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 191,
+            "enb_id": 14680254,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 192,
+            "enb_id": 14680255,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 193,
+            "enb_id": 14680256,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 194,
+            "enb_id": 14680257,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 195,
+            "enb_id": 14680258,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 196,
+            "enb_id": 14680259,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 197,
+            "enb_id": 14680260,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 198,
+            "enb_id": 14680261,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 199,
+            "enb_id": 14680262,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 200,
+            "enb_id": 14680263,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 201,
+            "enb_id": 14680264,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 202,
+            "enb_id": 14680265,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 203,
+            "enb_id": 14680266,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 204,
+            "enb_id": 14680267,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 205,
+            "enb_id": 14680268,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 206,
+            "enb_id": 14680269,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 207,
+            "enb_id": 14680270,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 208,
+            "enb_id": 14680271,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 209,
+            "enb_id": 14680272,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 210,
+            "enb_id": 14680273,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 211,
+            "enb_id": 14680274,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 212,
+            "enb_id": 14680275,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 213,
+            "enb_id": 14680276,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 214,
+            "enb_id": 14680277,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 215,
+            "enb_id": 14680278,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 216,
+            "enb_id": 14680279,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 217,
+            "enb_id": 14680280,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 218,
+            "enb_id": 14680281,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 219,
+            "enb_id": 14680282,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 220,
+            "enb_id": 14680283,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 221,
+            "enb_id": 14680284,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 222,
+            "enb_id": 14680285,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 223,
+            "enb_id": 14680286,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 224,
+            "enb_id": 14680287,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 225,
+            "enb_id": 14680288,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 226,
+            "enb_id": 14680289,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 227,
+            "enb_id": 14680290,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 228,
+            "enb_id": 14680291,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 229,
+            "enb_id": 14680292,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 230,
+            "enb_id": 14680293,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 231,
+            "enb_id": 14680294,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 232,
+            "enb_id": 14680295,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 233,
+            "enb_id": 14680296,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 234,
+            "enb_id": 14680297,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 235,
+            "enb_id": 14680298,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 236,
+            "enb_id": 14680299,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 237,
+            "enb_id": 14680300,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 238,
+            "enb_id": 14680301,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 239,
+            "enb_id": 14680302,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 240,
+            "enb_id": 14680303,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 241,
+            "enb_id": 14680304,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 242,
+            "enb_id": 14680305,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 243,
+            "enb_id": 14680306,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 244,
+            "enb_id": 14680307,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 245,
+            "enb_id": 14680308,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 246,
+            "enb_id": 14680309,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 247,
+            "enb_id": 14680310,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 248,
+            "enb_id": 14680311,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 249,
+            "enb_id": 14680312,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 250,
+            "enb_id": 14680313,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 251,
+            "enb_id": 14680314,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 252,
+            "enb_id": 14680315,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 253,
+            "enb_id": 14680316,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 254,
+            "enb_id": 14680317,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 255,
+            "enb_id": 14680318,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 256,
+            "enb_id": 14680319,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 257,
+            "enb_id": 14680320,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 258,
+            "enb_id": 14680321,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 259,
+            "enb_id": 14680322,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 260,
+            "enb_id": 14680323,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 261,
+            "enb_id": 14680324,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 262,
+            "enb_id": 14680325,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 263,
+            "enb_id": 14680326,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 264,
+            "enb_id": 14680327,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 265,
+            "enb_id": 14680328,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 266,
+            "enb_id": 14680329,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 267,
+            "enb_id": 14680330,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 268,
+            "enb_id": 14680331,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 269,
+            "enb_id": 14680332,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 270,
+            "enb_id": 14680333,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 271,
+            "enb_id": 14680334,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 272,
+            "enb_id": 14680335,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 273,
+            "enb_id": 14680336,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 274,
+            "enb_id": 14680337,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 275,
+            "enb_id": 14680338,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 276,
+            "enb_id": 14680339,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 277,
+            "enb_id": 14680340,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 278,
+            "enb_id": 14680341,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 279,
+            "enb_id": 14680342,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 280,
+            "enb_id": 14680343,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 281,
+            "enb_id": 14680344,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 282,
+            "enb_id": 14680345,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 283,
+            "enb_id": 14680346,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 284,
+            "enb_id": 14680347,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 285,
+            "enb_id": 14680348,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 286,
+            "enb_id": 14680349,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 287,
+            "enb_id": 14680350,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 288,
+            "enb_id": 14680351,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 289,
+            "enb_id": 14680352,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 290,
+            "enb_id": 14680353,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 291,
+            "enb_id": 14680354,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 292,
+            "enb_id": 14680355,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 293,
+            "enb_id": 14680356,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 294,
+            "enb_id": 14680357,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 295,
+            "enb_id": 14680358,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 296,
+            "enb_id": 14680359,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 297,
+            "enb_id": 14680360,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 298,
+            "enb_id": 14680361,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 299,
+            "enb_id": 14680362,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        },
+        {
+            "enb_num": 300,
+            "enb_id": 14680363,
+            "enb_mcc": "208",
+            "enb_mnc": "93"
+        }
+    ],
+    "ues": [
+        {
+            "ue_id": 1,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000001",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 1
+        },
+        {
+            "ue_id": 2,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000002",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 2
+        },
+        {
+            "ue_id": 3,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000003",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 3
+        },
+        {
+            "ue_id": 4,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000004",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 4
+        },
+        {
+            "ue_id": 5,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000005",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 5
+        },
+        {
+            "ue_id": 6,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000006",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 6
+        },
+        {
+            "ue_id": 7,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000007",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 7
+        },
+        {
+            "ue_id": 8,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000008",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 8
+        },
+        {
+            "ue_id": 9,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000009",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 9
+        },
+        {
+            "ue_id": 10,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000010",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 10
+        },
+        {
+            "ue_id": 11,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000011",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 11
+        },
+        {
+            "ue_id": 12,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000012",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 12
+        },
+        {
+            "ue_id": 13,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000013",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 13
+        },
+        {
+            "ue_id": 14,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000014",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 14
+        },
+        {
+            "ue_id": 15,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000015",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 15
+        },
+        {
+            "ue_id": 16,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000016",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 16
+        },
+        {
+            "ue_id": 17,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000017",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 17
+        },
+        {
+            "ue_id": 18,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000018",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 18
+        },
+        {
+            "ue_id": 19,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000019",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 19
+        },
+        {
+            "ue_id": 20,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000020",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 20
+        },
+        {
+            "ue_id": 21,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000021",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 21
+        },
+        {
+            "ue_id": 22,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000022",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 22
+        },
+        {
+            "ue_id": 23,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000023",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 23
+        },
+        {
+            "ue_id": 24,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000024",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 24
+        },
+        {
+            "ue_id": 25,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000025",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 25
+        },
+        {
+            "ue_id": 26,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000026",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 26
+        },
+        {
+            "ue_id": 27,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000027",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 27
+        },
+        {
+            "ue_id": 28,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000028",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 28
+        },
+        {
+            "ue_id": 29,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000029",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 29
+        },
+        {
+            "ue_id": 30,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000030",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 30
+        },
+        {
+            "ue_id": 31,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000031",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 31
+        },
+        {
+            "ue_id": 32,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000032",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 32
+        },
+        {
+            "ue_id": 33,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000033",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 33
+        },
+        {
+            "ue_id": 34,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000034",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 34
+        },
+        {
+            "ue_id": 35,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000035",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 35
+        },
+        {
+            "ue_id": 36,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000036",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 36
+        },
+        {
+            "ue_id": 37,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000037",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 37
+        },
+        {
+            "ue_id": 38,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000038",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 38
+        },
+        {
+            "ue_id": 39,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000039",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 39
+        },
+        {
+            "ue_id": 40,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000040",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 40
+        },
+        {
+            "ue_id": 41,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000041",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 41
+        },
+        {
+            "ue_id": 42,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000042",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 42
+        },
+        {
+            "ue_id": 43,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000043",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 43
+        },
+        {
+            "ue_id": 44,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000044",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 44
+        },
+        {
+            "ue_id": 45,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000045",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 45
+        },
+        {
+            "ue_id": 46,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000046",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 46
+        },
+        {
+            "ue_id": 47,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000047",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 47
+        },
+        {
+            "ue_id": 48,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000048",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 48
+        },
+        {
+            "ue_id": 49,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000049",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 49
+        },
+        {
+            "ue_id": 50,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000050",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 50
+        },
+        {
+            "ue_id": 51,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000051",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 51
+        },
+        {
+            "ue_id": 52,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000052",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 52
+        },
+        {
+            "ue_id": 53,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000053",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 53
+        },
+        {
+            "ue_id": 54,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000054",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 54
+        },
+        {
+            "ue_id": 55,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000055",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 55
+        },
+        {
+            "ue_id": 56,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000056",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 56
+        },
+        {
+            "ue_id": 57,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000057",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 57
+        },
+        {
+            "ue_id": 58,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000058",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 58
+        },
+        {
+            "ue_id": 59,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000059",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 59
+        },
+        {
+            "ue_id": 60,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000060",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 60
+        },
+        {
+            "ue_id": 61,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000061",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 61
+        },
+        {
+            "ue_id": 62,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000062",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 62
+        },
+        {
+            "ue_id": 63,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000063",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 63
+        },
+        {
+            "ue_id": 64,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000064",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 64
+        },
+        {
+            "ue_id": 65,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000065",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 65
+        },
+        {
+            "ue_id": 66,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000066",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 66
+        },
+        {
+            "ue_id": 67,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000067",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 67
+        },
+        {
+            "ue_id": 68,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000068",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 68
+        },
+        {
+            "ue_id": 69,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000069",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 69
+        },
+        {
+            "ue_id": 70,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000070",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 70
+        },
+        {
+            "ue_id": 71,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000071",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 71
+        },
+        {
+            "ue_id": 72,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000072",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 72
+        },
+        {
+            "ue_id": 73,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000073",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 73
+        },
+        {
+            "ue_id": 74,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000074",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 74
+        },
+        {
+            "ue_id": 75,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000075",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 75
+        },
+        {
+            "ue_id": 76,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000076",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 76
+        },
+        {
+            "ue_id": 77,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000077",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 77
+        },
+        {
+            "ue_id": 78,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000078",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 78
+        },
+        {
+            "ue_id": 79,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000079",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 79
+        },
+        {
+            "ue_id": 80,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000080",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 80
+        },
+        {
+            "ue_id": 81,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000081",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 81
+        },
+        {
+            "ue_id": 82,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000082",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 82
+        },
+        {
+            "ue_id": 83,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000083",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 83
+        },
+        {
+            "ue_id": 84,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000084",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 84
+        },
+        {
+            "ue_id": 85,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000085",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 85
+        },
+        {
+            "ue_id": 86,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000086",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 86
+        },
+        {
+            "ue_id": 87,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000087",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 87
+        },
+        {
+            "ue_id": 88,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000088",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 88
+        },
+        {
+            "ue_id": 89,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000089",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 89
+        },
+        {
+            "ue_id": 90,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000090",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 90
+        },
+        {
+            "ue_id": 91,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000091",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 91
+        },
+        {
+            "ue_id": 92,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000092",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 92
+        },
+        {
+            "ue_id": 93,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000093",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 93
+        },
+        {
+            "ue_id": 94,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000094",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 94
+        },
+        {
+            "ue_id": 95,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000095",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 95
+        },
+        {
+            "ue_id": 96,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000096",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 96
+        },
+        {
+            "ue_id": 97,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000097",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 97
+        },
+        {
+            "ue_id": 98,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000098",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 98
+        },
+        {
+            "ue_id": 99,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000099",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 99
+        },
+        {
+            "ue_id": 100,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000100",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 100
+        },
+        {
+            "ue_id": 101,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000101",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 101
+        },
+        {
+            "ue_id": 102,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000102",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 102
+        },
+        {
+            "ue_id": 103,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000103",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 103
+        },
+        {
+            "ue_id": 104,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000104",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 104
+        },
+        {
+            "ue_id": 105,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000105",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 105
+        },
+        {
+            "ue_id": 106,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000106",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 106
+        },
+        {
+            "ue_id": 107,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000107",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 107
+        },
+        {
+            "ue_id": 108,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000108",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 108
+        },
+        {
+            "ue_id": 109,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000109",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 109
+        },
+        {
+            "ue_id": 110,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000110",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 110
+        },
+        {
+            "ue_id": 111,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000111",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 111
+        },
+        {
+            "ue_id": 112,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000112",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 112
+        },
+        {
+            "ue_id": 113,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000113",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 113
+        },
+        {
+            "ue_id": 114,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000114",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 114
+        },
+        {
+            "ue_id": 115,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000115",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 115
+        },
+        {
+            "ue_id": 116,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000116",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 116
+        },
+        {
+            "ue_id": 117,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000117",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 117
+        },
+        {
+            "ue_id": 118,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000118",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 118
+        },
+        {
+            "ue_id": 119,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000119",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 119
+        },
+        {
+            "ue_id": 120,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000120",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 120
+        },
+        {
+            "ue_id": 121,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000121",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 121
+        },
+        {
+            "ue_id": 122,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000122",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 122
+        },
+        {
+            "ue_id": 123,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000123",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 123
+        },
+        {
+            "ue_id": 124,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000124",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 124
+        },
+        {
+            "ue_id": 125,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000125",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 125
+        },
+        {
+            "ue_id": 126,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000126",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 126
+        },
+        {
+            "ue_id": 127,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000127",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 127
+        },
+        {
+            "ue_id": 128,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000128",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 128
+        },
+        {
+            "ue_id": 129,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000129",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 129
+        },
+        {
+            "ue_id": 130,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000130",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 130
+        },
+        {
+            "ue_id": 131,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000131",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 131
+        },
+        {
+            "ue_id": 132,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000132",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 132
+        },
+        {
+            "ue_id": 133,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000133",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 133
+        },
+        {
+            "ue_id": 134,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000134",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 134
+        },
+        {
+            "ue_id": 135,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000135",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 135
+        },
+        {
+            "ue_id": 136,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000136",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 136
+        },
+        {
+            "ue_id": 137,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000137",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 137
+        },
+        {
+            "ue_id": 138,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000138",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 138
+        },
+        {
+            "ue_id": 139,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000139",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 139
+        },
+        {
+            "ue_id": 140,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000140",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 140
+        },
+        {
+            "ue_id": 141,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000141",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 141
+        },
+        {
+            "ue_id": 142,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000142",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 142
+        },
+        {
+            "ue_id": 143,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000143",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 143
+        },
+        {
+            "ue_id": 144,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000144",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 144
+        },
+        {
+            "ue_id": 145,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000145",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 145
+        },
+        {
+            "ue_id": 146,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000146",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 146
+        },
+        {
+            "ue_id": 147,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000147",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 147
+        },
+        {
+            "ue_id": 148,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000148",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 148
+        },
+        {
+            "ue_id": 149,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000149",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 149
+        },
+        {
+            "ue_id": 150,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000150",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 150
+        },
+        {
+            "ue_id": 151,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000151",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 151
+        },
+        {
+            "ue_id": 152,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000152",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 152
+        },
+        {
+            "ue_id": 153,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000153",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 153
+        },
+        {
+            "ue_id": 154,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000154",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 154
+        },
+        {
+            "ue_id": 155,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000155",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 155
+        },
+        {
+            "ue_id": 156,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000156",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 156
+        },
+        {
+            "ue_id": 157,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000157",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 157
+        },
+        {
+            "ue_id": 158,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000158",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 158
+        },
+        {
+            "ue_id": 159,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000159",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 159
+        },
+        {
+            "ue_id": 160,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000160",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 160
+        },
+        {
+            "ue_id": 161,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000161",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 161
+        },
+        {
+            "ue_id": 162,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000162",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 162
+        },
+        {
+            "ue_id": 163,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000163",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 163
+        },
+        {
+            "ue_id": 164,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000164",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 164
+        },
+        {
+            "ue_id": 165,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000165",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 165
+        },
+        {
+            "ue_id": 166,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000166",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 166
+        },
+        {
+            "ue_id": 167,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000167",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 167
+        },
+        {
+            "ue_id": 168,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000168",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 168
+        },
+        {
+            "ue_id": 169,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000169",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 169
+        },
+        {
+            "ue_id": 170,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000170",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 170
+        },
+        {
+            "ue_id": 171,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000171",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 171
+        },
+        {
+            "ue_id": 172,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000172",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 172
+        },
+        {
+            "ue_id": 173,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000173",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 173
+        },
+        {
+            "ue_id": 174,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000174",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 174
+        },
+        {
+            "ue_id": 175,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000175",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 175
+        },
+        {
+            "ue_id": 176,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000176",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 176
+        },
+        {
+            "ue_id": 177,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000177",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 177
+        },
+        {
+            "ue_id": 178,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000178",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 178
+        },
+        {
+            "ue_id": 179,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000179",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 179
+        },
+        {
+            "ue_id": 180,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000180",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 180
+        },
+        {
+            "ue_id": 181,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000181",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 181
+        },
+        {
+            "ue_id": 182,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000182",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 182
+        },
+        {
+            "ue_id": 183,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000183",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 183
+        },
+        {
+            "ue_id": 184,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000184",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 184
+        },
+        {
+            "ue_id": 185,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000185",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 185
+        },
+        {
+            "ue_id": 186,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000186",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 186
+        },
+        {
+            "ue_id": 187,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000187",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 187
+        },
+        {
+            "ue_id": 188,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000188",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 188
+        },
+        {
+            "ue_id": 189,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000189",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 189
+        },
+        {
+            "ue_id": 190,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000190",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 190
+        },
+        {
+            "ue_id": 191,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000191",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 191
+        },
+        {
+            "ue_id": 192,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000192",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 192
+        },
+        {
+            "ue_id": 193,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000193",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 193
+        },
+        {
+            "ue_id": 194,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000194",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 194
+        },
+        {
+            "ue_id": 195,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000195",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 195
+        },
+        {
+            "ue_id": 196,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000196",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 196
+        },
+        {
+            "ue_id": 197,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000197",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 197
+        },
+        {
+            "ue_id": 198,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000198",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 198
+        },
+        {
+            "ue_id": 199,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000199",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 199
+        },
+        {
+            "ue_id": 200,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000200",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 200
+        },
+        {
+            "ue_id": 201,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000201",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 201
+        },
+        {
+            "ue_id": 202,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000202",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 202
+        },
+        {
+            "ue_id": 203,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000203",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 203
+        },
+        {
+            "ue_id": 204,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000204",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 204
+        },
+        {
+            "ue_id": 205,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000205",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 205
+        },
+        {
+            "ue_id": 206,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000206",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 206
+        },
+        {
+            "ue_id": 207,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000207",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 207
+        },
+        {
+            "ue_id": 208,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000208",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 208
+        },
+        {
+            "ue_id": 209,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000209",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 209
+        },
+        {
+            "ue_id": 210,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000210",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 210
+        },
+        {
+            "ue_id": 211,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000211",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 211
+        },
+        {
+            "ue_id": 212,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000212",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 212
+        },
+        {
+            "ue_id": 213,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000213",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 213
+        },
+        {
+            "ue_id": 214,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000214",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 214
+        },
+        {
+            "ue_id": 215,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000215",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 215
+        },
+        {
+            "ue_id": 216,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000216",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 216
+        },
+        {
+            "ue_id": 217,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000217",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 217
+        },
+        {
+            "ue_id": 218,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000218",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 218
+        },
+        {
+            "ue_id": 219,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000219",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 219
+        },
+        {
+            "ue_id": 220,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000220",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 220
+        },
+        {
+            "ue_id": 221,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000221",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 221
+        },
+        {
+            "ue_id": 222,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000222",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 222
+        },
+        {
+            "ue_id": 223,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000223",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 223
+        },
+        {
+            "ue_id": 224,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000224",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 224
+        },
+        {
+            "ue_id": 225,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000225",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 225
+        },
+        {
+            "ue_id": 226,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000226",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 226
+        },
+        {
+            "ue_id": 227,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000227",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 227
+        },
+        {
+            "ue_id": 228,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000228",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 228
+        },
+        {
+            "ue_id": 229,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000229",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 229
+        },
+        {
+            "ue_id": 230,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000230",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 230
+        },
+        {
+            "ue_id": 231,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000231",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 231
+        },
+        {
+            "ue_id": 232,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000232",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 232
+        },
+        {
+            "ue_id": 233,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000233",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 233
+        },
+        {
+            "ue_id": 234,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000234",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 234
+        },
+        {
+            "ue_id": 235,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000235",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 235
+        },
+        {
+            "ue_id": 236,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000236",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 236
+        },
+        {
+            "ue_id": 237,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000237",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 237
+        },
+        {
+            "ue_id": 238,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000238",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 238
+        },
+        {
+            "ue_id": 239,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000239",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 239
+        },
+        {
+            "ue_id": 240,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000240",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 240
+        },
+        {
+            "ue_id": 241,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000241",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 241
+        },
+        {
+            "ue_id": 242,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000242",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 242
+        },
+        {
+            "ue_id": 243,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000243",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 243
+        },
+        {
+            "ue_id": 244,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000244",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 244
+        },
+        {
+            "ue_id": 245,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000245",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 245
+        },
+        {
+            "ue_id": 246,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000246",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 246
+        },
+        {
+            "ue_id": 247,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000247",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 247
+        },
+        {
+            "ue_id": 248,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000248",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 248
+        },
+        {
+            "ue_id": 249,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000249",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 249
+        },
+        {
+            "ue_id": 250,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000250",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 250
+        },
+        {
+            "ue_id": 251,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000251",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 251
+        },
+        {
+            "ue_id": 252,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000252",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 252
+        },
+        {
+            "ue_id": 253,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000253",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 253
+        },
+        {
+            "ue_id": 254,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000254",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 254
+        },
+        {
+            "ue_id": 255,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000255",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 255
+        },
+        {
+            "ue_id": 256,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000256",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 256
+        },
+        {
+            "ue_id": 257,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000257",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 257
+        },
+        {
+            "ue_id": 258,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000258",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 258
+        },
+        {
+            "ue_id": 259,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000259",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 259
+        },
+        {
+            "ue_id": 260,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000260",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 260
+        },
+        {
+            "ue_id": 261,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000261",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 261
+        },
+        {
+            "ue_id": 262,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000262",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 262
+        },
+        {
+            "ue_id": 263,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000263",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 263
+        },
+        {
+            "ue_id": 264,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000264",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 264
+        },
+        {
+            "ue_id": 265,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000265",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 265
+        },
+        {
+            "ue_id": 266,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000266",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 266
+        },
+        {
+            "ue_id": 267,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000267",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 267
+        },
+        {
+            "ue_id": 268,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000268",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 268
+        },
+        {
+            "ue_id": 269,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000269",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 269
+        },
+        {
+            "ue_id": 270,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000270",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 270
+        },
+        {
+            "ue_id": 271,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000271",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 271
+        },
+        {
+            "ue_id": 272,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000272",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 272
+        },
+        {
+            "ue_id": 273,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000273",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 273
+        },
+        {
+            "ue_id": 274,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000274",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 274
+        },
+        {
+            "ue_id": 275,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000275",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 275
+        },
+        {
+            "ue_id": 276,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000276",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 276
+        },
+        {
+            "ue_id": 277,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000277",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 277
+        },
+        {
+            "ue_id": 278,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000278",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 278
+        },
+        {
+            "ue_id": 279,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000279",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 279
+        },
+        {
+            "ue_id": 280,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000280",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 280
+        },
+        {
+            "ue_id": 281,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000281",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 281
+        },
+        {
+            "ue_id": 282,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000282",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 282
+        },
+        {
+            "ue_id": 283,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000283",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 283
+        },
+        {
+            "ue_id": 284,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000284",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 284
+        },
+        {
+            "ue_id": 285,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000285",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 285
+        },
+        {
+            "ue_id": 286,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000286",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 286
+        },
+        {
+            "ue_id": 287,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000287",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 287
+        },
+        {
+            "ue_id": 288,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000288",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 288
+        },
+        {
+            "ue_id": 289,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000289",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 289
+        },
+        {
+            "ue_id": 290,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000290",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 290
+        },
+        {
+            "ue_id": 291,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000291",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 291
+        },
+        {
+            "ue_id": 292,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000292",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 292
+        },
+        {
+            "ue_id": 293,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000293",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 293
+        },
+        {
+            "ue_id": 294,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000294",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 294
+        },
+        {
+            "ue_id": 295,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000295",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 295
+        },
+        {
+            "ue_id": 296,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000296",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 296
+        },
+        {
+            "ue_id": 297,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000297",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 297
+        },
+        {
+            "ue_id": 298,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000298",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 298
+        },
+        {
+            "ue_id": 299,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000299",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 299
+        },
+        {
+            "ue_id": 300,
+            "ue_mcc": "208",
+            "ue_mnc": "93",
+            "ue_msin": "0000000300",
+            "ue_key": "0x3f3f473f2f3fd0943f3f3f3f097c6862",
+            "ue_op_key": "0xe9be7fb89bb01978e67972ca8580079e",
+            "control_plane": "init-0-detach_switch_off-0-attach-0",
+            "traffic_command": "sleep 1000000",
+            "enb": 300
+        }
+    ]
+}
