@@ -1,12 +1,17 @@
 #include "argparse/argparse.hpp"
+#include "curl/curl.h"
 #include "deploy.h"
 #include "exithandler.h"
 #include "info.h"
+#include "loadtest.h"
 #include "quill/Quill.h"
 #include <iostream>
 
 int main(int argc, char **argv)
 {
+  // Any global setups
+  // Initialize libcurl
+  curl_global_init(CURL_GLOBAL_ALL);
   // Register Ctrl-C handler
   ExitHandler::create_handlers();
 
@@ -50,6 +55,10 @@ int main(int argc, char **argv)
   auto info_parser = info_app.info_arg_parser();
   program.add_subparser(*info_parser);
 
+  LoadTestApp loadtest_app;
+  auto loadtest_parser = loadtest_app.loadtest_arg_parser();
+  program.add_subparser(*loadtest_parser);
+
   // Parse the command line arguments
   try
   {
@@ -86,5 +95,13 @@ int main(int argc, char **argv)
   {
     info_app.info_command_handler(*info_parser);
   }
+  else if (program.is_subcommand_used(*loadtest_parser))
+  {
+    loadtest_app.loadtest_command_handler(*loadtest_parser);
+  }
+
+  // Cleanup
+  curl_global_cleanup();
+
   return 0;
 }
