@@ -18,11 +18,17 @@ public:
 private:
   static size_t
   curl_write_callback(void *buffer, size_t size, size_t count, void *user);
-  std::future<void> stop_nervion_controller(deployment_info_s info);
-  void post_nervion_controller(std::string file_path, deployment_info_s info);
+  std::future<void>
+  stop_nervion_controller(deployment_info_s info, context_info_s contexts);
+  void post_nervion_controller(
+    std::string file_path,
+    deployment_info_s info,
+    context_info_s contexts
+  );
 
   quill::Logger *logger;
   Executor executor;
+  InfoApp info_app;
 };
 
 #endif // LOADTEST_H

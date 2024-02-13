@@ -31,48 +31,72 @@ void InfoApp::info_command_handler(argparse::ArgumentParser &parser)
   LOG_INFO(logger, "Nervion: http://{}:8080", info->nervion_dns_name);
 }
 
-std::optional<deployment_info_s> InfoApp::get_info()
+std::optional<context_info_s> InfoApp::get_contexts()
 {
-  LOG_DEBUG(logger, "Looking for active deployment.");
-
-  // Check if there is an active deployment
   LOG_TRACE_L3(logger, "Checking existing contexts");
+
   auto contexts_str =
     executor.run({"kubectl", "config", "get-contexts", "--output=name"}, false)
       .future.get();
   auto contexts = Utils::split(contexts_str, '\n');
   if (contexts.size() == 1 && contexts[0].empty())
   {
-    LOG_TRACE_L3(logger, "No active deployment found.");
+    LOG_TRACE_L3(logger, "No contexts found.");
     return std::nullopt;
   }
 
-  // Double-check that there is a CoreKube and Nervion deployment
-  std::string corekube_name;
-  std::string nervion_name;
+  std::string corekube_context;
+  std::string nervion_context;
   for (auto &context : contexts)
   {
     if (context.find("corekube") != std::string::npos)
     {
       LOG_TRACE_L3(logger, "CoreKube context found: {}", context);
-      corekube_name = context;
+      corekube_context = context;
     }
     if (context.find("nervion") != std::string::npos)
     {
       LOG_TRACE_L3(logger, "Nervion context found: {}", context);
-      nervion_name = context;
+      nervion_context = context;
     }
   }
-  if (corekube_name.empty() || nervion_name.empty())
+  if (corekube_context.empty() || nervion_context.empty())
+  {
+    LOG_TRACE_L3(logger, "No active deployment found.");
+    return std::nullopt;
+  }
+
+  std::string current_context =
+    executor.run({"kubectl", "config", "current-context"}, false).future.get();
+
+  return context_info_s{
+    .current_context = current_context,
+    .corekube_context = corekube_context,
+    .nervion_context = nervion_context,
+  };
+}
+
+void InfoApp::switch_context(std::string context)
+{
+  LOG_DEBUG(logger, "Switching to context: {}", context);
+  executor.run({"kubectl", "config", "use-context", context}, false)
+    .future.get();
+}
+
+std::optional<deployment_info_s> InfoApp::get_info()
+{
+  LOG_DEBUG(logger, "Looking for active deployment.");
+
+  // Check if there is an active deployment
+  auto contexts = get_contexts();
+  if (!contexts.has_value())
   {
     LOG_TRACE_L3(logger, "No active deployment found.");
     return std::nullopt;
   }
 
   // Switch to the CoreKube context to get information about frontend
-  LOG_TRACE_L3(logger, "Switching to CoreKube context");
-  executor.run({"kubectl", "config", "use-context", corekube_name}, false)
-    .future.get();
+  switch_context(contexts->corekube_context);
 
   // Get the VPC-internal IP of the frontend node
   LOG_TRACE_L3(logger, "Getting frontend IP");
@@ -106,9 +130,7 @@ std::optional<deployment_info_s> InfoApp::get_info()
       .future.get();
 
   // Switch to the Nervion context to get information about Nervion controller
-  LOG_TRACE_L3(logger, "Switching to Nervion context");
-  executor.run({"kubectl", "config", "use-context", nervion_name}, false)
-    .future.get();
+  switch_context(contexts->nervion_context);
 
   // Get the public DNS of the Nervion controller service.
   auto nervion_controller_public_dns =
@@ -123,6 +145,9 @@ std::optional<deployment_info_s> InfoApp::get_info()
         false
       )
       .future.get();
+
+  // Switch back to the original context
+  switch_context(contexts->current_context);
 
   return deployment_info_s{
     .corekube_dns_name = ck_grafana_public_dns,

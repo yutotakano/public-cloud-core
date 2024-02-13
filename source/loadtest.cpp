@@ -7,6 +7,7 @@ LoadTestApp::LoadTestApp()
 {
   logger = quill::create_logger("loadtest");
   executor = Executor();
+  info_app = InfoApp();
 }
 
 std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
@@ -25,10 +26,10 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
 {
   LOG_DEBUG(logger, "Getting deployment info.");
 
-  InfoApp info_app;
   auto info = info_app.get_info();
+  auto contexts = info_app.get_contexts();
 
-  if (!info.has_value())
+  if (!info.has_value() || !contexts.has_value())
   {
     LOG_ERROR(logger, "Could not run loadtest: no active deployment found.");
     return;
@@ -38,7 +39,8 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   {
     LOG_INFO(logger, "Stopping the current loadtest.");
     // Stop the current loadtest
-    auto completion_future = stop_nervion_controller(info.value());
+    auto completion_future =
+      stop_nervion_controller(info.value(), contexts.value());
     completion_future.get();
     return;
   }
@@ -48,13 +50,16 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   LOG_INFO(logger, "Running loadtest with file: {}", file_path);
 
   // Send the loadtest file to the Nervion controller
-  post_nervion_controller(file_path, info.value());
+  post_nervion_controller(file_path, info.value(), contexts.value());
 }
 
-std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
+std::future<void> LoadTestApp::stop_nervion_controller(
+  deployment_info_s info,
+  context_info_s contexts
+)
 {
   return std::async(
-    [&]()
+    [&, contexts]()
     {
       // Send the file to the Nervion controller via libcurl
       CURL *curl = curl_easy_init();
@@ -87,10 +92,10 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
       curl_easy_cleanup(curl);
 
       // Wait for all pods beginning with name 'slave-' to be deleted
+      info_app.switch_context(contexts.nervion_context);
+
       while (true)
       {
-        LOG_INFO(logger, "Waiting for all pods to be deleted.");
-
         std::string pods_str =
           executor.run({"kubectl", "get", "pods", "--no-headers"}, false)
             .future.get();
@@ -104,9 +109,11 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
         if (num_slaves == 0)
           break;
 
-        LOG_DEBUG(logger, "Waiting for {} pods to be deleted.", num_slaves);
+        LOG_INFO(logger, "Waiting for {} pods to be deleted.", num_slaves);
         std::this_thread::sleep_for(std::chrono::seconds(5));
       }
+
+      info_app.switch_context(contexts.current_context);
 
       LOG_INFO(logger, "Loadtest stopped.");
     }
@@ -128,7 +135,8 @@ size_t LoadTestApp::curl_write_callback(
 
 void LoadTestApp::post_nervion_controller(
   std::string file_path,
-  deployment_info_s info
+  deployment_info_s info,
+  context_info_s contexts
 )
 {
   // Send the file to the Nervion controller via libcurl
