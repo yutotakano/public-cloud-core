@@ -494,29 +494,46 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
-  // // Get AWS ARN for using in the next step
-  // auto policy_arn =
-  //   executor
-  //     .run({"aws", "sts", "get-caller-identity", "--query=Arn",
-  //     "--output=text"}
-  //     )
-  //     .future.get();
+  // Get the created policy ARN (created by --asg-access)
+  auto policy_arn =
+    executor
+      .run(
+        {"aws",
+         "iam",
+         "list-policies",
+         "--query",
+         "Policies[?PolicyName==`AmazonEKSClusterAutoscalerPolicy`].Arn",
+         "--output",
+         "text"}
+      )
+      .future.get();
 
-  // // Create the IAM service account for the cluster autoscaler
-  // executor
-  //   .run(
-  //     {"eksctl",
-  //      "create",
-  //      "iamserviceaccount",
-  //      "--cluster=nervion-aws-cluster",
-  //      "--namespace=kube-system",
-  //      "--name=cluster-autoscaler",
-  //      "--attach-policy-arn=" + policy_arn +
-  //        ":policy/AmazonEKSClusterAutoscalerPolicy",
-  //      "--override-existing-serviceaccounts",
-  //      "--approve"}
-  //   )
-  //   .future.get();
+  // Set IAM provider for all pods within a cluster
+  executor
+    .run(
+      {"eksctl",
+       "utils",
+       "associate-iam-oidc-provider",
+       "--cluster=nervion-aws-cluster",
+       "--region=eu-north-1",
+       "--approve"}
+    )
+    .future.get();
+
+  // Create the IAM service account for the cluster autoscaler
+  executor
+    .run(
+      {"eksctl",
+       "create",
+       "iamserviceaccount",
+       "--cluster=nervion-aws-cluster",
+       "--namespace=kube-system",
+       "--name=cluster-autoscaler",
+       "--attach-policy-arn=" + policy_arn,
+       "--override-existing-serviceaccounts",
+       "--approve"}
+    )
+    .future.get();
 
   // Apply cluster auto-scaler
   executor
