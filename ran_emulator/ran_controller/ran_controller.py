@@ -68,7 +68,10 @@ class RANControler:
 			'apiVersion': 'v1',
 			'kind': 'Pod',
 			'metadata': {
-				'name': 'pod-name'
+				'name': 'pod-name',
+				'labels': {
+					'app': 'ran-slave'
+				}
 			},
 			'spec': {
 				'containers': [{
