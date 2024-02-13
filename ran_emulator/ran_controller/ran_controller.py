@@ -91,7 +91,7 @@ class RANControler:
 					"args": [
 						"/bin/sh",
 						"-c",
-						"python3 powder_hack.py $INTERNAL_CONTROLLER_SERVICE_HOST $NODE_NAME"
+						"./ran_emulator $INTERNAL_CONTROLLER_SERVICE_HOST $(hostname -I)"
 					],
 				}],
 				'volumes': [{
