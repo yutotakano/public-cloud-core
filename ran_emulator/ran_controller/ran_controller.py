@@ -48,6 +48,11 @@ CODE_CP_MODE_ONLY = 0x0B
 '''
 
 class RANControler:
+	
+	# used to notify old kubernetes threads to stop scaling when restarting,
+	# so they don't keep incrementally adding pods. This flag defaults to
+	# SET/ON, and is only turned off when restarting.
+	should_keep_scaling = threading.Event() 
 
 	def __init__(self):
 		# Initialize Kubernetes if needed
@@ -116,10 +121,6 @@ class RANControler:
 		self.num_ues = len(self.controller_data['UEs'])
 		self.enb_ips = []
 
-		# used to notify old kubernetes threads to stop scaling when restarting,
-		# so they don't keep incrementally adding pods. This flag defaults to
-		# SET/ON, and is only turned off when restarting.
-		self.should_keep_scaling = threading.Event() 
 		self.should_keep_scaling.set()
 
 		if restart == False:
