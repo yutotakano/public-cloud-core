@@ -573,11 +573,14 @@ std::future<std::string> DeployApp::eksctl_delete_resource(
   // Delete - eksctl has same syntax for get and delete for the most part
   full_args.at(1) = "delete";
 
-  // If resource is nodegroup, we have to disable eviction:
+  // If resource is nodegroup, we have to disable eviction rules when draining:
   // https://github.com/eksctl-io/eksctl/issues/6287
   if (resource_type == "nodegroup")
   {
     full_args.emplace_back("--disable-eviction");
+
+    // Speed up the drain process
+    full_args.emplace_back("--parallel=4");
   }
   return executor.run(full_args, true).future;
 }
