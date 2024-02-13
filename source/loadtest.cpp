@@ -61,12 +61,14 @@ std::future<void> LoadTestApp::stop_nervion_controller(
   return std::async(
     [&, info, contexts]()
     {
+      info_app.switch_context(contexts.nervion_context);
+
       // Send the file to the Nervion controller via libcurl
       CURL *curl = curl_easy_init();
       if (!curl)
         throw std::runtime_error("Could not initialize curl.");
 
-      curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0L);
+      curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
       curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
       std::string url = info.nervion_dns_name + "/restart/";
@@ -87,14 +89,33 @@ std::future<void> LoadTestApp::stop_nervion_controller(
           "curl_easy_perform() failed: {}",
           curl_easy_strerror(res)
         );
-        return;
+
+        // Manually delete all pods beginning with name 'slave-'
+        LOG_INFO(
+          logger,
+          "Manually deleting pods assuming Nervion is in undefined state."
+        );
+        std::string pods_str =
+          executor
+            .run(
+              {"kubectl", "get", "pods", "--no-headers", "--output=name"},
+              false
+            )
+            .future.get();
+        auto pods = Utils::split(pods_str, '\n');
+        for (auto &pod : pods)
+        {
+          if (pod.find("slave-") != std::string::npos)
+          {
+            LOG_DEBUG(logger, "Manually deleting pod: {}", pod);
+            executor.run({"kubectl", "delete", pod, "--wait=false"}, false);
+          }
+        }
       }
 
       curl_easy_cleanup(curl);
 
       // Wait for all pods beginning with name 'slave-' to be deleted
-      info_app.switch_context(contexts.nervion_context);
-
       while (true)
       {
         std::string pods_str =
