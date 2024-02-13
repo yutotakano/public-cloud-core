@@ -393,6 +393,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
       {"eksctl",
        "create",
        "cluster",
+       "--asg-access",
        "--name=nervion-aws-cluster",
        "--region=eu-north-1",
        "--version=1.28",
@@ -424,23 +425,23 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   // Create the nodegroup for the Nervion cluster
   executor
-    .run(
-      {"eksctl",
-       "create",
-       "nodegroup",
-       "--cluster=nervion-aws-cluster",
-       "--name=ng-nervion",
-       "--node-ami-family=AmazonLinux2",
-       "--node-type=t3.small",
-       "--nodes=2",
-       "--nodes-min=2",
-       "--nodes-max=10",
-       "--node-volume-size=20",
-       "--ssh-access",
-       "--ssh-public-key=" + public_key_path,
-       "--managed",
-       "--asg-access"}
-    )
+    .run({
+      "eksctl",
+      "create",
+      "nodegroup",
+      "--cluster=nervion-aws-cluster",
+      "--name=ng-nervion",
+      "--node-ami-family=AmazonLinux2",
+      "--node-type=t3.small",
+      "--nodes-min=2",
+      "--nodes-max=10",
+      "--node-volume-size=20",
+      "--ssh-access",
+      "--ssh-public-key=" + public_key_path,
+      "--managed",
+      "--asg-access",
+      "--node-labels=\"autoscaling=enabled\"" // Todo: check if this is needed
+    })
     .future.get();
 
   // Verify that we can ping the frontend node from the Nervion cluster
@@ -490,6 +491,75 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
        "all",
        "--cidr",
        "0.0.0.0/0"}
+    )
+    .future.get();
+
+  // // Get AWS ARN for using in the next step
+  // auto policy_arn =
+  //   executor
+  //     .run({"aws", "sts", "get-caller-identity", "--query=Arn",
+  //     "--output=text"}
+  //     )
+  //     .future.get();
+
+  // // Create the IAM service account for the cluster autoscaler
+  // executor
+  //   .run(
+  //     {"eksctl",
+  //      "create",
+  //      "iamserviceaccount",
+  //      "--cluster=nervion-aws-cluster",
+  //      "--namespace=kube-system",
+  //      "--name=cluster-autoscaler",
+  //      "--attach-policy-arn=" + policy_arn +
+  //        ":policy/AmazonEKSClusterAutoscalerPolicy",
+  //      "--override-existing-serviceaccounts",
+  //      "--approve"}
+  //   )
+  //   .future.get();
+
+  // Apply cluster auto-scaler
+  executor
+    .run(
+      {"kubectl",
+       "apply",
+       "-f",
+       "scripts/configs/cluster-autoscaler-autodiscover.yaml"}
+    )
+    .future.get();
+
+  // Patch the cluster-autoscaler deployment to use the correct cluster for
+  // auto-discovery (the labels are set by --asg-access at cluster and
+  // nodegroup creation)
+  executor
+    .run(
+      {"kubectl",
+       "patch",
+       "deployment",
+       "cluster-autoscaler",
+       "-n=kube-system",
+       "--type=json",
+       "--patch",
+       R"(
+[
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/command/6",
+    "value": "--node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/nervion-aws-cluster"
+  }
+])"}
+    )
+    .future.get();
+
+  // Annotate the cluster-autoscaler deployment to prevent it from being evicted
+  // by the cluster autoscaler itself
+  executor
+    .run(
+      {"kubectl",
+       "annotate",
+       "deployment.apps/cluster-autoscaler",
+       "-n=kube-system",
+       "cluster-autoscaler.kubernetes.io/safe-to-evict=false"}
     )
     .future.get();
 
@@ -617,16 +687,12 @@ void DeployApp::teardown_aws_eks_fargate()
 {
   LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
 
-  // Delete the Fargate profile and the nodegroups for both clusters
-  eksctl_delete_resource(
-    "fargateprofile",
-    {
-      "--cluster=corekube-aws-cluster",
-      "--name=fp-corekube",
-    }
-  )
-    .get();
-
+  // Delete the nodegroups for both clusters.
+  // Calling deletion on the cluster will normally also invoke deletion on
+  // any of its attached nodegroup or fargateproiles, but because the deletion
+  // of those run synchronously regardless of --wait and take a long time, we
+  // delete long-running ones separately beforehand. Fargate profiles are quick
+  // to delete so we haven't separated it out though.
   eksctl_delete_resource(
     "nodegroup",
     {
@@ -644,18 +710,14 @@ void DeployApp::teardown_aws_eks_fargate()
   );
 
   // The above futures will complete immediately because we don't use --wait.
-  // We choose to do so because we can get more detailed information about the
-  // deletion process by querying the events directly.
-
-  // The above ones (nodegroups + fargate profile) need to be deleted before
-  // attempting to delete clusters, since they have a dependency.
-  eksctl_deletion_details("eksctl-corekube-aws-cluster-fargate").get();
+  // We choose to do so because we can get more detailed information about
+  // the deletion process by querying the events directly.
   eksctl_deletion_details("eksctl-corekube-aws-cluster-nodegroup-ng-corekube")
     .get();
   eksctl_deletion_details("eksctl-nervion-aws-cluster-nodegroup-ng-nervion")
     .get();
 
-  // Delete the Nervion cluster first (as it doesn't depend on anything else)
+  // Delete the Nervion cluster first (as it uses corekube cluster VPCs).
   eksctl_delete_resource("cluster", {"--name=nervion-aws-cluster"});
   eksctl_delete_resource("cluster", {"--name=corekube-aws-cluster"});
 
