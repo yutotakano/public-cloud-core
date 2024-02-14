@@ -121,6 +121,7 @@ std::future<void> LoadTestApp::stop_nervion_controller(
       curl_easy_cleanup(curl);
 
       // Wait for all pods beginning with name 'slave-' to be deleted
+      int last_pod_count = 0;
       while (true)
       {
         std::string pods_str =
@@ -136,7 +137,12 @@ std::future<void> LoadTestApp::stop_nervion_controller(
         if (num_slaves == 0)
           break;
 
-        LOG_INFO(logger, "Waiting for {} pods to be deleted.", num_slaves);
+        if (num_slaves != last_pod_count)
+        {
+          LOG_INFO(logger, "Waiting for {} pods to be deleted.", num_slaves);
+          last_pod_count = num_slaves;
+        }
+
         std::this_thread::sleep_for(std::chrono::seconds(5));
       }
 
