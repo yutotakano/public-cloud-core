@@ -716,7 +716,8 @@ void DeployApp::teardown_aws_eks_fargate()
       "--cluster=corekube-aws-cluster",
       "--name=ng-corekube",
     }
-  );
+  )
+    .get();
 
   eksctl_delete_resource(
     "nodegroup",
@@ -724,7 +725,8 @@ void DeployApp::teardown_aws_eks_fargate()
       "--cluster=nervion-aws-cluster",
       "--name=ng-nervion",
     }
-  );
+  )
+    .get();
 
   // The above futures will complete immediately because we don't use --wait.
   // We choose to do so because we can get more detailed information about
@@ -735,8 +737,8 @@ void DeployApp::teardown_aws_eks_fargate()
     .get();
 
   // Delete the Nervion cluster first (as it uses corekube cluster VPCs).
-  eksctl_delete_resource("cluster", {"--name=nervion-aws-cluster"});
-  eksctl_delete_resource("cluster", {"--name=corekube-aws-cluster"});
+  eksctl_delete_resource("cluster", {"--name=nervion-aws-cluster"}).get();
+  eksctl_delete_resource("cluster", {"--name=corekube-aws-cluster"}).get();
 
   eksctl_deletion_details("eksctl-nervion-aws-cluster-cluster").get();
   eksctl_deletion_details("eksctl-corekube-aws-cluster-cluster").get();
