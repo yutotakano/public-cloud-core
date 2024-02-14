@@ -53,6 +53,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   LOG_INFO(logger, "Running loadtest with file: {}", file_path);
 
   int minutes = parser.present<int>("--incremental").value_or(0);
+  LOG_TRACE_L3(logger, "Incremental duration: {}", minutes);
 
   // Send the loadtest file to the Nervion controller
   post_nervion_controller(file_path, info.value(), contexts.value(), minutes);
