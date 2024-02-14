@@ -15,6 +15,9 @@ std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
   auto parser = std::make_unique<argparse::ArgumentParser>("loadtest");
   parser->add_description("Run a loadtest on the current deployment.");
   parser->add_argument("--file").help("Definition file for Nervion load");
+  parser->add_argument("--incremental")
+    .help("Duration of incremental scaling")
+    .scan<'i', int>();
   parser->add_argument("--stop")
     .help("Stop the current loadtest")
     .default_value(false)
@@ -49,8 +52,10 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   LOG_TRACE_L3(logger, "File: {}", file_path);
   LOG_INFO(logger, "Running loadtest with file: {}", file_path);
 
+  int minutes = parser.present<int>("--incremental").value_or(0);
+
   // Send the loadtest file to the Nervion controller
-  post_nervion_controller(file_path, info.value(), contexts.value());
+  post_nervion_controller(file_path, info.value(), contexts.value(), minutes);
 }
 
 std::future<void> LoadTestApp::stop_nervion_controller(
@@ -158,7 +163,8 @@ size_t LoadTestApp::curl_write_callback(
 void LoadTestApp::post_nervion_controller(
   std::string file_path,
   deployment_info_s info,
-  context_info_s contexts
+  context_info_s contexts,
+  int incremental_duration
 )
 {
   // Send the file to the Nervion controller via libcurl
@@ -188,7 +194,11 @@ void LoadTestApp::post_nervion_controller(
 
   field = curl_mime_addpart(form);
   curl_mime_name(field, "scale_minutes");
-  curl_mime_data(field, "0", CURL_ZERO_TERMINATED);
+  curl_mime_data(
+    field,
+    std::to_string(incremental_duration).c_str(),
+    CURL_ZERO_TERMINATED
+  );
 
   field = curl_mime_addpart(form);
   curl_mime_name(field, "multi_ip");

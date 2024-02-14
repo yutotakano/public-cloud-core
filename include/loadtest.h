@@ -23,7 +23,8 @@ private:
   void post_nervion_controller(
     std::string file_path,
     deployment_info_s info,
-    context_info_s contexts
+    context_info_s contexts,
+    int incremental_duration
   );
 
   quill::Logger *logger;
