@@ -83,7 +83,7 @@ module "vpc" {
 # and the kubernetes provider to setup the EKS service
 module "ck_cluster" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.15.3"
+  version = "20.2.1"
 
   cluster_name    = local.ck_cluster_name
   cluster_version = "1.29"
@@ -154,7 +154,7 @@ module "ck_cluster" {
 # and have auto-scaling groups for the worker nodes
 module "nv_cluster" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.15.3"
+  version = "20.2.1"
 
   cluster_name    = local.nv_cluster_name
   cluster_version = "1.29"
@@ -188,6 +188,7 @@ module "nv_cluster" {
       tags = {
         "k8s.io/cluster-autoscaler/enabled"                  = "true"
         "k8s.io/cluster-autoscaler/${local.nv_cluster_name}" = "owned"
+        "kubernetes.io/cluster/${local.nv_cluster_name}"     = "owned"
       }
     }
   }
@@ -239,7 +240,11 @@ provider "helm" {
   kubernetes {
     host                   = data.aws_eks_cluster.nervion.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.nervion.certificate_authority.0.data)
-    token                  = data.aws_eks_cluster_auth.nervion.token
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", local.nv_cluster_name]
+      command     = "aws"
+    }
   }
 }
 
@@ -247,7 +252,9 @@ provider "helm" {
 data "aws_region" "current" {}
 
 # Deploy the cluster-autoscaler to the Nervion cluster
-resource "helm_release" "cluster_autoscaler" {
+resource "helm_release" "nv_cluster_autoscaler" {
+  depends_on = [module.nv_cluster]
+
   name       = "cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
@@ -275,6 +282,17 @@ resource "helm_release" "cluster_autoscaler" {
   }
 
   set {
+    name  = "rbac.serviceAccount.name"
+    value = "cluster-autoscaler-aws"
+  }
+
+  set {
+    name  = "rbac.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.nv_cluster_autoscaler_irsa.iam_role_arn
+    type  = "string"
+  }
+
+  set {
     name  = "rbac.create"
     value = "true"
   }
@@ -282,6 +300,25 @@ resource "helm_release" "cluster_autoscaler" {
   set {
     name  = "sslCertPath"
     value = "/etc/ssl/certs/ca-bundle.crt"
+  }
+}
+
+# Create an IAM role for the cluster-autoscaler to use
+module "nv_cluster_autoscaler_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 4.12"
+
+  role_name_prefix = "cluster-autoscaler"
+  role_description = "IRSA role for cluster autoscaler"
+
+  attach_cluster_autoscaler_policy = true
+  cluster_autoscaler_cluster_ids   = [module.nv_cluster.cluster_id]
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.nv_cluster.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:cluster-autoscaler-aws"]
+    }
   }
 }
 
@@ -298,36 +335,46 @@ provider "kubectl" {
   load_config_file       = false
   host                   = data.aws_eks_cluster.corekube.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.corekube.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.corekube.token
-  alias                  = "corekube"
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", local.ck_cluster_name]
+    command     = "aws"
+  }
+  alias = "corekube"
 }
 
 resource "kubectl_manifest" "corekube_metrics_server" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/metrics-server.yaml")
   provider  = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_grafana" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/grafana.yaml")
   provider  = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_prometheus" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/prometheus.yaml")
   provider  = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_opencost" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/opencost.yaml")
   provider  = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_frontend" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/5G/corekube-frontend.yaml")
   provider  = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_workers" {
+  depends_on = [ module.ck_cluster ]
   yaml_body = file("${path.module}/scripts/configs/5G/corekube-worker-and-db.yaml")
   provider  = kubectl.corekube
 }
@@ -337,16 +384,22 @@ provider "kubectl" {
   load_config_file       = false
   host                   = data.aws_eks_cluster.nervion.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.nervion.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.nervion.token
-  alias                  = "nervion"
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", local.nv_cluster_name]
+    command     = "aws"
+  }
+  alias = "nervion"
 }
 
 resource "kubectl_manifest" "nervion_metrics_server" {
+  depends_on = [ module.nv_cluster ]
   yaml_body = file("${path.module}/scripts/configs/metrics-server.yaml")
   provider  = kubectl.nervion
 }
 
 resource "kubectl_manifest" "nervion_ran_controller" {
+  depends_on = [ module.nv_cluster ]
   yaml_body = file("${path.module}/scripts/configs/nervion.yaml")
   provider  = kubectl.nervion
 }
