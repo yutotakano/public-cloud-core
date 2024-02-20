@@ -4,3 +4,6 @@ publicore.exe
 objects
 .vscode
 external
+.terraform
+.terraform.tfstate.lock.info
+terraform.tfstate*
