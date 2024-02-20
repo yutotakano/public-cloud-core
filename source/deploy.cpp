@@ -140,151 +140,230 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   // Create the EKS cluster (bootstrapped with private+public VPC subnets and
   // no nodegroup)
-  executor
-    .run(
-      {"eksctl",
-       "create",
-       "cluster",
-       "--name=corekube-aws-cluster",
-       "--region=eu-north-1",
-       "--version=1.29",
-       "--without-nodegroup",
-       "--node-private-networking",
-       "--ssh-access",
-       "--ssh-public-key=" + public_key_path}
-    )
-    .future.get();
+  auto create_corekube_cluster = tf_taskflow.emplace(
+    [this, &public_key_path]()
+    {
+      executor
+        .run(
+          {"eksctl",
+           "create",
+           "cluster",
+           "--name=corekube-aws-cluster",
+           "--region=eu-north-1",
+           "--version=1.29",
+           "--without-nodegroup",
+           "--node-private-networking",
+           "--ssh-access",
+           "--ssh-public-key=" + public_key_path}
+        )
+        .future.get();
+    }
+  );
 
   // Enable prefix delegation on the cluster before we create nodes to increase
-  // the number of possible pods & IP addresses
-  executor
-    .run(
-      {"kubectl",
-       "set",
-       "env",
-       "daemonset",
-       "aws-node",
-       "-n=kube-system",
-       "ENABLE_PREFIX_DELEGATION=true"}
-    )
-    .future.get();
+  // the number of possible pods & IP addresses -- using t3.small, up to 146
+  // pods per node instead of default 11 pods per node.
+  // default: (3 enis x (4 max ip per eni - 1) + 2)
+  // prefix delegated: (3 enis x (4 max ip per eni - 1) x 16 + 2)
+  auto enable_prefix_delegation = tf_taskflow.emplace(
+    [this]()
+    {
+      executor
+        .run(
+          {"kubectl",
+           "set",
+           "env",
+           "daemonset",
+           "aws-node",
+           "-n=kube-system",
+           "ENABLE_PREFIX_DELEGATION=true"}
+        )
+        .future.get();
+    }
+  );
 
   // Create a nodegroup to attach to the cluster - this is for the frontend
   // and database.
-  auto ng_future =
-    executor
-      .run(
-        {"eksctl",
-         "create",
-         "nodegroup",
-         "--cluster=corekube-aws-cluster",
-         "--name=ng-corekube",
-         "--node-ami-family=AmazonLinux2",
-         "--node-type=t3.small",
-         "--nodes=1",
-         "--nodes-min=1",
-         "--nodes-max=1",
-         "--node-volume-size=20",
-         "--ssh-access",
-         "--ssh-public-key=" + public_key_path,
-         "--managed",
-         "--asg-access"}
-      )
-      .future;
+  auto create_corekube_nodegroup = tf_taskflow.emplace(
+    [this, &public_key_path]()
+    {
+      executor
+        .run(
+          {"eksctl",
+           "create",
+           "nodegroup",
+           "--cluster=corekube-aws-cluster",
+           "--name=ng-corekube",
+           "--node-ami-family=AmazonLinux2",
+           "--node-type=t3.small",
+           "--nodes=1",
+           "--nodes-min=1",
+           "--nodes-max=1",
+           "--node-volume-size=20",
+           "--ssh-access",
+           "--ssh-public-key=" + public_key_path,
+           "--managed",
+           "--asg-access"}
+        )
+        .future;
+    }
+  );
 
   // Create a Fargate profile to attach to the cluster, for the backend
-  auto fp_future =
-    executor
-      .run(
-        {"eksctl",
-         "create",
-         "fargateprofile",
-         "--namespace=default",
-         "--namespace=kube-system",
-         "--namespace=grafana",
-         "--namespace=prometheus",
-         "--cluster=corekube-aws-cluster",
-         "--name=fp-corekube"}
-      )
-      .future;
+  auto create_corekube_fargateprofile = tf_taskflow.emplace(
+    [this]()
+    {
+      executor
+        .run(
+          {"eksctl",
+           "create",
+           "fargateprofile",
+           "--namespace=default",
+           "--namespace=kube-system",
+           "--namespace=grafana",
+           "--namespace=prometheus",
+           "--cluster=corekube-aws-cluster",
+           "--name=fp-corekube"}
+        )
+        .future;
+    }
+  );
 
-  // Wait for the nodegroup and Fargate profile to be created
-  ng_future.get();
-  fp_future.get();
+  std::string public_subnets;
 
   // Collect the public subnets for the Fargate profile, which we will use later
   // to attach Nervion
-  auto public_subnets_tab =
-    executor
-      .run(
-        {"aws",
-         "ec2",
-         "describe-subnets",
-         "--filter",
-         "Name=tag:alpha.eksctl.io/cluster-name,Values=corekube-aws-cluster",
-         "Name=tag:aws:cloudformation:logical-id,Values=SubnetPublic*",
-         "--query",
-         "Subnets[*].SubnetId",
-         "--output",
-         "text"},
-        false
-      )
-      .future.get();
-
-  // The output from above is tab-separated so we replace tabs with commas
-  std::string public_subnets_comma = public_subnets_tab;
-  std::replace(
-    public_subnets_comma.begin(),
-    public_subnets_comma.end(),
-    '\t',
-    ','
+  auto get_public_subnets = tf_taskflow.emplace(
+    [this, &public_subnets]()
+    {
+      public_subnets =
+        executor
+          .run(
+            {"aws",
+             "ec2",
+             "describe-subnets",
+             "--filter",
+             "Name=tag:alpha.eksctl.io/"
+             "cluster-name,Values=corekube-aws-cluster",
+             "Name=tag:aws:cloudformation:logical-id,Values=SubnetPublic*",
+             "--query",
+             "Subnets[*].SubnetId",
+             "--output",
+             "text"},
+            false
+          )
+          .future.get();
+      std::replace(public_subnets.begin(), public_subnets.end(), '\t', ',');
+    }
   );
 
-  LOG_INFO(logger, "Public subnets: {}", public_subnets_comma);
+  std::string private_subnets;
 
-  // Collect pivate subnets for the Fargate profile
-  auto private_subnets_tab =
-    executor
-      .run(
-        {"aws",
-         "ec2",
-         "describe-subnets",
-         "--filter",
-         "Name=tag:alpha.eksctl.io/cluster-name,Values=corekube-aws-cluster",
-         "Name=tag:aws:cloudformation:logical-id,Values=SubnetPrivate*",
-         "--query",
-         "Subnets[*].SubnetId",
-         "--output",
-         "text"},
-        false
-      )
-      .future.get();
-
-  // The output from above is tab-separated so we replace tabs with commas
-  std::string private_subnets_comma = private_subnets_tab;
-  std::replace(
-    private_subnets_comma.begin(),
-    private_subnets_comma.end(),
-    '\t',
-    ','
+  // Collect the private subnets for the Fargate profile, which we will use
+  // later to attach Nervion
+  auto get_private_subnets = tf_taskflow.emplace(
+    [this, &private_subnets]()
+    {
+      private_subnets =
+        executor
+          .run(
+            {"aws",
+             "ec2",
+             "describe-subnets",
+             "--filter",
+             "Name=tag:alpha.eksctl.io/"
+             "cluster-name,Values=corekube-aws-cluster",
+             "Name=tag:aws:cloudformation:logical-id,Values=SubnetPrivate*",
+             "--query",
+             "Subnets[*].SubnetId",
+             "--output",
+             "text"},
+            false
+          )
+          .future.get();
+      std::replace(private_subnets.begin(), private_subnets.end(), '\t', ',');
+    }
   );
 
-  LOG_INFO(logger, "Private subnets: {}", private_subnets_comma);
+  std::string frontend_ip;
 
   // Get the VPC-internal IP of the frontend node
-  auto frontend_ip =
-    executor
-      .run(
-        {"kubectl",
-         "get",
-         "nodes",
-         "-o",
-         "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
-         "address}",
-         "-l",
-         "alpha.eksctl.io/nodegroup-name=ng-corekube"}
-      )
-      .future.get();
+  auto get_frontend_ip = tf_taskflow.emplace(
+    [this, &frontend_ip]()
+    {
+      frontend_ip =
+        executor
+          .run(
+            {"kubectl",
+             "get",
+             "nodes",
+             "-o",
+             "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
+             "address}",
+             "-l",
+             "alpha.eksctl.io/nodegroup-name=ng-corekube"}
+          )
+          .future.get();
+    }
+  );
+
+  // Get the CoreKube cluster security group id
+  std::string ck_security_group_id;
+  auto get_corekube_security_group = tf_taskflow.emplace(
+    [this, &ck_security_group_id]()
+    {
+      ck_security_group_id =
+        executor
+          .run(
+            {"aws",
+             "ec2",
+             "describe-instances",
+             "--filters",
+             "Name=tag:eks:cluster-name,Values=corekube-aws-cluster",
+             "--query",
+             "Reservations[*].Instances[*].SecurityGroups[?starts_with("
+             "GroupName, "
+             "`eks-`)][][].GroupId | [0]",
+             "--output=text"}
+          )
+          .future.get();
+    }
+  );
+
+  // # Add a new rule to the security group which allows all incoming traffic
+  auto allow_corekube_incoming_traffic = tf_taskflow.emplace(
+    [this, &ck_security_group_id]()
+    {
+      executor
+        .run(
+          {"aws",
+           "ec2",
+           "authorize-security-group-ingress",
+           "--group-id",
+           ck_security_group_id,
+           "--protocol",
+           "all",
+           "--cidr",
+           "0.0.0.0/0"}
+        )
+        .future.get();
+    }
+  );
+
+  create_corekube_cluster.precede(enable_prefix_delegation);
+  create_corekube_cluster.precede(create_corekube_nodegroup);
+  create_corekube_cluster.precede(create_corekube_fargateprofile);
+  create_corekube_cluster.precede(get_public_subnets);
+  create_corekube_cluster.precede(get_private_subnets);
+  create_corekube_cluster.precede(get_corekube_security_group);
+  create_corekube_nodegroup.precede(get_frontend_ip);
+  get_corekube_security_group.precede(allow_corekube_incoming_traffic);
+
+  tf::Future ft = tf_executor.run(tf_taskflow);
+  ft.get();
+
+  LOG_INFO(logger, "Public subnets: {}", public_subnets);
+  LOG_INFO(logger, "Private subnets: {}", private_subnets);
 
   // Apply metrics server deployment
   executor
@@ -353,58 +432,32 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
       )
       .future.get();
 
-  // Get the CoreKube cluster security group id
-  auto ck_security_group_id =
-    executor
-      .run(
-        {"aws",
-         "ec2",
-         "describe-instances",
-         "--filters",
-         "Name=tag:eks:cluster-name,Values=corekube-aws-cluster",
-         "--query",
-         "Reservations[*].Instances[*].SecurityGroups[?starts_with(GroupName, "
-         "`eks-`)][][].GroupId | [0]",
-         "--output=text"}
-      )
-      .future.get();
-
-  // # Add a new rule to the security group which allows all incoming traffic
-  executor
-    .run(
-      {"aws",
-       "ec2",
-       "authorize-security-group-ingress",
-       "--group-id",
-       ck_security_group_id,
-       "--protocol",
-       "all",
-       "--cidr",
-       "0.0.0.0/0"}
-    )
-    .future.get();
-
   // don't create nodegroup automatically, we'll set a specific size and use
   // that also use the same subnet as the corekube because otherwise I had
   // massive problems with trying to reach the other cluster over public
   // internet
-  executor
-    .run(
-      {"eksctl",
-       "create",
-       "cluster",
-       "--asg-access",
-       "--name=nervion-aws-cluster",
-       "--region=eu-north-1",
-       "--version=1.29",
-       "--without-nodegroup",
-       "--node-private-networking",
-       "--vpc-public-subnets",
-       public_subnets_comma,
-       "--vpc-private-subnets",
-       private_subnets_comma}
-    )
-    .future.get();
+  auto create_nervion_cluster = tf_taskflow.emplace(
+    [this, &public_subnets, &private_subnets]()
+    {
+      executor
+        .run(
+          {"eksctl",
+           "create",
+           "cluster",
+           "--asg-access",
+           "--name=nervion-aws-cluster",
+           "--region=eu-north-1",
+           "--version=1.29",
+           "--without-nodegroup",
+           "--node-private-networking",
+           "--vpc-public-subnets",
+           public_subnets,
+           "--vpc-private-subnets",
+           private_subnets}
+        )
+        .future.get();
+    }
+  );
 
   // Enable prefix delegation on the cluster before we create nodes to increase
   // the number of possible pods & IP addresses -- using t3.small, up to 146

@@ -4,6 +4,7 @@
 #include "argparse/argparse.hpp"
 #include "executor.h"
 #include "quill/Quill.h"
+#include <taskflow/taskflow.hpp>
 
 class DeployApp
 {
@@ -33,6 +34,9 @@ private:
     std::string resource_type,
     std::vector<std::string> args
   );
+
+  tf::Executor tf_executor;
+  tf::Taskflow tf_taskflow;
 
   quill::Logger *logger;
   Executor executor;
