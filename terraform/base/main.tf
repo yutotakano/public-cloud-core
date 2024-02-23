@@ -1,0 +1,245 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.37"
+    }
+  }
+
+  required_version = ">= 1.2.0"
+}
+
+
+
+# Configure the AWS Provider: all subsequent resources under this provider will
+# be created in the specified region.
+
+provider "aws" {
+  region = "eu-north-1"
+}
+
+# Data source to fetch only the available AWS availability zones (excluding
+# local zones since EKS nodegroups don't support them)
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
+
+# Register the machine's SSH key with AWS
+resource "aws_key_pair" "personal_key" {
+  key_name   = "personal_key"
+  public_key = file("~/.ssh/id_ed25519.pub")
+}
+
+# Local variables
+locals {
+  ck_cluster_name = "corekube-eks"
+  nv_cluster_name = "nervion-eks"
+}
+
+# Use the eks module to create the AWS VPC: this uses the aws provider
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.0.0"
+
+  name = "corekube-vpc"
+
+  cidr = "10.0.0.0/16"
+  azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+  # single_nat_gateway   = false
+  # one_nat_gateway_per_az = true
+  # enable_dns_support = true
+  enable_dns_hostnames = true
+  # create_igw = true
+
+  # These tags are required for things like the load balancer
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${local.ck_cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                         = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${local.ck_cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"                = 1
+  }
+}
+
+# Use the eks module to create the EKS cluster: uses the aws provider to create
+# and the kubernetes provider to setup the EKS service
+module "ck_cluster" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.2.1"
+
+  cluster_name    = local.ck_cluster_name
+  cluster_version = "1.29"
+
+  vpc_id                                   = module.vpc.vpc_id
+  subnet_ids                               = module.vpc.private_subnets
+  enable_cluster_creator_admin_permissions = true
+  cluster_endpoint_public_access           = true
+  cluster_endpoint_private_access          = true
+  enable_irsa                              = true
+
+  # Use AmazonLinux2 for the EKS worker nodes
+  eks_managed_node_group_defaults = {
+    ami_type = "AL2_x86_64"
+  }
+
+  # Create a node group for the frontend and other kube-system pods: this isn't
+  # meant to scale
+  eks_managed_node_groups = {
+    frontend = {
+      name = "corekube-ng-1"
+
+      instance_types = ["t3.small"]
+
+      min_size     = 1
+      max_size     = 1
+      desired_size = 1
+      volume_size  = 20
+
+      # SSH key pair to allow for direct node access
+      key_name = "personal_key"
+    }
+  }
+
+  # Create a fargate profile for the actual CoreKube worker pods
+  fargate_profiles = {
+    app_wildcard = {
+      selectors = [
+        { namespace = "default" },
+        { namespace = "grafana" },
+        { namespace = "prometheus" }
+      ]
+    }
+    kube_system = {
+      name = "kube-system"
+      selectors = [
+        { namespace = "kube-system" }
+      ]
+    }
+  }
+
+  # Enable Prefix Delegation for the VPC CNI, so we get more IPv4 addresses:
+  # this is required to simply run more pods
+  cluster_addons = {
+    coredns = {
+      preserve    = true
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true # To ensure access to the latest settings provided
+      configuration_values = jsonencode({
+        env = {
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
+        }
+      })
+    }
+  }
+}
+
+
+# Create the Nervion cluster: this should use the VPC created for the CoreKube,
+# and have auto-scaling groups for the worker nodes
+module "nv_cluster" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.2.1"
+
+  cluster_name    = local.nv_cluster_name
+  cluster_version = "1.29"
+
+  vpc_id                                   = module.vpc.vpc_id
+  subnet_ids                               = module.vpc.private_subnets
+  enable_cluster_creator_admin_permissions = true
+  cluster_endpoint_public_access           = true
+  cluster_endpoint_private_access          = true
+  enable_irsa                              = true
+
+  # Use AmazonLinux2 for the EKS worker nodes
+  eks_managed_node_group_defaults = {
+    ami_type = "AL2_x86_64"
+  }
+
+  # Create a node group for the frontend and other kube-system pods: this isn't
+  # meant to scale
+  eks_managed_node_groups = {
+    nervion = {
+      name = "nervion-ng-1"
+
+      instance_types = ["t3.small"]
+      capacity_type  = "ON_DEMAND"
+
+      min_size     = 1
+      max_size     = 10
+      desired_size = 2
+      volume_size  = 20
+
+      # SSH key pair to allow for direct node access
+      key_name = "personal_key"
+
+      tags = {
+        "k8s.io/cluster-autoscaler/enabled"                  = "true"
+        "k8s.io/cluster-autoscaler/${local.nv_cluster_name}" = "owned"
+        "kubernetes.io/cluster/${local.nv_cluster_name}"     = "owned"
+        "k8s.io/cluster-autoscaler/node-template/label/role" = "nervion-scaling-ng"
+      }
+    }
+  }
+
+  # Enable Prefix Delegation for the VPC CNI, so we get more IPv4 addresses:
+  # this is required to simply run more pods
+  cluster_addons = {
+    coredns = {
+      preserve    = true
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      resolve_conflicts = "OVERWRITE"
+      before_compute    = true
+      most_recent       = true # To ensure access to the latest settings provided
+      configuration_values = jsonencode({
+        env = {
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
+        }
+      })
+    }
+  }
+}
+
+locals {
+  nervion_scaling_ng_asg_taglist = {
+    "k8s.io/cluster-autoscaler/enabled"                  = "true"
+    "k8s.io/cluster-autoscaler/${local.nv_cluster_name}" = "owned"
+    "kubernetes.io/cluster/${local.nv_cluster_name}"     = "owned"
+    "k8s.io/cluster-autoscaler/node-template/label/role" = "nervion-scaling-ng"
+  }
+}
+
+resource "aws_autoscaling_group_tag" "scaling_ng" {
+  for_each               = local.nervion_scaling_ng_asg_taglist
+  autoscaling_group_name = element(module.nv_cluster.eks_managed_node_groups_autoscaling_group_names, 0)
+
+  tag {
+    key                 = each.key
+    value               = each.value
+    propagate_at_launch = true
+  }
+}
