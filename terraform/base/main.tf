@@ -58,9 +58,9 @@ module "vpc" {
   single_nat_gateway = true
   # single_nat_gateway   = false
   # one_nat_gateway_per_az = true
-  # enable_dns_support = true
+  enable_dns_support = true
   enable_dns_hostnames = true
-  # create_igw = true
+  create_igw = true
 
   # These tags are required for things like the load balancer
   public_subnet_tags = {
@@ -73,6 +73,7 @@ module "vpc" {
     "kubernetes.io/role/internal-elb"                = 1
   }
 }
+
 
 # Use the eks module to create the EKS cluster: uses the aws provider to create
 # and the kubernetes provider to setup the EKS service
@@ -89,6 +90,22 @@ module "ck_cluster" {
   cluster_endpoint_public_access           = true
   cluster_endpoint_private_access          = true
   enable_irsa                              = true
+
+  # Allow all ingress traffic to the VPC's default security group. Otherwise
+  # things like DNS resolution (UDP port 53) won't work, so even if pinging
+  # IP might work, it can't resolve any cluster DNSes (svc.cluster.internal) or
+  # domains (like the apt repo)
+  node_security_group_additional_rules = {
+    ingress_self_all  = {
+      description      = "Allow all incoming traffic"
+      type             = "ingress"
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      security_group_id = module.vpc.default_security_group_id
+    }
+  }
 
   # Use AmazonLinux2 for the EKS worker nodes
   eks_managed_node_group_defaults = {
@@ -122,21 +139,17 @@ module "ck_cluster" {
         { namespace = "prometheus" }
       ]
     }
-    kube_system = {
-      name = "kube-system"
-      selectors = [
-        { namespace = "kube-system" }
-      ]
-    }
+    # kube_system = {
+    #   name = "kube-system"
+    #   selectors = [
+    #     { namespace = "kube-system" }
+    #   ]
+    # }
   }
 
   # Enable Prefix Delegation for the VPC CNI, so we get more IPv4 addresses:
   # this is required to simply run more pods
   cluster_addons = {
-    coredns = {
-      preserve    = true
-      most_recent = true
-    }
     kube-proxy = {
       most_recent = true
     }
@@ -168,6 +181,22 @@ module "nv_cluster" {
   cluster_endpoint_public_access           = true
   cluster_endpoint_private_access          = true
   enable_irsa                              = true
+
+  # Allow all ingress traffic to the VPC's default security group. Otherwise
+  # things like DNS resolution (UDP port 53) won't work, so even if pinging
+  # IP might work, it can't resolve any cluster DNSes (svc.cluster.internal) or
+  # domains (like the apt repo)
+  node_security_group_additional_rules = {
+    ingress_self_all  = {
+      description      = "Allow all incoming traffic"
+      type             = "ingress"
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      security_group_id = module.vpc.default_security_group_id
+    }
+  }
 
   # Use AmazonLinux2 for the EKS worker nodes
   eks_managed_node_group_defaults = {
@@ -203,10 +232,6 @@ module "nv_cluster" {
   # Enable Prefix Delegation for the VPC CNI, so we get more IPv4 addresses:
   # this is required to simply run more pods
   cluster_addons = {
-    coredns = {
-      preserve    = true
-      most_recent = true
-    }
     kube-proxy = {
       most_recent = true
     }

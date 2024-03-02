@@ -1,19 +1,10 @@
 # <https://www.opencost.io/docs/>
 ---
-
-# The namespace OpenCost will run in
-apiVersion: v1
-kind: Namespace
-metadata:
-    name: opencost
----
-
 # Service account for permissions
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: opencost
-  namespace: opencost
 ---
 
 # Cluster role giving OpenCost to get, list, watch required resources
@@ -110,7 +101,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: opencost
-    namespace: opencost
+    namespace: default
 ---
 
 # Create a deployment for a single cost model pod
@@ -121,7 +112,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: opencost
-  namespace: opencost
   labels:
     app: opencost
 spec:
@@ -136,6 +126,10 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/'
+        prometheus.io/port: '9003'
       labels:
         app: opencost
     spec:
@@ -153,7 +147,7 @@ spec:
               memory: "1G"
           env:
             - name: PROMETHEUS_SERVER_ENDPOINT
-              value: "http://corekube-prometheus.prometheus.svc" # The endpoint should have the form http://<service-name>.<namespace-name>.svc
+              value: "http://corekube-prometheus.default.svc" # The endpoint should have the form http://<service-name>.<namespace-name>.svc
             - name: CLOUD_PROVIDER_API_KEY
               value: "AIzaSyD29bGxmHAVEOBYtgd8sYM2gM2ekfxQX4U" # The GCP Pricing API requires a key. This is supplied just for evaluation.
             - name: CLUSTER_ID
@@ -187,39 +181,29 @@ spec:
       #       items:
       #         - key: cloud-integration.json
       #           path: cloud-integration.json
+      ports:
+        - containerPort: 9003
+          hostPort: 9003
+          name: opencost
+        - containerPort: 9090
+          hostPort: 9090
+          name: opencost-ui
 ---
 
-# Expose internally for Prometheus to scrape
-apiVersion: v1
-kind: Service
-metadata:
-  name: opencost
-  namespace: opencost
-spec:
-  type: ClusterIP
-  selector:
-    app: opencost
-  ports:
-    - name: opencost
-      port: 9003
-      targetPort: 9003
----
-
-# Expose both the cost model and UI externally
-kind: Service
-apiVersion: v1
-metadata:
-  name: opencost
-  namespace: opencost
-spec:
-  selector:
-    app: opencost
-  type: LoadBalancer
-  ports:
-    - name: opencost
-      port: 9003
-      targetPort: 9003
-    - name: opencost-ui
-      port: 9090
-      targetPort: 9090
----
+# # Expose both the cost model and UI externally
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: opencost
+# spec:
+#   selector:
+#     app: opencost
+#   type: LoadBalancer
+#   ports:
+#     - name: opencost
+#       port: 9003
+#       targetPort: 9003
+#     - name: opencost-ui
+#       port: 9090
+#       targetPort: 9090
+# ---

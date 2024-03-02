@@ -31,6 +31,10 @@ spec:
       app: corekube-frontend
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/'
+        prometheus.io/port: '5050'
       labels:
         app: corekube-frontend
         namespace: corekube-frontend
@@ -45,6 +49,7 @@ spec:
           hostPort: 38412 # Necessary on AWS. This means there can only be one frontend pod per node.
           # The alternative is to use NodePort but the default range (not modifiable) is 30000-32767
           # which is not NGAP-compatible (38412).
+          # Fargate does not support HostPort.
           protocol: SCTP
         command: ["/bin/sh", "-c", "./corekube_frontend $(THIS_POD_IP) $(dig +short corekube-worker.default.svc.cluster.local) 5G"]
         env:
