@@ -329,3 +329,62 @@ resource "helm_release" "alb-controller" {
     value = local.ck_cluster_name
   }
  }
+
+
+# Nervion
+
+module "nv_loadbalancer_irsa" {
+  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version    = "~> 5.34"
+
+  role_name = "nv-load-balancer-controller"
+  role_description = "EKS Cluster ${local.nv_cluster_name} Load Balancer Controller"
+
+  attach_load_balancer_controller_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = data.aws_iam_openid_connect_provider.nv_cluster_oidc.arn
+      namespace_service_accounts = ["kube-system:aws-nv-load-balancer-controller"]
+    }
+  }
+}
+
+# Install the AWS Load Balancer Controller
+resource "helm_release" "nv_alb_controller" {
+  provider   = helm.nervion
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+
+  set {
+    name  = "region"
+    value = data.aws_region.current.name
+  }
+
+  set {
+    name  = "vpcId"
+    value = data.aws_vpc.corekube_vpc.id
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-nv-load-balancer-controller"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.nv_loadbalancer_irsa.iam_role_arn
+  }
+
+  set {
+    name  = "clusterName"
+    value = local.nv_cluster_name
+  }
+ }

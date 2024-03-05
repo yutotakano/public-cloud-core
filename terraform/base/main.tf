@@ -65,11 +65,13 @@ module "vpc" {
   # These tags are required for things like the load balancer
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.ck_cluster_name}" = "shared"
+    "kubernetes.io/cluster/${local.nv_cluster_name}" = "shared"
     "kubernetes.io/role/elb"                         = 1
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.ck_cluster_name}" = "shared"
+    "kubernetes.io/cluster/${local.nv_cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"                = 1
   }
 }
