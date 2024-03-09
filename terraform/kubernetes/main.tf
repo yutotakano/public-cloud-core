@@ -181,6 +181,9 @@ data "kubectl_path_documents" "nervion_manifest" {
 }
 
 resource "kubectl_manifest" "corekube_common_setup" {
+  # Need to keep AWS Load Balancer Controller activated while we destroy the
+  # deployments so this dependency is explicitly stated
+  depends_on = [ helm_release.alb-controller, module.ck_loadbalancer_irsa ]
   for_each  = data.kubectl_path_documents.common_manifest.manifests
   yaml_body = each.value
   wait = true
@@ -188,6 +191,9 @@ resource "kubectl_manifest" "corekube_common_setup" {
 }
 
 resource "kubectl_manifest" "corekube_setup" {
+  # Need to keep AWS Load Balancer Controller activated while we destroy the
+  # deployments so this dependency is explicitly stated
+  depends_on = [ helm_release.alb-controller, module.ck_loadbalancer_irsa ]
   for_each  = data.kubectl_path_documents.corekube_manifest.manifests
   yaml_body = each.value
   wait = true
@@ -232,6 +238,9 @@ provider "kubectl" {
 }
 
 resource "kubectl_manifest" "nervion_common_setup" {
+  # Need to keep AWS Load Balancer Controller activated while we destroy the
+  # deployments so this dependency is explicitly stated
+  depends_on = [ helm_release.nv_alb_controller, module.nv_loadbalancer_irsa ]
   wait = true
   for_each  = data.kubectl_path_documents.common_manifest.manifests
   yaml_body = each.value
@@ -239,6 +248,9 @@ resource "kubectl_manifest" "nervion_common_setup" {
 }
 
 resource "kubectl_manifest" "nervion_setup" {
+  # Need to keep AWS Load Balancer Controller activated while we destroy the
+  # deployments so this dependency is explicitly stated
+  depends_on = [ helm_release.nv_alb_controller, module.nv_loadbalancer_irsa ]
   wait = true
   for_each  = data.kubectl_path_documents.nervion_manifest.manifests
   yaml_body = each.value
@@ -246,7 +258,6 @@ resource "kubectl_manifest" "nervion_setup" {
 }
 
 
-## For CoreKube:
 ## Use AWS Load Balancer Controller (set up role and install) since Fargate
 ## doesn't support the classic LB
 
@@ -328,7 +339,15 @@ resource "helm_release" "alb-controller" {
     name  = "clusterName"
     value = local.ck_cluster_name
   }
- }
+
+  // This is required for the AWS Load Balancer Controller since otherwise
+  // the Helm chart when destroyed will not delete the security groups (bug?)
+  // and the VPC will not be deleted due to this hanging resource
+  set {
+    name = "enableBackendSecurityGroup"
+    value = "false"
+  }
+}
 
 
 # Nervion
@@ -387,4 +406,9 @@ resource "helm_release" "nv_alb_controller" {
     name  = "clusterName"
     value = local.nv_cluster_name
   }
- }
+
+  set {
+    name = "enableBackendSecurityGroup"
+    value = "false"
+  }
+}
