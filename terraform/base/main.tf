@@ -167,6 +167,22 @@ module "ck_cluster" {
   }
 }
 
+// Make sure eks-cluster-sg-corekube-eks-365405836 (the security group for the
+// EKS cluster, NOT the additional security group for the cluster, nor the node
+// security group) allows all incoming traffic -- this is because the Fargate
+// pods inherit the security group of the EKS cluster, and while pods within
+// Fargate can reach each other without any security group rules, the frontend
+// being a node group cannot.
+resource "aws_security_group_rule" "ingress_all" {
+  description      = "Allow all incoming traffic from nodes (inherited by Fargate pods; needed for nodegroups to reach Fargate)"
+  type        = "ingress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = module.ck_cluster.cluster_primary_security_group_id
+}
+
 
 # Create the Nervion cluster: this should use the VPC created for the CoreKube,
 # and have auto-scaling groups for the worker nodes
