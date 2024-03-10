@@ -66,8 +66,6 @@ spec:
         - '1'
         ports:
         - containerPort: 5050
-        securityContext:
-          privileged: false # Required to access the Kubernetes API
 
 ---
 
