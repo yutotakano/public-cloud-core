@@ -86,6 +86,7 @@ spec:
       labels:
         app: corekube-prometheus
     spec:
+      serviceAccountName: corekube-prometheus-sa
       containers:
       - name: prometheus
         image: prom/prometheus
@@ -101,3 +102,47 @@ spec:
       - name: corekube-prometheus-config-volume
         configMap:
           name: corekube-prometheus-conf
+
+---
+
+# Create a Service Account to be used by Prometheus when querying the Kubernetes
+# API for service discovery
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: corekube-prometheus-sa
+
+---
+
+# Create a ClusterRole that has the capabilities to get/list the pods/nodes in
+# the API
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: corekube-prometheus-cr
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "services", "pods", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get"]
+- apiGroups: ["extensions"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+
+---
+
+# Bind the above ClusterRole to the Service Account
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: corekube-prometheus-crb
+subjects:
+- kind: ServiceAccount
+  name: corekube-prometheus-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: corekube-prometheus-cr
+  apiGroup: rbac.authorization.k8s.io
