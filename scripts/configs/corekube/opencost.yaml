@@ -128,7 +128,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/path: '/'
+        prometheus.io/path: '/metrics'
         prometheus.io/port: '9003'
       labels:
         app: opencost
