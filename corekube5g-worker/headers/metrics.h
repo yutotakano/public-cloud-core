@@ -8,7 +8,8 @@
 typedef struct worker_metrics {
     unsigned long long start_time;
     uint64_t ue_id;
-    int message_type;
+    int ngap_message_type;
+    int nas_message_type;
     int invalid;
     int latency;
     int handle_latency;

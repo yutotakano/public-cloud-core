@@ -103,7 +103,7 @@ int ngap_initiatingMessage_handler(ogs_ngap_message_t *initiatingMessage, messag
     ogs_info("Handling NGAP message of type InitiatingMessage");
 
     NGAP_InitiatingMessage__value_PR messageType = initiatingMessage->choice.initiatingMessage->value.present;
-    response->stats->message_type = (int)messageType;
+    response->stats->ngap_message_type = (int)messageType;
 
     switch (messageType) {
         case NGAP_InitiatingMessage__value_PR_NGSetupRequest:
@@ -128,7 +128,7 @@ int ngap_successfulOutcome_handler(ogs_ngap_message_t *ngap_message, message_han
     // all successful outcomes have no response
     response->num_responses = 0;
 
-    response->stats->message_type = (int)successfulOutcome->value.present;
+    response->stats->ngap_message_type = (int)successfulOutcome->value.present;
 
     switch (successfulOutcome->value.present) {
         case NGAP_SuccessfulOutcome__value_PR_InitialContextSetupResponse:

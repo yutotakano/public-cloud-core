@@ -37,6 +37,8 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
             return OGS_ERROR;
     }
 
+    response->stats->nas_message_type = params->nas_message_type;
+
     ogs_assert(handle_outcome == OGS_OK);
 
     return nas_message_to_bytes(params, response);

@@ -66,20 +66,21 @@ unsigned long long get_microtime()
 int metrics_send(int sock, worker_metrics_t *stats)
 {
   int res;
-  char buffer[256];
+  char buffer[512];
   int buffer_len = 0;
   ogs_debug("Creating metrics byte buffer\n");
 
-  buffer_len += sprintf(buffer + buffer_len, "start_time:%llu|", stats->start_time);
-	buffer_len += sprintf(buffer + buffer_len, "ue_id:%ld|", stats->ue_id);
-	buffer_len += sprintf(buffer + buffer_len, "message_type:%d|", stats->message_type);
-	buffer_len += sprintf(buffer + buffer_len, "invalid:%d|", stats->invalid);
-	buffer_len += sprintf(buffer + buffer_len, "latency:%d|", stats->latency);
-	buffer_len += sprintf(buffer + buffer_len, "handle_latency:%d|", stats->handle_latency);
-	buffer_len += sprintf(buffer + buffer_len, "decode_latency:%d|", stats->decode_latency);
-	buffer_len += sprintf(buffer + buffer_len, "encode_latency:%d|", stats->encode_latency);
-	buffer_len += sprintf(buffer + buffer_len, "send_latency:%d|", stats->send_latency);
-	buffer_len += sprintf(buffer + buffer_len, "end_time:%llu\n", stats->end_time);
+  buffer_len += sprintf(buffer + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_nas_type:%d|", stats->nas_message_type);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_invalid:%d|", stats->invalid);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_latency:%d|", stats->latency);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_handle_latency:%d|", stats->handle_latency);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_decode_latency:%d|", stats->decode_latency);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
+	buffer_len += sprintf(buffer + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
 
 	ogs_trace("Sending metrics data: %s", buffer);
   res = send(sock, buffer, buffer_len, 0);

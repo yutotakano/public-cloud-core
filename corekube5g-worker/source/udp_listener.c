@@ -237,12 +237,14 @@ int main(int argc, char const *argv[])
 	// connecto to the metrics server
 	metrics_sock = metrics_connect((char *)argv[5], 0);
 	ogs_assert(metrics_sock != -1);
+	ogs_info("Metrics socket configured correctly.\n");
 
 	// setup the DB IP address
 	//db_ip_address = (char*) core_calloc(strlen((char *)argv[2]), sizeof(char));
 	//memcpy(db_ip_address, (char *)argv[2], strlen((char *)argv[2]));
 	db_sock = db_connect((char *)argv[2], 0);
 	ogs_assert(db_sock != -1);
+	ogs_info("DB socket configured correctly.\n");
 
 	start_listener((char *)argv[1], metrics_sock, use_threads);
 
