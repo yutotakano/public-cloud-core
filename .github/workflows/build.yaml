@@ -221,7 +221,7 @@ jobs:
   build_ran_controller:
     needs: changes
     if: ${{ needs.changes.outputs.ran_controller == 'true' }}
-    name: Build and push Nervion RAN Emulator controller
+    name: Build and push Nervion controller
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -263,7 +263,7 @@ jobs:
   build_ran_slave:
     needs: changes
     if: ${{ needs.changes.outputs.ran_slave == 'true' }}
-    name: Build and push Nervion RAN Emulator slave
+    name: Build and push Nervion slave
     runs-on: ubuntu-latest
     permissions:
       contents: read
