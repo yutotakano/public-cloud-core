@@ -121,7 +121,7 @@ jobs:
   # =========================================================
   build_corekube_worker:
     needs: changes
-    if: ${{ needs.changes.outputs.corekube_worker == 'true' }}
+    if: ${{ needs.changes.outputs.corekube_worker == 'true' || needs.changes.outputs.libck == 'true' }}
     name: Build and push CoreKube Worker
     runs-on: ubuntu-latest
     steps:
