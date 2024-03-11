@@ -1,0 +1,215 @@
+name: Build Docker Images
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  # ================================================================
+  # Find what changes have been made and determine which jobs to run
+  # ================================================================
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      corekube_db: ${{ steps.filter.outputs.corekube_db }}
+      corekube_frontend: ${{ steps.filter.outputs.corekube_frontend }}
+      corekube_worker: ${{ steps.filter.outputs.corekube_worker }}
+      libck: ${{ steps.filter.outputs.libck }}
+      ran_controller: ${{ steps.filter.outputs.ran_controller }}
+      ran_slave: ${{ steps.filter.outputs.ran_slave }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Output is set to true if there are changes in any of the paths
+          filters: |
+            corekube_db:
+              - 'corekube-db/**'
+              - '!**/*.md'
+            corekube_frontend:
+              - 'corekube-frontend/**'
+              - '!**/*.md'
+            corekube_worker:
+              - 'corekube5g-worker/**'
+              - '!**/*.md'
+            libck:
+              - 'libck/**'
+              - '!**/*.md'
+            ran_controller:
+              - 'ran_emulator/kubernetes/docker_controller/**'
+              - 'ran_emulator/ran_controller/**'
+            ran_slave:
+              - 'ran_emulator/**'
+              - '!ran_emulator/kubernetes/docker_controller/**'
+              - '!ran_emulator/ran_controller/**'
+              - '!**/*.md'
+
+  # =========================================================
+  # CoreKube DB
+  # =========================================================
+  build_corekube_db:
+    needs: changes
+    if: ${{ needs.changes.outputs.corekube_db == 'true' }}
+    name: Build and push CoreKube DB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yutotakano/corekube-db
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./corekube-db
+          file: ./corekube-db/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # =========================================================
+  # CoreKube Frontend
+  # =========================================================
+  build_corekube_frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.corekube_frontend == 'true' }}
+    name: Build and push CoreKube Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yutotakano/corekube-frontend
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./corekube-frontend
+          file: ./corekube-frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # =========================================================
+  # CoreKube Worker
+  # =========================================================
+  build_corekube_worker:
+    needs: changes
+    if: ${{ needs.changes.outputs.corekube_worker == 'true' }}
+    name: Build and push CoreKube Worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yutotakano/corekube5g-worker
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./corekube5g-worker
+          file: ./corekube5g-worker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # =========================================================
+  # Nervion RAN emulator controller
+  # =========================================================
+  build_ran_controller:
+    needs: changes
+    if: ${{ needs.changes.outputs.ran_controller == 'true' }}
+    name: Build and push Nervion RAN Emulator controller
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yutotakano/ran_controller
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./ran_emulator/kubernetes/docker_controller/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # =========================================================
+  # Nervion RAN emulator slave
+  # =========================================================
+  build_ran_slave:
+    needs: changes
+    if: ${{ needs.changes.outputs.ran_slave == 'true' }}
+    name: Build and push Nervion RAN Emulator slave
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yutotakano/ran_slave
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./ran_emulator/kubernetes/docker_slave/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
