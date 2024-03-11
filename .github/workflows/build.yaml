@@ -16,6 +16,7 @@ jobs:
       corekube_frontend: ${{ steps.filter.outputs.corekube_frontend }}
       corekube_worker: ${{ steps.filter.outputs.corekube_worker }}
       libck: ${{ steps.filter.outputs.libck }}
+      core_metrics_bus: ${{ steps.filter.outputs.core_metrics_bus }}
       ran_controller: ${{ steps.filter.outputs.ran_controller }}
       ran_slave: ${{ steps.filter.outputs.ran_slave }}
     steps:
@@ -35,6 +36,8 @@ jobs:
               - 'corekube5g-worker/**'
             libck:
               - 'libck/**'
+            core_metrics_bus:
+              - 'core-metrics-bus/**'
             ran_controller:
               - 'ran_emulator/kubernetes/docker_controller/**'
               - 'ran_emulator/ran_controller/**'
@@ -164,6 +167,48 @@ jobs:
         with:
           context: .
           file: ./corekube5g-worker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================
+  # Core Metrics Bus
+  # =========================================================
+  build_core_metrics_bus:
+    needs: changes
+    if: ${{ needs.changes.outputs.core_metrics_bus == 'true' }}
+    name: Build and push Core Metrics Bus
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (sha-based tags and labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/yutotakano/core_metrics_bus
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./core-metrics-bus
+          file: ./core-metrics-bus/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
