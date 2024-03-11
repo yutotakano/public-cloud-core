@@ -1,0 +1,6 @@
+external
+objects
+core-metrics-aggregator
+core-metrics-aggregator.exe
+.venv
+.vscode
