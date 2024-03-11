@@ -1,0 +1,103 @@
+/**
+ * Configuration Information for CoreKube
+ */
+
+
+/**
+ * Common Values
+ */
+
+
+/**
+ * Values used to build the NG Setup Response
+ */
+
+#define CoreKube_AMFName "CoreKube5G_Worker"
+
+#define CoreKube_MCC 208
+#define CoreKube_MNC 93
+#define CoreKube_MNClen 2
+
+#define CoreKube_AMFRegionID 2
+#define CoreKube_AMFSetID 1
+#define CoreKube_AMFPointer 0
+
+#define CoreKube_RelativeCapacity 255
+
+#define CoreKube_NSSAI_sST 1
+
+
+/**
+ * Values used to build the Authentication Request
+ */
+
+#define CoreKube_AMF_Field {0x80, 0x00}
+
+#define CoreKube_NGKSI_TSC 0
+#define CoreKube_NGKSI_Value 0
+
+#define CoreKube_ABBA_Length 2
+#define CoreKube_ABBA_Value "0000"
+
+/**
+ * Values used for the NAS message security
+ */
+
+#define COREKUBE_NAS_SECURITY_DOWNLINK_DIRECTION 1
+#define COREKUBE_NAS_SECURITY_UPLINK_DIRECTION 0
+
+#define COREKUBE_NAS_SECURITY_MAC_SIZE 4
+
+#define COREKUBE_NAS_SECURITY_ACCESS_TYPE_3GPP_ACCESS 1
+
+#define COREKUBE_NAS_SECURITY_ENC_ALGORITHM OGS_NAS_SECURITY_ALGORITHMS_EEA0
+#define COREKUBE_NAS_SECURITY_INT_ALGORITHM OGS_NAS_SECURITY_ALGORITHMS_128_EIA2
+#define COREKUBE_NAS_SECURITY_5GEA_SUPPORT 0
+#define COREKUBE_NAS_SECURITY_5GIA_SUPPORT 0
+#define COREKUBE_NAS_SECURITY_EEA_SUPPORT 0b10000000 // only EEA0
+#define COREKUBE_NAS_SECURITY_EIA_SUPPORT 0b00100000 // only 128_EIA2
+
+/**
+ * Values used for the NAS Security Mode Command
+ */
+
+#define COREKUBE_UE_SECURITY_CAPABILITY_NR_EA 0xF0
+#define COREKUBE_UE_SECURITY_CAPABILITY_NR_IA 0xF0
+#define COREKUBE_UE_SECURITY_CAPABILITY_EUTRA_EA 0xF0
+#define COREKUBE_UE_SECURITY_CAPABILITY_EUTRA_IA 0xF0
+
+/**
+ * Values used for the NAS Registration Accept
+ */
+
+#define COREKUBE_DEFAULT_TAC 1
+
+#define COREKUBE_DEFAULT_sNSSAI_VALUE "0000"
+
+/**
+ * Values used for the NAS GSM PDU Session Establishment Accept
+ */
+
+#define COREKUBE_QOS_RULE_IDENTIFIER 1
+#define COREKUBE_QOS_FLOW_IDENTIFIER 1
+#define COREKUBE_QOS_5QI 9
+#define COREKUBE_QOS_ARP_PRIORITY 8
+#define COREKUBE_QOS_PREEMPTIVE_CAPABILITY 0
+#define COREKUBE_QOS_PREEMPTIVE_VULNERABILITY 0
+
+#define COREKUBE_AMBR_DOWNLINK_GBPS 1
+#define COREKUBE_AMBR_UPLINK_GBPS 1
+#define COREKUBE_AMBR_DOWNLINK_BPS COREKUBE_AMBR_DOWNLINK_GBPS * 1024 * 1024 * 1024
+#define COREKUBE_AMBR_UPLINK_BPS COREKUBE_AMBR_UPLINK_GBPS * 1024 * 1024 * 1024
+
+#define COREKUBE_DEFAULT_PDU_ADDRESS 0x0A2D0002 // 10.45.0.2
+
+#define COREKUBE_DEFAULT_DNS_PRIMARY "08080808" // 8.8.8.8
+#define COREKUBE_DEFAULT_DNS_SECONDARY "08080804" // 8.8.8.4
+
+#define COREKUBE_DNN_SESSION_NAME "internet"
+
+#define COREKUBE_PDN_SESSION_IDENTITY 1
+#define COREKUBE_PDN_PROCEDURE_TRANSACTION_IDENTITY 1
+
+#define COREKUBE_DEFAULT_SESSION_TYPE OGS_PDU_SESSION_TYPE_IPV4
