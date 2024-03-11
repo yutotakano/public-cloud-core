@@ -1,5 +1,5 @@
 # Comment: Image base with corekube DB installed
-# Based upon ran_emulator/kubernetes/docker_slave/Dockerfile by github.com/j0lama
+# Based upon ran-emulator/kubernetes/docker_slave/Dockerfile by github.com/j0lama
 
 # Download ubuntu from the Docker Hub
 FROM ubuntu:focal

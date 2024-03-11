@@ -1,4 +1,4 @@
-# Comment: Image base with ran_emulator installed
+# Comment: Image base with ran-emulator installed
 
 # Download ubuntu from the Docker Hub
 FROM ubuntu:bionic
@@ -19,10 +19,10 @@ RUN make install
 
 WORKDIR ../
 
-# Install ran_emulator
+# Install ran-emulator
 # TODO
-COPY ran_emulator/ ran_emulator/
-WORKDIR ran_emulator/
+COPY ran-emulator/ ran-emulator/
+WORKDIR ran-emulator/
 RUN make
 
 # Install tools to generate traffic

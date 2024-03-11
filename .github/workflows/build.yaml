@@ -44,13 +44,13 @@ jobs:
             core_metrics_bus:
               - 'core-metrics-bus/**'
             ran_controller:
-              - 'ran_emulator/kubernetes/docker_controller/**'
-              - 'ran_emulator/ran_controller/**'
+              - 'ran-emulator/kubernetes/docker_controller/**'
+              - 'ran-emulator/ran_controller/**'
             ran_slave:
-              - 'ran_emulator/kubernetes/docker_slave/**'
-              - 'ran_emulator/headers/**'
-              - 'ran_emulator/source/**'
-              - 'ran_emulator/Makefile'
+              - 'ran-emulator/kubernetes/docker_slave/**'
+              - 'ran-emulator/headers/**'
+              - 'ran-emulator/source/**'
+              - 'ran-emulator/Makefile'
 
   # =========================================================
   # CoreKube DB
@@ -225,7 +225,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/yutotakano/core_metrics_bus
+          images: ghcr.io/yutotakano/core-metrics-bus
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -273,7 +273,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/yutotakano/ran_controller
+          images: ghcr.io/yutotakano/ran-controller
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -285,7 +285,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./ran_emulator/kubernetes/docker_controller/Dockerfile
+          file: ./ran-emulator/kubernetes/docker_controller/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -321,7 +321,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/yutotakano/ran_slave
+          images: ghcr.io/yutotakano/ran-slave
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
@@ -333,7 +333,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./ran_emulator/kubernetes/docker_slave/Dockerfile
+          file: ./ran-emulator/kubernetes/docker_slave/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

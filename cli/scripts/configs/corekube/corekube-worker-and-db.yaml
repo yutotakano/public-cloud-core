@@ -141,7 +141,7 @@ spec:
     spec:
       containers:
       - name: core-metrics-bus
-        image: ghcr.io/yutotakano/core_metrics_bus:latest
+        image: ghcr.io/yutotakano/core-metrics-bus:latest
         ports:
         - containerPort: 8080
           protocol: TCP

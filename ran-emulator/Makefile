@@ -12,7 +12,7 @@ LIBFLAGS = -lgc -rdynamic -lcrypto -lpthread
 #LINK FLAGS
 LINKFLAGS = -lsctp
 
-TARGET = ran_emulator
+TARGET = ran-emulator
 
 # PATHS
 SOURCE_DIRECTORY = source/
