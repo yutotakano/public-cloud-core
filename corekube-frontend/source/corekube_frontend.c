@@ -242,6 +242,11 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 
+	// Print the parameters
+	printInfo("FRONTEND_IP_ADDRESS: %s\n", argv[1]);
+	printInfo("K8S_LOADBALANCER_IP_ADDRESS: %s\n", argv[2]);
+	printInfo("NETWORK_TYPE: %s\n", argv[3]);
+
 	if(strcmp((char *)argv[3], "4G") == 0) {
 		printInfo("Starting 4G CoreKube Frontend...\n");
 		frontend((char *)argv[1], (char *)argv[2], 0);
