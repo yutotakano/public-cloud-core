@@ -9,6 +9,7 @@ jobs:
   # Find what changes have been made and determine which jobs to run
   # ================================================================
   changes:
+    name: Determine changes
     runs-on: ubuntu-latest
     outputs:
       corekube_db: ${{ steps.filter.outputs.corekube_db }}
@@ -18,6 +19,9 @@ jobs:
       ran_controller: ${{ steps.filter.outputs.ran_controller }}
       ran_slave: ${{ steps.filter.outputs.ran_slave }}
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v3
         id: filter
         with:
