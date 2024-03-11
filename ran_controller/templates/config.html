@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+	<head>
+		<title>Nervion Controller</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+	</head>
+	<body {{ onload|safe }}>
+		{{ code|safe }}
+		<h1>Nervion Controller</h1>
+		<div style="width:50%; margin: 0 auto; border:groove;">
+			<h2>Configuration panel</h2>
+			<div style="margin: 0 auto; position:relative; width:50%;">
+				<form method="POST" action="/config/" enctype=multipart/form-data>
+				MME/AMF IP Address:
+				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				<p>
+				Control-Plane Mode:
+				<input type="checkbox" id="cp_mode" name="cp_mode"/>
+				<br>
+				<span id="num_threads" name="num_threads">Number of threads per nUE: <input type="number" id="threads" name="threads" value="100"/></span>
+				</p>
+				<p>
+				Incremental Scaling (minutes, 0 to disable):
+				<input type="number" id="scale_minutes" name="scale_minutes" min="0" value="0">
+				</p>
+				<p>
+				Multiplexer IP Address:<input type="text" id="multi_ip" name="multi_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+				</p>
+				<p>
+				Configuration file (JSON):
+				<input type = "file" name = "config" accept=".json"/>
+				</p>
+				<p>
+				Slave Docker Image:
+				<input type="text" id="docker_image" name="docker_image" value="j0lama/ran_slave:latest">
+				</p>
+				<p>
+				Web-interface Refresh Time:
+				<input type="number" name="refresh_time" min="1" max="20" value="10">
+				</p>
+				<p>
+				<div style="text-align: center; margin: 0 auto; position:relative;">
+					<button type="submit">Submit</button>
+				</div>
+				</p>
+			</form>
+			</div>
+		</div>
+		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 5%;">
+			<p style="font-family: Perpetua;">THE UNIVERSITY <i>of</i> EDINBURGH</p>
+			Developed by <i>Jon Larrea</i>
+		</div>
+	</body>
+</html>
