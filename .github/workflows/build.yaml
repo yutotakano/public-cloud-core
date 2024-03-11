@@ -144,7 +144,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./corekube5g-worker
+          context: .
           file: ./corekube5g-worker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}

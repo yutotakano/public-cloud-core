@@ -13,40 +13,38 @@ RUN apt-get update
 RUN apt-get -y install git libsctp-dev build-essential
 
 # Build libck
-RUN git clone https://github.com/j0lama/libck.git
-WORKDIR libck/
+COPY ./libck /libck
+WORKDIR /libck
 RUN make
 RUN make install # installs headers for compilation
 
-WORKDIR ../
+WORKDIR /
 
 # Build the Open5GS libraries:
 RUN git clone https://github.com/andrewferguson/open5gs-corekube.git
 RUN apt-get -y install python3-pip python3-setuptools python3-wheel ninja-build build-essential flex bison git libsctp-dev libgnutls28-dev libgcrypt-dev libssl-dev libidn11-dev libmongoc-dev libbson-dev libyaml-dev libnghttp2-dev libmicrohttpd-dev libcurl4-gnutls-dev libnghttp2-dev libtins-dev meson
-WORKDIR open5gs-corekube
+WORKDIR /open5gs-corekube
 RUN meson build --prefix=`pwd`/install && \
     ninja -C build
 
-WORKDIR ../
+WORKDIR /
 
 # Copy the corekube_worker
 RUN mkdir corekube_worker
-COPY ./open5gs-corekube/ corekube_worker/open5gs-corekube/
-COPY ./source/ corekube_worker/source/
-COPY ./headers/ corekube_worker/headers/
-COPY ./lib /corekube_worker/lib/
-COPY ./libck /corekube_worker/libck/
+COPY ./corekube5g-worker/source/ corekube_worker/source/
+COPY ./corekube5g-worker/headers/ corekube_worker/headers/
+COPY ./corekube5g-worker/lib corekube_worker/lib/
 
 # Copy the libraries to the worker directory
 RUN mkdir corekube_worker/bin
 RUN LIBS=`find open5gs-corekube/build/lib/ -type f -name "libogs*.so.2.3.0"` && \
     for lib in $LIBS; do mv $lib corekube_worker/bin/$(basename "$lib" .3.0) ; done
-RUN cp libck/libck.so corekube_worker/bin/
+RUN cp /libck/libck.so corekube_worker/bin/
 
-COPY ./Makefile corekube_worker/Makefile
+COPY ./corekube5g-worker/Makefile corekube_worker/Makefile
 
 # Build corekube_worker
-WORKDIR corekube_worker/
+WORKDIR /corekube_worker
 RUN make
 
 
