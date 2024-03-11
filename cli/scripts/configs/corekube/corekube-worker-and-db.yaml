@@ -32,7 +32,7 @@ spec:
         - containerPort: 5566
           protocol: UDP
           name: worker-s1ap
-        command: ["./corekube_udp_worker", "$(THIS_POD_IP)", "$(COREKUBE_DB_SERVICE_HOST)", "6", "1", "$(CORE_METRICS_AGGREGATOR_SERVICE_HOST)"]
+        command: ["./corekube_udp_worker", "$(THIS_POD_IP)", "$(COREKUBE_DB_SERVICE_HOST)", "6", "1", "$(CORE_METRICS_BUS_SERVICE_HOST)"]
         env:
         - name: THIS_POD_IP
           valueFrom:
