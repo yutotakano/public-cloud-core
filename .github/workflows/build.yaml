@@ -56,6 +56,9 @@ jobs:
     if: ${{ needs.changes.outputs.corekube_db == 'true' }}
     name: Build and push CoreKube DB
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Set up Docker Buildx # needed for layer cache exporter
         uses: docker/setup-buildx-action@v3
@@ -95,6 +98,9 @@ jobs:
     if: ${{ needs.changes.outputs.corekube_frontend == 'true' }}
     name: Build and push CoreKube Frontend
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Set up Docker Buildx # needed for layer cache exporter
         uses: docker/setup-buildx-action@v3
@@ -134,6 +140,9 @@ jobs:
     if: ${{ needs.changes.outputs.corekube_worker == 'true' || needs.changes.outputs.libck == 'true' }}
     name: Build and push CoreKube Worker
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Set up Docker Buildx # needed for layer cache exporter
         uses: docker/setup-buildx-action@v3
@@ -173,6 +182,9 @@ jobs:
     if: ${{ needs.changes.outputs.ran_controller == 'true' }}
     name: Build and push Nervion RAN Emulator controller
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Set up Docker Buildx # needed for layer cache exporter
         uses: docker/setup-buildx-action@v3
@@ -212,6 +224,9 @@ jobs:
     if: ${{ needs.changes.outputs.ran_slave == 'true' }}
     name: Build and push Nervion RAN Emulator slave
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Set up Docker Buildx # needed for layer cache exporter
         uses: docker/setup-buildx-action@v3
