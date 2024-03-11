@@ -174,8 +174,8 @@ uint8_t * get_mme_s1ap_id(UE * ue, uint8_t * len)
 
 void set_mme_s1ap_id(UE * ue, uint8_t * mme_s1ap_id, uint8_t len)
 {
-	if(ue->mme_s1ap_id_len != 0)
-		return;
+	// if(ue->mme_s1ap_id_len != 0)
+	// 	return;
 	memcpy(ue->mme_s1ap_id, mme_s1ap_id, len);
 	ue->mme_s1ap_id_len = len;
 }

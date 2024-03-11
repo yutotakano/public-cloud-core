@@ -1499,7 +1499,7 @@ int procedure_Deregistration_Request(eNB * enb, UE * ue, int switch_off)
 	printOK("UEContextReleaseComplete sent.\n");
 
 	/* Reseting AMF_UE_NGAP_ID */
-	reset_mme_s1ap_id_len(ue);
+	// reset_mme_s1ap_id_len(ue);
 
 	return OK;
 }
