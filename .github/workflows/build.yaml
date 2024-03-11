@@ -57,6 +57,9 @@ jobs:
     name: Build and push CoreKube DB
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -81,6 +84,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # =========================================================
   # CoreKube Frontend
@@ -91,6 +96,9 @@ jobs:
     name: Build and push CoreKube Frontend
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -115,6 +123,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # =========================================================
   # CoreKube Worker
@@ -125,6 +135,9 @@ jobs:
     name: Build and push CoreKube Worker
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -149,6 +162,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # =========================================================
   # Nervion RAN emulator controller
@@ -159,6 +174,9 @@ jobs:
     name: Build and push Nervion RAN Emulator controller
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -183,6 +201,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # =========================================================
   # Nervion RAN emulator slave
@@ -193,6 +213,9 @@ jobs:
     name: Build and push Nervion RAN Emulator slave
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Docker Buildx # needed for layer cache exporter
+        uses: docker/setup-buildx-action@v3
+
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -217,3 +240,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
