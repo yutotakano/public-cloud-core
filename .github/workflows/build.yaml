@@ -3,6 +3,13 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force rebuild all images'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   # ================================================================
@@ -12,13 +19,13 @@ jobs:
     name: Determine changes
     runs-on: ubuntu-latest
     outputs:
-      corekube_db: ${{ steps.filter.outputs.corekube_db }}
-      corekube_frontend: ${{ steps.filter.outputs.corekube_frontend }}
-      corekube_worker: ${{ steps.filter.outputs.corekube_worker }}
-      libck: ${{ steps.filter.outputs.libck }}
-      core_metrics_bus: ${{ steps.filter.outputs.core_metrics_bus }}
-      ran_controller: ${{ steps.filter.outputs.ran_controller }}
-      ran_slave: ${{ steps.filter.outputs.ran_slave }}
+      corekube_db: ${{ github.event.inputs.force || steps.filter.outputs.corekube_db }}
+      corekube_frontend: ${{ github.event.inputs.force || steps.filter.outputs.corekube_frontend }}
+      corekube_worker: ${{ github.event.inputs.force || steps.filter.outputs.corekube_worker }}
+      libck: ${{ github.event.inputs.force || steps.filter.outputs.libck }}
+      core_metrics_bus: ${{ github.event.inputs.force || steps.filter.outputs.core_metrics_bus }}
+      ran_controller: ${{ github.event.inputs.force || steps.filter.outputs.ran_controller }}
+      ran_slave: ${{ github.event.inputs.force || steps.filter.outputs.ran_slave }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
