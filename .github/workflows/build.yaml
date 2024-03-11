@@ -77,6 +77,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/corekube-db
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -119,6 +122,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/corekube-frontend
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -161,6 +167,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/corekube5g-worker
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -203,6 +212,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/core_metrics_bus
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -245,6 +257,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/ran_controller
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -287,6 +302,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/yutotakano/ran_slave
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
