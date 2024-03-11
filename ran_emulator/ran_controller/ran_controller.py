@@ -75,7 +75,7 @@ class RANControler:
 			},
 			'spec': {
 				'containers': [{
-					'image': 'j0lama/ran_slave:latest',
+					'image': 'ghcr.io/yutotakano/ran_slave:latest',
 					'imagePullPolicy': 'IfNotPresent',
 					'name': 'name',
 					'env': [{'name': 'NODE_IP',

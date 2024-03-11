@@ -42,7 +42,7 @@ spec:
       serviceAccountName: corekube-core-sa
       containers:
       - name: corekube-frontend
-        image: yutotakano/corekube-frontend:latest
+        image: ghcr.io/yutotakano/corekube-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 38412

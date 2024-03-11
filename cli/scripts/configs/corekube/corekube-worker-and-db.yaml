@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: corekube-worker
-        image: yutotakano/corekube5g-worker-metrics:latest
+        image: ghcr.io/yutotakano/corekube5g-worker:latest
         ports:
         - containerPort: 5566
           protocol: UDP
@@ -89,7 +89,7 @@ spec:
     spec:
       containers:
       - name: corekube-db
-        image: andrewferguson/corekube-db:latest
+        image: ghcr.io/yutotakano/corekube-db:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 7788
@@ -106,7 +106,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: core-metrics-aggregator
+  name: core-metrics-bus
 spec:
   ports:
   - name: prometheus-scrape-port
@@ -118,18 +118,18 @@ spec:
     targetPort: 7799
     protocol: TCP
   selector:
-    app: core-metrics-aggregator
+    app: core-metrics-bus
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: core-metrics-aggregator
+  name: core-metrics-bus
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: core-metrics-aggregator
+      app: core-metrics-bus
   template:
     metadata:
       annotations:
@@ -137,14 +137,14 @@ spec:
         prometheus.io/path: '/metrics'
         prometheus.io/port: '8080'
       labels:
-        app: core-metrics-aggregator
+        app: core-metrics-bus
     spec:
       containers:
-      - name: core-metrics-aggregator
-        image: yutotakano/core-metrics-aggregator:cpp-latest
+      - name: core-metrics-bus
+        image: ghcr.io/yutotakano/core-metrics-bus:latest
         ports:
         - containerPort: 8080
           protocol: TCP
         - containerPort: 7799
           protocol: TCP
-        command: ["./core-metrics-aggregator"]
+        command: ["./core-metrics-bus"]

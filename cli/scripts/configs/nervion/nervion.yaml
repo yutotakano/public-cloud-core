@@ -46,7 +46,7 @@ spec:
     spec:
       containers:
       - name: ran-emulator
-        image: yutotakano/ran-controller-aws:latest
+        image: ghcr.io/yutotakano/ran-controller:latest
         env:
         - name: PYTHONUNBUFFERED
           value: "0"
