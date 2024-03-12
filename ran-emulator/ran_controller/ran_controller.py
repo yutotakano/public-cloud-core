@@ -802,24 +802,24 @@ class RANControler:
         print("Staring eNB Slave Pods...")
         for i in range(enb_pods):
             # Configure POD Manifest for each slave
-            self.pod_manifest.metadata.name = "slave-enb-" + str(i)  # type: ignore
+            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
             self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
-            self.pod_manifest.spec.containers[0].name = "slave-enb-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
         print("Staring UE Slave Pods...")
         # Scale incrementally if required
-        for i in range(ue_pods):
+        for i in range(enb_pods, enb_pods + ue_pods):
             if not self.should_keep_scaling.is_set():
                 # Stop creating pods anymore if the experiment is restarted.
                 # Promptly exit the thread
                 break
 
             # Configure POD Manifest for each slave
-            self.pod_manifest.metadata.name = "slave-ue-" + str(i)  # type: ignore
+            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
             self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
-            self.pod_manifest.spec.containers[0].name = "slave-ue-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
@@ -875,14 +875,6 @@ class RANControler:
             core_v1 = client.CoreV1Api()
             ret = core_v1.list_namespaced_pod("default")
             for i in ret.items:
-                print(
-                    "%s\t%s\t%s"
-                    % (
-                        getattr(i.status, "pod_ip"),
-                        getattr(i.metadata, "namespace"),
-                        getattr(i.metadata, "name"),
-                    )
-                )
                 if "slave-" in getattr(i.metadata, "name"):
                     slaves += 1
         print("Number of Slave pods:", slaves)
