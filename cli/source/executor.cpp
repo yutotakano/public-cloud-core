@@ -85,8 +85,9 @@ ExecutingProcess Executor::run(
       std::string output;
       std::string error;
       int bread = 0;
+      int bread_err = 0;
 
-      while (subprocess_alive(process.get()))
+      while (subprocess_alive(process.get()) || bread > 0 || bread_err > 0)
       {
         // Check if program has received Ctrl-C, since we are in another thread
         // and won't receive it. Wait up to 100ms to prevent busy-waiting on the
@@ -113,10 +114,10 @@ ExecutingProcess Executor::run(
         if (stream_cout)
           std::cout << out_buffer;
 
-        bread = subprocess_read_stderr(process.get(), err_buffer, 1024);
-        if (bread > 0)
+        bread_err = subprocess_read_stderr(process.get(), err_buffer, 1024);
+        if (bread_err > 0)
         {
-          LOG_TRACE_L3(logger, "{} bytes read from stderr", bread);
+          LOG_TRACE_L3(logger, "{} bytes read from stderr", bread_err);
         }
 
         error += err_buffer;
