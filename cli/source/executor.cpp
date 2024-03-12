@@ -80,8 +80,8 @@ ExecutingProcess Executor::run(
     {
       // Stream the output of the process stdout to a small buffer that gets
       // processed into the output string
-      char out_buffer[1024] = {0};
-      char err_buffer[1024] = {0};
+      char out_buffer[2048] = {0};
+      char err_buffer[2048] = {0};
       std::string output;
       std::string error;
       int bread = 0;
@@ -104,7 +104,7 @@ ExecutingProcess Executor::run(
         std::fill(std::begin(out_buffer), std::end(out_buffer), 0);
         std::fill(std::begin(err_buffer), std::end(err_buffer), 0);
 
-        bread = subprocess_read_stdout(process.get(), out_buffer, 1024);
+        bread = subprocess_read_stdout(process.get(), out_buffer, 2048);
         if (bread > 0)
         {
           LOG_TRACE_L3(logger, "{} bytes read from stdout", bread);
@@ -114,7 +114,7 @@ ExecutingProcess Executor::run(
         if (stream_cout)
           std::cout << out_buffer;
 
-        bread_err = subprocess_read_stderr(process.get(), err_buffer, 1024);
+        bread_err = subprocess_read_stderr(process.get(), err_buffer, 2048);
         if (bread_err > 0)
         {
           LOG_TRACE_L3(logger, "{} bytes read from stderr", bread_err);
