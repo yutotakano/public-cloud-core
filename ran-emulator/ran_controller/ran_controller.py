@@ -246,9 +246,21 @@ class RANControler:
 
         if msg["type"] == "init" or msg["type"] == "cp_mode":
             print("New slave at " + msg["ip"] + ":" + str(msg["port"]))
+            friendly_ip = str(socket.inet_ntoa(struct.pack("!L", msg["ip_node"])))
             print(
-                "Node IP: " + str(socket.inet_ntoa(struct.pack("!L", msg["ip_node"])))
+                "Node IP: " + friendly_ip
             )
+
+            # Get pod name from IP using k8s API
+            if k8s == True:
+                core_v1 = client.CoreV1Api()
+                ret = core_v1.list_pod_for_all_namespaces(watch=False)
+                for i in ret.items:
+                    if getattr(i.status, "pod_ip") == friendly_ip:
+                        print("Pod name: " + getattr(i.metadata, "name"))
+                        break
+                else:
+                    print("Pod not found for IP")
 
             ######################
             # Critical section 1 #
