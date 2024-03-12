@@ -247,9 +247,7 @@ class RANControler:
         if msg["type"] == "init" or msg["type"] == "cp_mode":
             print("New slave at " + msg["ip"] + ":" + str(msg["port"]))
             friendly_ip = str(socket.inet_ntoa(struct.pack("!L", msg["ip_node"])))
-            print(
-                "Node IP: " + friendly_ip
-            )
+            print("Node IP: " + friendly_ip)
 
             # Get pod name from IP using k8s API
             if k8s == True:
@@ -851,46 +849,24 @@ class RANControler:
         # Remove all eNB IPs
         self.enb_ips = []
 
-        enb_pods = len(self.controller_data["eNBs"])
-        ue_pods = (
-            math.ceil(len(self.controller_data["UEs"]) / self.num_threads)
-            if self.cp_mode
-            else len(self.controller_data["UEs"])
-        )
-
-        if k8s == True:
+        # Delete all pods with the label app=ran-slave
+        if k8s:
             core_v1 = client.CoreV1Api()
             delete_options = client.V1DeleteOptions()
-            print("Removing Slave Pods")
-            for i in range(enb_pods):
-                try:
-                    core_v1.delete_namespaced_pod(
-                        name="slave-enb-" + str(i),
-                        namespace="default",
-                        body=delete_options,
-                    )
-                except Exception as e:
-                    print(
-                        "Error removing slave-enb-"
-                        + str(i)
-                        + " pod, supressing (stack trace):"
-                        + str(e)
-                    )
-            for i in range(ue_pods):
-                try:
-                    core_v1.delete_namespaced_pod(
-                        name="slave-ue-" + str(i),
-                        namespace="default",
-                        body=delete_options,
-                    )
-                except Exception as e:
-                    print(
-                        "Error removing slave-ue-"
-                        + str(i)
-                        + " pod, supressing (stack trace):"
-                        + str(e)
-                    )
-        print("Pods removed!")
+            ret = core_v1.list_pod_for_all_namespaces(watch=False)
+            for i in ret.items:
+                if getattr(i.metadata, "labels").get("app", "") == "ran-slave":
+                    try:
+                        core_v1.delete_namespaced_pod(
+                            name=getattr(i.metadata, "name"),
+                            namespace="default",
+                            body=delete_options,
+                        )
+                    except Exception as e:
+                        print("Error deleting pod: ", getattr(i.metadata, "name"))
+                        print("Suprressing (stack trace): ", e)
+
+            print("Pods removed!")
         return
 
     def kubernetes_check_pods(self):
