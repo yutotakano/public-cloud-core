@@ -96,7 +96,11 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
           "Manually deleting pods assuming Nervion is in undefined state."
         );
         std::string pods_str =
-          nv_app.run_kubectl({"get", "pods", "--no-headers", "--output=name"})
+          nv_app
+            .run_kubectl(
+              {"get", "pods", "--no-headers", "--output=name"},
+              false
+            )
             .future.get();
         auto pods = Utils::split(pods_str, '\n');
         for (auto &pod : pods)
@@ -116,7 +120,8 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
       while (true)
       {
         std::string pods_str =
-          nv_app.run_kubectl({"get", "pods", "--no-headers"}).future.get();
+          nv_app.run_kubectl({"get", "pods", "--no-headers"}, false)
+            .future.get();
         auto pods = Utils::split(pods_str, '\n');
         int num_slaves = 0;
         for (auto &pod : pods)
