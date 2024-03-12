@@ -26,7 +26,7 @@
 				<input type="text" id="mme_ip" name="mme_ip" placeholder="Enter IP" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
 				<p>
 				Control-Plane Mode:
-				<input type="checkbox" id="cp_mode" name="cp_mode"/>
+				<input type="checkbox" id="cp_mode" name="cp_mode" checked/>
 				<br>
 				<span id="num_threads" name="num_threads">Number of threads per nUE: <input type="number" id="threads" name="threads" value="100"/></span>
 				</p>
@@ -43,7 +43,7 @@
 				</p>
 				<p>
 				Slave Docker Image:
-				<input type="text" id="docker_image" name="docker_image" value="j0lama/ran_slave:latest">
+				<input type="text" id="docker_image" name="docker_image" value="ghcr.io/yutotakano/ran-slave:latest">
 				</p>
 				<p>
 				Web-interface Refresh Time:
