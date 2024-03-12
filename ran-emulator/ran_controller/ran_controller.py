@@ -792,24 +792,24 @@ class RANControler:
         print("Staring eNB Slave Pods...")
         for i in range(enb_pods):
             # Configure POD Manifest for each slave
-            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.metadata.name = "slave-enb-" + str(i)  # type: ignore
             self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
-            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-enb-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
         print("Staring UE Slave Pods...")
         # Scale incrementally if required
-        for i in range(enb_pods, enb_pods + ue_pods):
+        for i in range(ue_pods):
             if not self.should_keep_scaling.is_set():
                 # Stop creating pods anymore if the experiment is restarted.
                 # Promptly exit the thread
                 break
 
             # Configure POD Manifest for each slave
-            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.metadata.name = "slave-ue-" + str(i)  # type: ignore
             self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
-            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-ue-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
@@ -838,27 +838,42 @@ class RANControler:
 
         # Remove all eNB IPs
         self.enb_ips = []
-        if self.cp_mode == True:
-            tot_len = len(self.controller_data["eNBs"]) + math.ceil(
-                len(self.controller_data["UEs"]) / self.num_threads
-            )
-        else:
-            tot_len = len(self.controller_data["UEs"]) + len(
-                self.controller_data["eNBs"]
-            )
+
+        enb_pods = len(self.controller_data["eNBs"])
+        ue_pods = (
+            math.ceil(len(self.controller_data["UEs"]) / self.num_threads)
+            if self.cp_mode
+            else len(self.controller_data["UEs"])
+        )
 
         if k8s == True:
             core_v1 = client.CoreV1Api()
             delete_options = client.V1DeleteOptions()
             print("Removing Slave Pods")
-            for i in range(tot_len):
+            for i in range(enb_pods):
                 try:
                     core_v1.delete_namespaced_pod(
-                        name="slave-" + str(i), namespace="default", body=delete_options
+                        name="slave-enb-" + str(i),
+                        namespace="default",
+                        body=delete_options,
                     )
                 except Exception as e:
                     print(
-                        "Error removing slave-"
+                        "Error removing slave-enb-"
+                        + str(i)
+                        + " pod, supressing (stack trace):"
+                        + str(e)
+                    )
+            for i in range(ue_pods):
+                try:
+                    core_v1.delete_namespaced_pod(
+                        name="slave-ue-" + str(i),
+                        namespace="default",
+                        body=delete_options,
+                    )
+                except Exception as e:
+                    print(
+                        "Error removing slave-ue-"
                         + str(i)
                         + " pod, supressing (stack trace):"
                         + str(e)
