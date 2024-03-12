@@ -8,3 +8,4 @@ external
 .terraform.tfstate.lock.info
 terraform.tfstate*
 config
+**/publicore.yaml
