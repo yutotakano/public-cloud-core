@@ -1,10 +1,11 @@
 #include "argparse/argparse.hpp"
+#include "ck.h"
 #include "curl/curl.h"
 #include "deploy.h"
-#include "env.h"
 #include "exithandler.h"
 #include "info.h"
 #include "loadtest.h"
+#include "nv.h"
 #include "quill/Quill.h"
 #include <iostream>
 
@@ -60,9 +61,13 @@ int main(int argc, char **argv)
   auto loadtest_parser = loadtest_app.loadtest_arg_parser();
   program.add_subparser(*loadtest_parser);
 
-  EnvApp env_app;
-  auto env_parser = env_app.env_arg_parser();
-  program.add_subparser(*env_parser);
+  CKApp ck_app;
+  auto ck_parser = ck_app.ck_arg_parser();
+  program.add_subparser(*ck_parser);
+
+  NVApp nv_app;
+  auto nv_parser = nv_app.nv_arg_parser();
+  program.add_subparser(*nv_parser);
 
   // Parse the command line arguments
   try
@@ -104,9 +109,13 @@ int main(int argc, char **argv)
   {
     loadtest_app.loadtest_command_handler(*loadtest_parser);
   }
-  else if (program.is_subcommand_used(*env_parser))
+  else if (program.is_subcommand_used(*ck_parser))
   {
-    env_app.env_command_handler(*env_parser);
+    ck_app.ck_command_handler(*ck_parser);
+  }
+  else if (program.is_subcommand_used(*nv_parser))
+  {
+    nv_app.nv_command_handler(*nv_parser);
   }
   else
   {

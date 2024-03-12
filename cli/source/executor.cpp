@@ -9,8 +9,12 @@
 
 Executor::Executor() { logger = quill::get_logger(); }
 
-ExecutingProcess
-Executor::run(std::string command, bool stream_cout, bool suppress_err)
+ExecutingProcess Executor::run(
+  std::string command,
+  bool stream_cout,
+  bool suppress_err,
+  bool show_command
+)
 {
   LOG_DEBUG(logger, "Running command: {}", command);
 
@@ -22,12 +26,11 @@ Executor::run(std::string command, bool stream_cout, bool suppress_err)
 ExecutingProcess Executor::run(
   std::vector<std::string> command_parts,
   bool stream_cout,
-  bool suppress_err
+  bool suppress_err,
+  bool show_command
 )
 {
-  // If streaming to stdout, we want to make sure the command is visible, but
-  // otherwise the user doesn't need to see it unless they are debugging.
-  if (stream_cout)
+  if (show_command)
   {
     LOG_INFO(logger, "Running command: {}", command_parts);
   }

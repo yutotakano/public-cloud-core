@@ -28,10 +28,15 @@ public:
    *
    * @param command Command to run, e.g. "ls -l"
    * @param stream_cout Whether to stream the stdout of the command
+   * @param show_command Whether to log the command being run
    * @return ExecutingProcess
    */
-  ExecutingProcess
-  run(std::string command, bool stream_cout = true, bool suppress_err = false);
+  ExecutingProcess run(
+    std::string command,
+    bool stream_cout = true,
+    bool suppress_err = false,
+    bool show_command = true
+  );
 
   /**
    * @brief Run a command, optionally passing a pipe or string to stdin. Will
@@ -43,12 +48,14 @@ public:
    * @param stream_cout Whether to stream the stdout of the command
    * @param suppress_err Whether to suppress logging stderr. Will still raise
    * exceptions if the command fails.
+   * @param show_command Whether to log the command being run
    * @return ExecutingProcess
    */
   ExecutingProcess run(
     std::vector<std::string> command_parts,
     bool stream_cout = true,
-    bool suppress_err = false
+    bool suppress_err = false,
+    bool show_command = true
   );
 
   /**

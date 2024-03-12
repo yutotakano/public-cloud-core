@@ -2,7 +2,9 @@
 #define INFO_H
 
 #include "argparse/argparse.hpp"
+#include "ck.h"
 #include "executor.h"
+#include "nv.h"
 #include "quill/Quill.h"
 
 struct deployment_info_s
@@ -10,13 +12,6 @@ struct deployment_info_s
   std::string corekube_dns_name;
   std::string nervion_dns_name;
   std::string frontend_ip;
-};
-
-struct context_info_s
-{
-  std::string current_context;
-  std::string corekube_context;
-  std::string nervion_context;
 };
 
 class InfoApp
@@ -28,13 +23,14 @@ public:
 
   void info_command_handler(argparse::ArgumentParser &parser);
 
-  void switch_context(std::string context);
-  std::optional<context_info_s> get_contexts();
+  bool check_contexts_exist();
   std::optional<deployment_info_s> get_info();
 
 private:
   quill::Logger *logger;
   Executor executor;
+  CKApp ck_app;
+  NVApp nv_app;
 };
 
 #endif // INFO_H
