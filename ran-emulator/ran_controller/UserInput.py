@@ -390,7 +390,9 @@ class UserInput:
         self.socketio.on_event("connect", self.update, namespace="/update")
 
         #
-        self.socketio.run(app=self.app, port=8080, host="0.0.0.0")
+        self.socketio.run(
+            app=self.app, port=8080, host="0.0.0.0", allow_unsafe_werkzeug=True
+        )
 
     def ues_to_html(self) -> str:
         html: str = '<div style="overflow:scroll; height:200px; border:solid;">'
