@@ -442,14 +442,7 @@ class UserInput:
             html += "<td>" + enb.get_id() + "</td>"
             html += "<td>" + enb.get_mcc() + "</td>"
             html += "<td>" + enb.get_mnc() + "</td>"
-            html += (
-                "<td>"
-                + enb.get_address_text()
-                + " (pod: "
-                + enb.get_pod_name()
-                + ")"
-                + "</td>"
-            )
+            html += "<td>" + enb.get_address_text() + "</td>"
             html += "<td>" + enb.get_html_status() + "</td>"
             html += "</tr>"
         html += "</table>"
