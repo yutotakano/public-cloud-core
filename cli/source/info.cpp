@@ -46,6 +46,8 @@ bool InfoApp::check_contexts_exist()
          "--output=name",
          "--kubeconfig",
          "config"},
+        false,
+        false,
         false
       )
       .future.get();
