@@ -2,6 +2,18 @@
 	<head>
 		<title>Nervion Controller</title>
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+		<script>
+			// Query /pods/ every 5 seconds to get number of pods, and show it
+			(() => {
+				setInterval(() => {
+					fetch('/pods/')
+					.then(response => response.json())
+					.then(data => {
+						document.getElementById('number_pods').innerHTML = data.num_pods;
+					})
+				}, 5000);
+			})();
+		</script>
 	</head>
 	<body {{ onload|safe }}>
 		{{ code|safe }}
@@ -44,6 +56,9 @@
 				</p>
 			</form>
 			</div>
+			<p>
+				<span id="number_pods">...</span> Pods Running
+			</p>
 		</div>
 		<div style="width: 100%; margin: 0 auto; font-size: large; text-align: center; position:fixed; bottom: 5%;">
 			<p style="font-family: Perpetua;">THE UNIVERSITY <i>of</i> EDINBURGH</p>
