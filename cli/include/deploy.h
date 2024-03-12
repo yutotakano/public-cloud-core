@@ -3,6 +3,7 @@
 
 #include "argparse/argparse.hpp"
 #include "executor.h"
+#include "info.h"
 #include "quill/Quill.h"
 #include <taskflow/taskflow.hpp>
 
@@ -28,18 +29,12 @@ private:
   void deploy_aws_eks_ec2_spot();
   void deploy_aws_ec2();
 
-  std::string get_most_recent_cloudformation_event(std::string stack_name);
-  std::future<void> eksctl_deletion_details(std::string stack_name);
-  std::future<std::string> eksctl_delete_resource(
-    std::string resource_type,
-    std::vector<std::string> args
-  );
-
   tf::Executor tf_executor;
   tf::Taskflow tf_taskflow;
 
   quill::Logger *logger;
   Executor executor;
+  InfoApp info_app;
 };
 
 #endif // DEPLOY_H

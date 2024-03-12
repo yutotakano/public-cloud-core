@@ -9,6 +9,7 @@ DeployApp::DeployApp()
 {
   logger = quill::get_logger();
   executor = Executor();
+  info_app = InfoApp();
 }
 
 std::unique_ptr<argparse::ArgumentParser> DeployApp::deploy_arg_parser()
@@ -140,9 +141,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
   executor.run({"terraform", "-chdir=terraform/base", "apply", "-auto-approve"})
     .future.get();
-  executor
-    .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
-    .future.get();
 
   // Register the two clusters with the local kubeconfig
   executor
@@ -172,13 +170,22 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
-  // Use the EnvApp to get the required environment info
+  executor
+    .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
+    .future.get();
+
+  // Get info
+  auto info = info_app.get_info();
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
-  // LOG_INFO(logger, "IP (within VPC) of CK frontend node: {}", frontend_ip);
-  // LOG_INFO(logger, "Grafana: http://{}:3000", ck_grafana_public_dns);
-  // LOG_INFO(logger, "Nervion: http://{}:8080", nervion_controller_public_dns);
-  LOG_INFO(logger, "Current cluster: nervion-aws-cluster");
+  LOG_INFO(
+    logger,
+    "IP (within VPC) of CK frontend node: {}",
+    info->frontend_ip
+  );
+  LOG_INFO(logger, "Grafana: http://{}:3000", info->corekube_dns_name);
+  LOG_INFO(logger, "Nervion: http://{}:8080", info->nervion_dns_name);
+  LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 
 void DeployApp::teardown_aws_eks_fargate()
