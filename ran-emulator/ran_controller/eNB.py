@@ -13,6 +13,7 @@ class eNB:
         self.address: Optional[tuple[str, int]] = None
         self.mutex = Lock()
         self.mutex_assign = Lock()
+        self.pod_name = "N/A"
 
     def printENB(self):
         print("eNB " + str(self.get_num()) + ":")
@@ -53,6 +54,9 @@ class eNB:
     def get_ue_port(self):
         return self.ue_port
 
+    def get_pod_name(self):
+        return self.pod_name
+
     def serialize(self, code: int, epc: int):
         # Add ID
         data = bytearray()
@@ -90,6 +94,9 @@ class eNB:
 
     def set_connected(self):
         self.status.move_to_connected()
+
+    def set_pod_name(self, name: str):
+        self.pod_name = name
 
     def acquire(self):
         self.mutex.acquire()

@@ -248,49 +248,61 @@ class RANControler:
             print("New slave at " + msg["ip"] + ":" + str(msg["port"]))
             friendly_ip = str(socket.inet_ntoa(struct.pack("!L", msg["ip_node"])))
             print("Node IP: " + friendly_ip)
+            pod_name = "N/A"
 
             # Get pod name from IP using k8s API
             if k8s == True:
                 core_v1 = client.CoreV1Api()
-                ret = core_v1.list_pod_for_all_namespaces(watch=False)
-                for i in ret.items:
-                    if getattr(i.status, "pod_ip") == friendly_ip:
-                        print("Pod name: " + getattr(i.metadata, "name"))
-                        break
-                else:
-                    print("Pod not found for IP " + friendly_ip, msg["type"])
+
+                # Wait for the pod's status IP to be visible - there can be
+                # a delay between the pod being created (and sending us the
+                # init message) and the IP being visible in the k8s API
+                while True:
+                    ret = core_v1.list_pod_for_all_namespaces(watch=False)
+                    for i in ret.items:
+                        if getattr(i.status, "pod_ip") == friendly_ip:
+                            pod_name = getattr(i.metadata, "name")
+                            print("Pod name: " + pod_name)
+                            break
 
             ######################
             # Critical section 1 #
             # Assign first eNBs  #
             ######################
-            # Acquire the Global Lock
-            self.lock.acquire()
-            for enb in self.controller_data["eNBs"]:
-                if (
-                    enb.get_status() == Status.STOPPED
-                    and msg["ip_node"] not in self.enb_ips
-                ):
-                    # Set pending
-                    enb.set_pending()
-                    # This is needed because of the MobileStream implementation
-                    if mobilestream == True:
-                        self.enb_ips.append(msg["ip_node"])
-                    # This slave has to be a eNB
-                    buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
-                    self.sock.sendto(buf, (msg["ip"], msg["port"]))
-                    print(
-                        "eNB role assigned to Slave at "
-                        + msg["ip"]
-                        + ":"
-                        + str(msg["port"])
-                    )
-                    # Release Global Lock
-                    self.lock.release()
-                    return
-            # Release Global Lock
-            self.lock.release()
-            print("This slave cannot be an eNB (No eNB role available)")
+            if "enb" in pod_name:
+                # Acquire the Global Lock
+                self.lock.acquire()
+                # Get the first not assigned eNB
+                for enb in self.controller_data["eNBs"]:
+                    if (
+                        enb.get_status() == Status.STOPPED
+                        and msg["ip_node"] not in self.enb_ips
+                    ):
+                        # Set pending
+                        enb.set_pending()
+                        # Set pod name to show in the UI, since pod number and
+                        # eNB number are not the same
+                        enb.set_pod_name(pod_name)
+                        # This is needed because of the MobileStream implementation
+                        if mobilestream == True:
+                            self.enb_ips.append(msg["ip_node"])
+                        # This slave has to be a eNB
+                        buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
+                        self.sock.sendto(buf, (msg["ip"], msg["port"]))
+                        print(
+                            "eNB role assigned to Slave at "
+                            + msg["ip"]
+                            + ":"
+                            + str(msg["port"])
+                        )
+                        # Release Global Lock
+                        self.lock.release()
+                        return
+                else:
+                    print("This slave cannot be an eNB (No eNB role available)")
+                # Release Global Lock
+                self.lock.release()
+
             #############################
             # End of critical section 1 #
             #############################
@@ -301,7 +313,7 @@ class RANControler:
             ###################################
             # Acquire the Global Lock
             self.lock.acquire()
-            if self.cp_mode == True and msg["type"] == "init":
+            if "ue" in pod_name and self.cp_mode == True and msg["type"] == "init":
                 print("Trying new UE in CP Only mode...")
                 if self.num_ues != -1:
                     # Calculate the number of threas
@@ -340,51 +352,52 @@ class RANControler:
             # Critical Section 3 #
             # Assign UE role     #
             ######################
-            # Acquire the Global Lock
-            self.lock.acquire()
-            # Get the first not assigned UE
-            for ue in self.controller_data["UEs"]:
-                if ue.get_status() == Status.STOPPED:
-                    ue.set_pending()
-                    # At this point, only one thread can execute the following
+            if "ue" in pod_name:
+                # Acquire the Global Lock
+                self.lock.acquire()
+                # Get the first not assigned UE
+                for ue in self.controller_data["UEs"]:
+                    if ue.get_status() == Status.STOPPED:
+                        ue.set_pending()
+                        # At this point, only one thread can execute the following
 
-                    # Release Global Lock
-                    self.lock.release()
+                        # Release Global Lock
+                        self.lock.release()
 
-                    # Get associated eNB
-                    assoc_enb = next(
-                        (
-                            enb
-                            for enb in self.controller_data["eNBs"]
-                            if enb.get_num() == ue.get_enb_id()
-                        ),
-                        None,
-                    )
+                        # Get associated eNB
+                        assoc_enb = next(
+                            (
+                                enb
+                                for enb in self.controller_data["eNBs"]
+                                if enb.get_num() == ue.get_enb_id()
+                            ),
+                            None,
+                        )
 
-                    if assoc_enb is None:
-                        print("ERROR: No eNB associated to the UE")
+                        if assoc_enb is None:
+                            print("ERROR: No eNB associated to the UE")
+                            return
+
+                        # Special race condition: eNB has been assigned but it does not already answer
+                        while assoc_enb.get_status() != Status.CONNECTED:
+                            time.sleep(1)
+
+                        buf = ue.serialize(
+                            CODE_OK | CODE_UE_BEHAVIOUR,
+                            assoc_enb,
+                            self.multiplexer,
+                            self.epc,
+                        )
+                        self.sock.sendto(buf, (msg["ip"], msg["port"]))
+                        print(
+                            "UE role assigned to Slave at "
+                            + msg["ip"]
+                            + ":"
+                            + str(msg["port"])
+                        )
                         return
-
-                    # Special race condition: eNB has been assigned but it does not already answer
-                    while assoc_enb.get_status() != Status.CONNECTED:
-                        time.sleep(1)
-
-                    buf = ue.serialize(
-                        CODE_OK | CODE_UE_BEHAVIOUR,
-                        assoc_enb,
-                        self.multiplexer,
-                        self.epc,
-                    )
-                    self.sock.sendto(buf, (msg["ip"], msg["port"]))
-                    print(
-                        "UE role assigned to Slave at "
-                        + msg["ip"]
-                        + ":"
-                        + str(msg["port"])
-                    )
-                    return
-            # Release Global Lock
-            self.lock.release()
+                # Release Global Lock
+                self.lock.release()
 
             # Send error message to the slave
             print(
@@ -875,14 +888,6 @@ class RANControler:
             core_v1 = client.CoreV1Api()
             ret = core_v1.list_namespaced_pod("default")
             for i in ret.items:
-                print(
-                    "%s\t%s\t%s"
-                    % (
-                        getattr(i.status, "pod_ip"),
-                        getattr(i.metadata, "namespace"),
-                        getattr(i.metadata, "name"),
-                    )
-                )
                 if "slave-" in getattr(i.metadata, "name"):
                     slaves += 1
         print("Number of Slave pods:", slaves)
