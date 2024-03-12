@@ -1,5 +1,5 @@
 CC := g++
-CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/curl_install/include -Iexternal/taskflow_install/include
+CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/curl_install/include
 CFLAGS := -Wall -DCURL_STATICLIB -std=c++17
 LDFLAGS := -Lexternal/quill_install/lib -Lexternal/curl_install/lib
 LDLIBS := -lpthread -lquill -lcurl
@@ -70,7 +70,7 @@ $(EXE): $(OBJ_LIST)
 		$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # If dependencies are needed, install them
-external: external/quill_install external/curl_install external/taskflow_install
+external: external/quill_install external/curl_install
 
 # If quill isn't present as an installed library, clone and install it
 external/quill_install:
@@ -96,13 +96,6 @@ external/curl_install:
 # because the default generator on Windows is the Visual Studio generator.
 		cd external/curl/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../curl_install/ -DBUILD_CURL_EXE=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCURL_DISABLE_DICT=ON -DCURL_DISABLE_KERBEROS_AUTH=ON -DCURL_DISABLE_AWS=ON -DCURL_DISABLE_FILE=ON -DCURL_DISABLE_FTP=ON -DCURL_DISABLE_GOPHER=ON -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_LDAP=ON -DCURL_DISABLE_LDAPS=ON -DCURL_DISABLE_MQTT=ON -DCURL_DISABLE_POP3=ON -DCURL_DISABLE_RTSP=ON -DCURL_DISABLE_SMB=ON -DCURL_DISABLE_SMTP=ON -DCURL_DISABLE_TELNET=ON -DCURL_DISABLE_TFTP=ON -DCURL_ENABLE_SSL=OFF -G "Unix Makefiles" ..
 		cd external/curl/cmake_build && make install
-
-external/taskflow_install:
-		@$(call MKDIR, external)
-		@$(call IF_NOT_EXISTS, external/taskflow, cd external && git clone https://github.com/taskflow/taskflow.git && cd taskflow && git checkout tags/v3.6.0)
-# Taskflow is a header-only library, so copy the headers to the install dir
-		@$(call MKDIR, external/taskflow_install/include)
-		@$(call CP, external/taskflow/taskflow, external/taskflow_install/include/taskflow)
 
 clean:
 		@$(call RMDIR, $(OBJ_DIR))

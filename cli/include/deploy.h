@@ -5,7 +5,6 @@
 #include "executor.h"
 #include "info.h"
 #include "quill/Quill.h"
-#include <taskflow/taskflow.hpp>
 
 class DeployApp
 {
@@ -28,9 +27,6 @@ private:
   void deploy_aws_eks_ec2();
   void deploy_aws_eks_ec2_spot();
   void deploy_aws_ec2();
-
-  tf::Executor tf_executor;
-  tf::Taskflow tf_taskflow;
 
   quill::Logger *logger;
   Executor executor;
