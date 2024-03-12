@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "ran-controller"
+version = "0.1.0"
+description = ""
+authors = ["j0lama <jon_larrea@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "ran_controller"}]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+kubernetes = "^29.0.0"
+Flask = "^3.0.2"
+Flask-SocketIO = "^5.3.6"
+markupsafe = "2.1.5"
+python-engineio = "^4.9.0"
+python-socketio = "^5.11.1"
+
+
+[tool.poetry.group.dev.dependencies]
+kubernetes-stubs-elephant-fork = "^29.0.0"
+types-flask-socketio = "^5.3.0.20240311"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

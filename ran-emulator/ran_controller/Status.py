@@ -8,7 +8,7 @@ DISCONNECTED = 5
 class Status():
 
 	def __init__(self):
-		self.status = STOPPED
+		self.status: int = STOPPED
 
 	def move_to_stopped(self):
 		self.status = STOPPED

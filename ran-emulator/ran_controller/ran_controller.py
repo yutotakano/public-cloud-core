@@ -1,15 +1,29 @@
 import socket
 import threading
-from UE import UE
-from eNB import eNB
-from UserInput import UserInput
-from queue import Queue
+from UserInput import UserInput, ControllerData
 import Status
 import time
 import struct
 import math
 
-from kubernetes import config, client
+from kubernetes.config import incluster_config
+from kubernetes import client
+from kubernetes.client.models import (
+    V1Pod,
+    V1ObjectMeta,
+    V1PodSpec,
+    V1Container,
+    V1EnvVar,
+    V1EnvVarSource,
+    V1ObjectFieldSelector,
+    V1SecurityContext,
+    V1Capabilities,
+    V1Volume,
+    V1VolumeMount,
+    V1HostPathVolumeSource,
+)
+
+from typing import TypedDict, Optional, Union, Literal
 
 # Debug variable to use in local testbed
 k8s = True
@@ -47,6 +61,44 @@ CODE_CP_MODE_ONLY = 0x0B
 """
 
 
+class ReceivedMessageWithIP(TypedDict):
+    type: Union[Literal["init"], Literal["cp_mode"]]
+    ip: str
+    port: int
+    ip_node: int
+
+
+class ReceivedMessageWithData(TypedDict):
+    type: Union[
+        Literal["enb_run"],
+        Literal["ue_run"],
+        Literal["ue_idle"],
+        Literal["ue_detached"],
+        Literal["ue_attached"],
+        Literal["moved_to_connected"],
+        Literal["get_enb"],
+        Literal["x2_completed"],
+        Literal["ue_attached_to_enb"],
+        Literal["s1_completed"],
+        Literal["enb_error_run"],
+        Literal["ue_error_run"],
+    ]
+    ip: str
+    port: int
+    data: bytes
+
+
+class ReceivedMessageError(TypedDict):
+    type: Literal["error"]
+    ip: str
+    port: int
+
+
+ReceivedMessage = Union[
+    ReceivedMessageWithIP, ReceivedMessageWithData, ReceivedMessageError
+]
+
+
 class RANControler:
 
     # used to notify old kubernetes threads to stop scaling when restarting,
@@ -57,59 +109,63 @@ class RANControler:
     def __init__(self):
         # Initialize Kubernetes if needed
         if k8s == True:
-            config.load_incluster_config()
+            incluster_config.load_incluster_config()
 
         self.lock = threading.Lock()
-        # Init communication queues
-        self.send_queue = Queue(maxsize=0)
-        self.user_queue = Queue(maxsize=0)
+
         # Slave K8s manifest
-        self.pod_manifest = {
-            "apiVersion": "v1",
-            "kind": "Pod",
-            "metadata": {"name": "pod-name", "labels": {"app": "ran-slave"}},
-            "spec": {
-                "containers": [
-                    {
-                        "image": "ghcr.io/yutotakano/ran-slave:latest",
-                        "imagePullPolicy": "IfNotPresent",
-                        "name": "name",
-                        "env": [
-                            {
-                                "name": "NODE_IP",
-                                "valueFrom": {
-                                    "fieldRef": {"fieldPath": "status.hostIP"}
-                                },
-                            },
-                            {
-                                "name": "NODE_NAME",
-                                "valueFrom": {
-                                    "fieldRef": {"fieldPath": "spec.nodeName"}
-                                },
-                            },
+        self.pod_manifest = V1Pod(
+            api_version="v1",
+            kind="Pod",
+            metadata=V1ObjectMeta(name="pod-name", labels={"app": "ran-slave"}),
+            spec=V1PodSpec(
+                containers=[
+                    V1Container(
+                        image="ghcr.io/yutotakano/ran-slave:latest",
+                        image_pull_policy="IfNotPresent",
+                        name="name",
+                        env=[
+                            V1EnvVar(
+                                name="NODE_IP",
+                                value_from=V1EnvVarSource(
+                                    field_ref=V1ObjectFieldSelector(
+                                        field_path="status.hostIP"
+                                    )
+                                ),
+                            ),
+                            V1EnvVar(
+                                name="NODE_NAME",
+                                value_from=V1EnvVarSource(
+                                    field_ref=V1ObjectFieldSelector(
+                                        field_path="spec.nodeName"
+                                    )
+                                ),
+                            ),
                         ],
-                        "securityContext": {
-                            "capabilities": {"add": ["NET_ADMIN"]},
-                            "privileged": False,
-                        },
-                        "volumeMounts": [
-                            {"mountPath": "/dev/net/tun", "name": "dev-tun"}
+                        security_context=V1SecurityContext(
+                            capabilities=V1Capabilities(add=["NET_ADMIN"]),
+                            privileged=False,
+                        ),
+                        volume_mounts=[
+                            V1VolumeMount(mount_path="/dev/net/tun", name="dev-tun")
                         ],
-                        "args": [
+                        args=[
                             "/bin/sh",
                             "-c",
                             "./ran-emulator $INTERNAL_CONTROLLER_SERVICE_HOST $(hostname -I)",
                         ],
-                    }
+                    )
                 ],
-                "volumes": [
-                    {
-                        "hostPath": {"path": "/dev/net/tun", "type": "CharDevice"},
-                        "name": "dev-tun",
-                    }
+                volumes=[
+                    V1Volume(
+                        host_path=V1HostPathVolumeSource(
+                            path="/dev/net/tun", type="CharDevice"
+                        ),
+                        name="dev-tun",
+                    )
                 ],
-            },
-        }
+            ),
+        )
 
     def start_user_input(self):
         self.user_input = UserInput(
@@ -119,14 +175,14 @@ class RANControler:
 
     def start_controller(
         self,
-        controller_data,
-        docker_image,
-        epc,
-        multiplexer,
-        restart,
-        cp_mode,
-        num_threads,
-        scale_minutes,
+        controller_data: ControllerData,
+        docker_image: str,
+        epc: int,
+        multiplexer: int,
+        restart: bool,
+        cp_mode: bool,
+        num_threads: int,
+        scale_minutes: int,
     ):
         self.controller_data = controller_data
         self.docker_image = docker_image
@@ -136,7 +192,7 @@ class RANControler:
         self.num_threads = num_threads
         self.scale_over_minutes = scale_minutes
         self.num_ues = len(self.controller_data["UEs"])
-        self.enb_ips = []
+        self.enb_ips: list[int] = []
 
         self.should_keep_scaling.set()
 
@@ -156,15 +212,13 @@ class RANControler:
 
         # Create 3 threads
         receive_t = threading.Thread(target=self.receive_thread)
-        send_t = threading.Thread(target=self.send_thread)
         self.kubernetes_t = threading.Thread(target=self.kubernetes_thread)
 
         # Start threads
         receive_t.start()
-        send_t.start()
         self.kubernetes_t.start()
 
-    def get_enb_by_buffer(self, data):
+    def get_enb_by_buffer(self, data: bytes):
         num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
         print("Getting eNB with ID: %d" % num)
         for enb in self.controller_data["eNBs"]:
@@ -172,21 +226,22 @@ class RANControler:
                 return enb
         return None
 
-    def get_enb(self, data):
+    def get_enb(self, data: bytes):
         num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
+        print("Getting eNB with num: %d" % num)
         for enb in self.controller_data["eNBs"]:
             if enb.get_num() == num:
                 return enb
         return None
 
-    def get_ue_by_buffer(self, data):
+    def get_ue_by_buffer(self, data: bytes):
         num = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]
         for ue in self.controller_data["UEs"]:
             if ue.get_id_int() == num:
                 return ue
         return None
 
-    def analyze_msg(self, msg):
+    def analyze_msg(self, msg: ReceivedMessage):
         print("\n\nMessage received:", msg["type"])
 
         if msg["type"] == "init" or msg["type"] == "cp_mode":
@@ -295,6 +350,10 @@ class RANControler:
                         ),
                         None,
                     )
+
+                    if assoc_enb is None:
+                        print("ERROR: No eNB associated to the UE")
+                        return
 
                     # Special race condition: eNB has been assigned but it does not already answer
                     while assoc_enb.get_status() != Status.CONNECTED:
@@ -467,6 +526,9 @@ class RANControler:
 
             # Get UE from data
             ue = self.get_ue_by_buffer(msg["data"][:4])  # First 4 bytes
+            if ue is None:
+                print("ERROR: UE not found")
+                return
             # Get eNB from data
             enb = self.get_enb(msg["data"][4:])  # Last 4 bytes
             buf = bytearray()
@@ -499,7 +561,7 @@ class RANControler:
                 buf.append(CODE_OK | CODE_UE_GET_ENB)
                 # Add eNB IP
                 try:
-                    ip = struct.unpack("!I", socket.inet_aton(enb.get_address()[0]))[0]
+                    ip = struct.unpack("!I", socket.inet_aton(enb.get_address()[0]))[0]  # type: ignore
                     buf.append((ip >> 24) & 0xFF)
                     buf.append((ip >> 16) & 0xFF)
                     buf.append((ip >> 8) & 0xFF)
@@ -517,6 +579,10 @@ class RANControler:
             if ue is not None:
                 # Get eNB from data
                 enb = self.get_enb(msg["data"][4:])  # Last 4 bytes
+                if enb is None:
+                    print("ERROR: eNB not found")
+                    return
+
                 # Update UE info
                 ue.set_enb_id(enb.get_num())
                 print(
@@ -536,6 +602,10 @@ class RANControler:
             if ue is not None:
                 # Get eNB from data
                 enb = self.get_enb(msg["data"][4:])  # Last 4 bytes
+                if enb is None:
+                    print("ERROR: eNB not found")
+                    return
+
                 # Update UE info
                 ue.set_enb_id(enb.get_num())
                 ue.set_traffic()
@@ -556,6 +626,10 @@ class RANControler:
             if ue is not None:
                 # Get eNB from data
                 enb = self.get_enb(msg["data"][4:])  # Last 4 bytes
+                if enb is None:
+                    print("ERROR: eNB not found")
+                    return
+
                 # Update UE info
                 ue.set_enb_id(enb.get_num())
                 print(
@@ -569,100 +643,125 @@ class RANControler:
                     + str(enb.get_num())
                 )
 
-    def generate_msg(self, data, address):
-        msg = {}
-
+    def generate_msg(
+        self, data: bytes, address: tuple[str, int]
+    ) -> Optional[ReceivedMessage]:
         if data[0] == CODE_INIT:
-            msg["type"] = "init"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["ip_node"] = (
-                (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
-            )
+            return {
+                "type": "init",
+                "ip": address[0],
+                "port": address[1],
+                "ip_node": (
+                    (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
+                ),
+            }
         elif data[0] == CODE_CP_MODE_ONLY:
-            msg["type"] = "cp_mode"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["ip_node"] = (
-                (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
-            )
+            return {
+                "type": "cp_mode",
+                "ip": address[0],
+                "port": address[1],
+                "ip_node": (
+                    (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4]
+                ),
+            }
         elif data[0] == CODE_OK | CODE_ENB_BEHAVIOUR:
-            msg["type"] = "enb_run"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "enb_run",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_OK | CODE_UE_BEHAVIOUR:
-            msg["type"] = "ue_run"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_run",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_IDLE:
-            msg["type"] = "ue_idle"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_idle",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_DETACH:
-            msg["type"] = "ue_detached"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_detached",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_ATTACH:
-            msg["type"] = "ue_attached"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_attached",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_MOVED_TO_CONNECTED:
-            msg["type"] = "moved_to_connected"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "moved_to_connected",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_GET_ENB:
-            msg["type"] = "get_enb"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "get_enb",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_X2_HANDOVER_COMPLETED:
-            msg["type"] = "x2_completed"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "x2_completed",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_ATTACH_TO_ENB:
-            msg["type"] = "ue_attached_to_enb"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_attached_to_enb",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
         elif data[0] == CODE_UE_S1_HANDOVER_COMPLETED:
-            msg["type"] = "s1_completed"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "s1_completed",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
 
         # Error Init cases
         elif data[0] == CODE_ENB_BEHAVIOUR:
-            msg["type"] = "enb_error_run"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "enb_error_run",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
 
         elif data[0] == CODE_UE_BEHAVIOUR:
-            msg["type"] = "ue_error_run"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
-            msg["data"] = data[1:]
+            return {
+                "type": "ue_error_run",
+                "ip": address[0],
+                "port": address[1],
+                "data": data[1:],
+            }
 
         # Error code: 0XXX XXXX
         elif (data[0] & CODE_OK) == CODE_ERROR:
-            msg["type"] = "error"
-            msg["ip"] = address[0]
-            msg["port"] = address[1]
+            return {
+                "type": "error",
+                "ip": address[0],
+                "port": address[1],
+            }
 
-        return msg
-
-    def send_thread(self):
-        print("Init sender thread")
-        while 1:
-            msg = self.send_queue.get()
-            sock.sendto(msg["data"], msg["address"])
+        else:
+            return None
 
     def receive_thread(self):
         print("Init receiver thread")
@@ -693,9 +792,9 @@ class RANControler:
         print("Staring eNB Slave Pods...")
         for i in range(enb_pods):
             # Configure POD Manifest for each slave
-            self.pod_manifest["metadata"]["name"] = "slave-" + str(i)
-            self.pod_manifest["spec"]["containers"][0]["image"] = self.docker_image
-            self.pod_manifest["spec"]["containers"][0]["name"] = "slave-" + str(i)
+            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
@@ -708,9 +807,9 @@ class RANControler:
                 break
 
             # Configure POD Manifest for each slave
-            self.pod_manifest["metadata"]["name"] = "slave-" + str(i)
-            self.pod_manifest["spec"]["containers"][0]["image"] = self.docker_image
-            self.pod_manifest["spec"]["containers"][0]["name"] = "slave-" + str(i)
+            self.pod_manifest.metadata.name = "slave-" + str(i)  # type: ignore
+            self.pod_manifest.spec.containers[0].image = self.docker_image  # type: ignore
+            self.pod_manifest.spec.containers[0].name = "slave-" + str(i)  # type: ignore
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
@@ -775,9 +874,13 @@ class RANControler:
             for i in ret.items:
                 print(
                     "%s\t%s\t%s"
-                    % (i.status.pod_ip, i.metadata.namespace, i.metadata.name)
+                    % (
+                        getattr(i.status, "pod_ip"),
+                        getattr(i.metadata, "namespace"),
+                        getattr(i.metadata, "name"),
+                    )
                 )
-                if "slave-" in i.metadata.name:
+                if "slave-" in getattr(i.metadata, "name"):
                     slaves += 1
         print("Number of Slave pods:", slaves)
         return slaves

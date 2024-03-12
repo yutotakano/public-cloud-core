@@ -1,35 +1,28 @@
 # Comment: Image base with ran-emulator installed
 
 # Download ubuntu from the Docker Hub
-FROM ubuntu:bionic
+FROM python:3.11-bookworm
 
 # Install dependencies
 RUN apt-get update
-RUN apt-get -y install git libsctp-dev build-essential libssl-dev python3 python3-pip net-tools iputils-ping nano
+RUN apt-get -y install net-tools iputils-ping nano
 
-RUN pip3 install --upgrade pip
-# Install Python dependencies
-RUN pip3 install MarkupSafe==2.0.0
-RUN pip3 install Flask
-RUN pip3 install kubernetes
-# Install engineio and socketio manually to avoid version errors
-RUN pip3 install python-engineio==3.13.2
-RUN pip3 install python-socketio==4.6.0
-RUN pip3 install Flask-SocketIO==4.3.1
+RUN pip3 install poetry==1.8.2
 
-# Install GarbageCollector
-RUN git clone https://github.com/j0lama/GarbageCollector.git
-WORKDIR GarbageCollector/
-RUN make
-RUN make install
+WORKDIR /app
 
-WORKDIR ../
+COPY ran-emulator/ran_controller/pyproject.toml .
+COPY ran-emulator/ran_controller/poetry.lock .
+RUN poetry install --no-dev
 
-# Install ran-emulator
-COPY ran-emulator/ ran-emulator/
-WORKDIR ran-emulator/
-RUN make
+COPY ran-emulator/ran_controller/static ./static
+COPY ran-emulator/ran_controller/templates ./templates
+COPY ran-emulator/ran_controller/ran_controller.py .
+COPY ran-emulator/ran_controller/eNB.py .
+COPY ran-emulator/ran_controller/Status.py .
+COPY ran-emulator/ran_controller/UE.py .
+COPY ran-emulator/ran_controller/UserInput.py .
 
-ENTRYPOINT [ "python3" ]
+ENTRYPOINT [ "poetry", "run", "python" ]
 
-CMD [ "ran_controller/ran_controller.py" ]
+CMD [ "ran_controller.py" ]
