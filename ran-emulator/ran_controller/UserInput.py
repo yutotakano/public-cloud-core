@@ -330,6 +330,12 @@ class UserInput:
         self.restarted = True
         return redirect(url_for("index"))
 
+    def get_number_pods(self):
+        self.num_of_running_pods = self.check_pods()
+        return {
+            "num_pods": self.num_of_running_pods,
+        }
+
     def updateThread(self):
         print("Starting web user updater thread")
         while not self.thread_stop_event.isSet():
@@ -373,6 +379,11 @@ class UserInput:
             endpoint="/restart/",
             endpoint_name="restart",
             handler=self.restart_experiment,
+        )
+        self.add_endpoint(
+            endpoint="/pods/",
+            endpoint_name="pods",
+            handler=self.get_number_pods,
         )
 
         # Async routes
