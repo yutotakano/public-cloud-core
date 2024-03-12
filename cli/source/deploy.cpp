@@ -185,6 +185,14 @@ void DeployApp::teardown_aws_eks_fargate()
 {
   LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
 
+  // Destroy the kubernetes layer first, since the LoadBalancers in this layer
+  // will directly prevent the base layer VPCs from being destroyed
+  executor
+    .run(
+      {"terraform", "-chdir=terraform/kubernetes", "destroy", "-auto-approve"}
+    )
+    .future.get();
+
   executor
     .run({"terraform", "-chdir=terraform/base", "destroy", "-auto-approve"})
     .future.get();
