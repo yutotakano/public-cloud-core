@@ -258,7 +258,7 @@ class RANControler:
                         print("Pod name: " + getattr(i.metadata, "name"))
                         break
                 else:
-                    print("Pod not found for IP")
+                    print("Pod not found for IP " + friendly_ip, msg["type"])
 
             ######################
             # Critical section 1 #
