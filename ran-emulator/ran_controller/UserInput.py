@@ -255,21 +255,6 @@ class UserInput:
         return False
 
     def index(self):
-        # If there is a Slave pod running, print an error
-        if self.num_of_running_pods > 0:
-            print(
-                "Error: There are "
-                + str(self.num_of_running_pods)
-                + " Slave pods running. Redirecting to the configuration panel"
-            )
-            errorMessage = {
-                "onload": 'onload="alertSlaves()"',
-                "code": '<script>function alertSlaves(){alert("There are '
-                + str(self.num_of_running_pods)
-                + ' Pods running from previous experiments. Please wait until the automatic deletion.");}</script>',
-            }
-            return render_template("config.html", **errorMessage)
-
         if self.configuration:
             return render_template("config.html")
         else:
@@ -307,6 +292,22 @@ class UserInput:
             self.refresh_time = int(request.form["refresh_time"])
             # Get the number of Slave pods
             self.num_of_running_pods = self.check_pods()
+
+            # If there is a Slave pod running, print an error
+            if self.num_of_running_pods > 0:
+                print(
+                    "Error: There are "
+                    + str(self.num_of_running_pods)
+                    + " Slave pods running. Redirecting to the configuration panel"
+                )
+                errorMessage = {
+                    "onload": 'onload="alertSlaves()"',
+                    "code": '<script>function alertSlaves(){alert("There are '
+                    + str(self.num_of_running_pods)
+                    + ' Pods running from previous experiments. Please wait until the automatic deletion.");}</script>',
+                }
+                return render_template("config.html", **errorMessage)
+
             # If the data has been validated
             if self.generate_data(
                 config,
