@@ -264,7 +264,6 @@ class RANControler:
                             pod_name = getattr(i.metadata, "name")
                             print("Pod name: " + pod_name)
                             break
-                    time.sleep(2)
 
             ######################
             # Critical section 1 #
