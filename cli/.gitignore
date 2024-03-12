@@ -7,3 +7,4 @@ external
 .terraform
 .terraform.tfstate.lock.info
 terraform.tfstate*
+config
