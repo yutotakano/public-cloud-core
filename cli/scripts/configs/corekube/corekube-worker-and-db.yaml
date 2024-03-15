@@ -49,6 +49,9 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: corekube-worker
 spec:
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 0 # Default is 300 seconds
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
