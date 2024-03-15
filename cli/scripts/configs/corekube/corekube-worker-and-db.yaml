@@ -16,7 +16,7 @@ kind: Deployment
 metadata:
   name: corekube-worker
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: corekube-worker
