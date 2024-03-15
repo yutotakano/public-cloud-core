@@ -84,7 +84,7 @@ module "ck_cluster" {
   version = "20.2.1"
 
   cluster_name    = local.ck_cluster_name
-  cluster_version = "1.29"
+  cluster_version = "1.28"
 
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = module.vpc.private_subnets
@@ -191,7 +191,7 @@ module "nv_cluster" {
   version = "20.2.1"
 
   cluster_name    = local.nv_cluster_name
-  cluster_version = "1.29"
+  cluster_version = "1.28"
 
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = module.vpc.private_subnets
