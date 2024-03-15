@@ -173,7 +173,6 @@ void LoadTestApp::post_nervion_controller(
   std::string file_name = Utils::split(file_path, '/').back();
 
   curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0);
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
   curl_mime *form = curl_mime_init(curl);
   curl_mimepart *field;
