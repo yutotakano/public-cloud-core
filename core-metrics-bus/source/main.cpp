@@ -135,7 +135,6 @@ int main(int argc, char *argv[])
 
       while (std::getline(line_stream, metric, '|'))
       {
-        std::cout << "Received metric: " << metric << std::endl;
         // Process each metric
         std::istringstream metric_stream(metric);
         std::string metric_name;
@@ -146,7 +145,8 @@ int main(int argc, char *argv[])
         if (metric_name == "amf_message_ue_id")
         {
           ue_id = metric_value;
-          std::cout << "Received message from UE " << ue_id << std::endl;
+          std::cout << "Starting to read message from UE " << ue_id
+                    << std::endl;
         }
         else if (metric_name == "amf_message_ngap_type")
         {
@@ -155,47 +155,80 @@ int main(int argc, char *argv[])
         else if (metric_name == "amf_message_nas_type")
         {
           nas_message_type = metric_value;
-          packet_counter.Add({{"message_type", nas_message_type}}).Increment();
+          packet_counter
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}}
+            )
+            .Increment();
         }
         else if (metric_name == "amf_message_invalid")
         {
           invalid_messages_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_latency")
         {
-          latency_summary.Add({{"message_type", nas_message_type}}, quantiles)
+          latency_summary
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_decode_latency")
         {
           decode_latency_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_handle_latency")
         {
           handle_latency_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_encode_latency")
         {
           encode_latency_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_send_latency")
         {
           send_latency_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
         else if (metric_name == "amf_message_responses")
         {
           num_responses_summary
-            .Add({{"message_type", nas_message_type}}, quantiles)
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
             .Observe(std::stod(metric_value));
         }
       }
