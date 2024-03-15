@@ -121,7 +121,7 @@ class RANControler:
             spec=V1PodSpec(
                 containers=[
                     V1Container(
-                        image="ghcr.io/yutotakano/ran-slave:latest",
+                        image="j0lama/ran_slave:latest",
                         image_pull_policy="IfNotPresent",
                         name="name",
                         env=[
