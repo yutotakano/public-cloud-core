@@ -134,7 +134,8 @@ spec:
         - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
         - --kubelet-use-node-status-port
         - --kubelet-insecure-tls
-        - --metric-resolution=15s
+        - --metric-resolution=5s # default is 15s
+        - --horizontal-pod-autoscaler-downscale-stabilization=15 # default is 300 (5 minutes) to monitor before scaling down
         image: registry.k8s.io/metrics-server/metrics-server:v0.7.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
