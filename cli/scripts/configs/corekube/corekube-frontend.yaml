@@ -100,7 +100,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: corekube-core-sa
-  namespace: default
+  namespace: corekube-frontend
 roleRef:
   kind: ClusterRole
   name: corekube-core-cr
