@@ -2,5 +2,7 @@ external
 objects
 core-metrics-aggregator
 core-metrics-aggregator.exe
+core-metrics-bus
+core-metrics-bus.exe
 .venv
 .vscode
