@@ -20,6 +20,12 @@ typedef struct worker_metrics {
     unsigned long long end_time;
 } worker_metrics_t;
 
+typedef struct metrics_conn {
+    int sock;
+    char *host;
+    int port;
+} metrics_conn_t;
+
 /**
  * @brief Establish a connection with the metrics server.
  * 
@@ -27,7 +33,7 @@ typedef struct worker_metrics {
  * @param port The port to connect. If 0, will use DEFAULT_METRICS_PORT.
  * @return int The socket file descriptor, or -1 if an error occurred.
  */
-int metrics_connect(char * host, int port);
+metrics_conn_t metrics_connect(char * host, int port);
 
 /**
  * @brief Disconnect from the metrics server.
@@ -50,6 +56,6 @@ unsigned long long get_microtime();
  * @param stats The stats to send.
  * @return int 0 if successful, -1 if an error occurred.
  */
-int metrics_send(int sock, worker_metrics_t *stats);
+int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats);
 
 #endif /* METRICS_H */
