@@ -15,7 +15,7 @@
 
 int __corekube_log_domain;
 int db_sock;
-int metrics_sock;
+metrics_conn_t metrics_conn;
 pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
@@ -117,7 +117,7 @@ void *process_message(void *raw_args) {
 
 	ogs_trace("Finished handling message, sending metrics data");
 	// If there is an IP to send metrics to, send them to args->metrics_addr
-	int error = metrics_send(metrics_sock, response.stats);
+	int error = metrics_send(args->metrics_conn, response.stats);
 	if (error != 0) {
 		ogs_warn("Error sending metrics data, error code %d", error);
 	}
@@ -134,7 +134,7 @@ void *process_message(void *raw_args) {
 }
 
 
-void start_listener(char * mme_ip_address, int metrics_sock, int use_threads)
+void start_listener(char * mme_ip_address, metrics_conn_t * metrics_conn, int use_threads)
 {
 	int sock_udp;
 	int n;
@@ -175,7 +175,7 @@ void start_listener(char * mme_ip_address, int metrics_sock, int use_threads)
 		args->from_len = from_len;
 		args->num_bytes_received = n;
 		args->sock_udp = sock_udp;
-		args->metrics_sock = metrics_sock;
+		args->metrics_conn = metrics_conn;
 
 		if (use_threads) {
 			pthread_t thread;
@@ -235,8 +235,8 @@ int main(int argc, char const *argv[])
 	ogs_pkbuf_default_create(&config);
 
 	// connecto to the metrics server
-	metrics_sock = metrics_connect((char *)argv[5], 0);
-	ogs_assert(metrics_sock != -1);
+	metrics_conn = metrics_connect((char *)argv[5], 0);
+	ogs_assert(metrics_conn.sock != -1);
 	ogs_info("Metrics socket configured correctly.\n");
 
 	// setup the DB IP address
@@ -246,10 +246,10 @@ int main(int argc, char const *argv[])
 	ogs_assert(db_sock != -1);
 	ogs_info("DB socket configured correctly.\n");
 
-	start_listener((char *)argv[1], metrics_sock, use_threads);
+	start_listener((char *)argv[1], &metrics_conn, use_threads);
 
 	db_disconnect(db_sock);
-	metrics_disconnect(metrics_sock);
+	metrics_disconnect(metrics_conn.sock);
 
 	// delete the pkbuf pools
 	ogs_pkbuf_default_destroy();
