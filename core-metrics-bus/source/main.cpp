@@ -90,149 +90,166 @@ int main(int argc, char *argv[])
 
   while (true)
   {
+    // Use socket_ptr to pass the socket to the worker thread
     asio::ip::tcp::socket socket(io_context);
     acceptor.accept(socket);
-
-    std::array<char, 1024> buffer;
-    std::size_t bytes_transferred;
-    try
-    {
-      bytes_transferred = socket.read_some(asio::buffer(buffer));
-      if (bytes_transferred == 0)
+    std::thread(
+      [&socket,
+       &quantiles,
+       &packet_counter,
+       &invalid_messages_summary,
+       &latency_summary,
+       &decode_latency_summary,
+       &handle_latency_summary,
+       &encode_latency_summary,
+       &send_latency_summary,
+       &num_responses_summary]()
       {
-        continue;
+        std::cout << "Accepted connection from " << socket.remote_endpoint()
+                  << std::endl;
+        std::array<char, 1024> buffer;
+        std::size_t bytes_transferred;
+        try
+        {
+          bytes_transferred = socket.read_some(asio::buffer(buffer));
+          if (bytes_transferred == 0)
+          {
+            return;
+          }
+        }
+        catch (std::system_error &e)
+        {
+          std::error_code error = e.code();
+          if (error == asio::error::eof)
+          {
+            std::cout << "Connection closed by peer" << std::endl;
+          }
+          else
+          {
+            std::cerr << "Exception: " << e.what() << std::endl;
+          }
+          return;
+        }
+
+        // Each line of the message is  metric in the format:
+        // ue_id:value|message_type:value|metric_key1:metric_value1|metric_key2:metric_value2|...
+        std::string message(buffer.data(), bytes_transferred);
+        std::istringstream message_stream(message);
+        std::string line;
+
+        while (std::getline(message_stream, line))
+        {
+          std::cout << "Received line: " << line << std::endl;
+          std::istringstream line_stream(line);
+          std::string metric;
+
+          std::string ue_id;
+          std::string ngap_message_type;
+          std::string nas_message_type;
+
+          while (std::getline(line_stream, metric, '|'))
+          {
+            // Process each metric
+            std::istringstream metric_stream(metric);
+            std::string metric_name;
+            std::string metric_value;
+            std::getline(metric_stream, metric_name, ':');
+            std::getline(metric_stream, metric_value);
+
+            if (metric_name == "amf_message_ue_id")
+            {
+              ue_id = metric_value;
+              std::cout << "Starting to read message from UE " << ue_id
+                        << std::endl;
+            }
+            else if (metric_name == "amf_message_ngap_type")
+            {
+              ngap_message_type = metric_value;
+            }
+            else if (metric_name == "amf_message_nas_type")
+            {
+              nas_message_type = metric_value;
+              packet_counter
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}}
+                )
+                .Increment();
+            }
+            else if (metric_name == "amf_message_invalid")
+            {
+              invalid_messages_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_latency")
+            {
+              latency_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_decode_latency")
+            {
+              decode_latency_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_handle_latency")
+            {
+              handle_latency_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_encode_latency")
+            {
+              encode_latency_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_send_latency")
+            {
+              send_latency_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+            else if (metric_name == "amf_message_responses")
+            {
+              num_responses_summary
+                .Add(
+                  {{"nas_type", nas_message_type},
+                   {"ngap_type", ngap_message_type}},
+                  quantiles
+                )
+                .Observe(std::stod(metric_value));
+            }
+          }
+        }
       }
-    }
-    catch (std::system_error &e)
-    {
-      std::error_code error = e.code();
-      if (error == asio::error::eof)
-      {
-        std::cout << "Connection closed by peer" << std::endl;
-      }
-      else
-      {
-        std::cerr << "Exception: " << e.what() << std::endl;
-      }
-      continue;
-    }
-
-    // Each line of the message is  metric in the format:
-    // ue_id:value|message_type:value|metric_key1:metric_value1|metric_key2:metric_value2|...
-    std::string message(buffer.data(), bytes_transferred);
-    std::istringstream message_stream(message);
-    std::string line;
-
-    while (std::getline(message_stream, line))
-    {
-      std::cout << "Received line: " << line << std::endl;
-      std::istringstream line_stream(line);
-      std::string metric;
-
-      std::string ue_id;
-      std::string ngap_message_type;
-      std::string nas_message_type;
-
-      while (std::getline(line_stream, metric, '|'))
-      {
-        // Process each metric
-        std::istringstream metric_stream(metric);
-        std::string metric_name;
-        std::string metric_value;
-        std::getline(metric_stream, metric_name, ':');
-        std::getline(metric_stream, metric_value);
-
-        if (metric_name == "amf_message_ue_id")
-        {
-          ue_id = metric_value;
-          std::cout << "Starting to read message from UE " << ue_id
-                    << std::endl;
-        }
-        else if (metric_name == "amf_message_ngap_type")
-        {
-          ngap_message_type = metric_value;
-        }
-        else if (metric_name == "amf_message_nas_type")
-        {
-          nas_message_type = metric_value;
-          packet_counter
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}}
-            )
-            .Increment();
-        }
-        else if (metric_name == "amf_message_invalid")
-        {
-          invalid_messages_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_latency")
-        {
-          latency_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_decode_latency")
-        {
-          decode_latency_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_handle_latency")
-        {
-          handle_latency_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_encode_latency")
-        {
-          encode_latency_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_send_latency")
-        {
-          send_latency_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-        else if (metric_name == "amf_message_responses")
-        {
-          num_responses_summary
-            .Add(
-              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
-              },
-              quantiles
-            )
-            .Observe(std::stod(metric_value));
-        }
-      }
-    }
+    ).detach();
   }
 
   return 0;
