@@ -163,6 +163,8 @@ int analyze_controller_msg(uint8_t * buffer, int len, uint8_t * response, int * 
     }
     /* Message has been verified */
 
+    printf("Received message from controller with buffer[0]=%i\n", buffer[0]);
+
     /* Run as UE */
     if(buffer[0] == (CODE_OK | CODE_UE_BEHAVIOUR))
     {
