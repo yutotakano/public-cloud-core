@@ -268,6 +268,8 @@ class RANControler:
                     # This slave has to be a eNB
                     buf = enb.serialize(CODE_OK | CODE_ENB_BEHAVIOUR, self.epc)
                     self.sock.sendto(buf, (msg["ip"], msg["port"]))
+                    # Tentatively set the address (this will be updated when the slave answers with OK)
+                    enb.set_addr((msg["ip"], msg["port"]))
                     print(
                         "eNB role assigned to Slave at "
                         + msg["ip"]
@@ -806,7 +808,6 @@ class RANControler:
                 if enb.get_status() != Status.CONNECTED:
                     print(enb.get_id(), end=", ", flush=True)
                     all_connected = False
-                    break
             if all_connected or not self.should_keep_scaling.is_set():
                 print("eNB Check succeeded or aborted!")
                 break
