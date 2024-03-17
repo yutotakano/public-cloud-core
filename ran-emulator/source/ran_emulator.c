@@ -614,6 +614,9 @@ int main(int argc, char const *argv[])
     /* Send INIT message */
     send_init_controller();
 
+    // wait 5 seconds
+    sleep(5);
+
     while(1)
     {
         /* Receive Controller instructions */
