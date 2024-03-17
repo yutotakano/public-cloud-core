@@ -122,7 +122,7 @@ class RANControler:
                 containers=[
                     V1Container(
                         image="ghcr.io/yutotakano/ran-slave:latest",
-                        image_pull_policy="IfNotPresent",
+                        image_pull_policy="Always",
                         name="name",
                         env=[
                             V1EnvVar(
