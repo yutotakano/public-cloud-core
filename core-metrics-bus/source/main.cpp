@@ -7,7 +7,7 @@
 
 void threadWorker(
   asio::ip::tcp::socket socket,
-  prometheus::Summary::Quantiles quantiles,
+  prometheus::Summary::Quantiles &quantiles,
   prometheus::Family<prometheus::Counter> &packet_counter,
   prometheus::Family<prometheus::Summary> &invalid_messages_summary,
   prometheus::Family<prometheus::Summary> &latency_summary,
@@ -27,6 +27,8 @@ void threadWorker(
     bytes_transferred = socket.read_some(asio::buffer(buffer));
     if (bytes_transferred == 0)
     {
+      std::cout << "Connection closed by peer (0 bytes transferred)"
+                << std::endl;
       return;
     }
   }
@@ -35,7 +37,7 @@ void threadWorker(
     std::error_code error = e.code();
     if (error == asio::error::eof)
     {
-      std::cout << "Connection closed by peer" << std::endl;
+      std::cout << "Connection closed by peer (EOF received)" << std::endl;
     }
     else
     {
@@ -245,7 +247,7 @@ int main(int argc, char *argv[])
     std::thread(
       threadWorker,
       std::move(socket),
-      quantiles,
+      std::ref(quantiles),
       std::ref(packet_counter),
       std::ref(invalid_messages_summary),
       std::ref(latency_summary),
