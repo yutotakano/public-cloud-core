@@ -801,13 +801,16 @@ class RANControler:
         print("Waiting for all eNBs to start before starting UEs...")
         while True:
             all_connected = True
+            print("eNB not connected: ", end="")
             for enb in self.controller_data["eNBs"]:
                 if enb.get_status() != Status.CONNECTED:
+                    print(enb.get_id(), end=", ", flush=True)
                     all_connected = False
                     break
             if all_connected or not self.should_keep_scaling.is_set():
+                print("eNB Check succeeded or aborted!")
                 break
-            time.sleep(1)
+            time.sleep(3)
 
         print("Starting UE Slave Pods...")
         # Scale incrementally if required
