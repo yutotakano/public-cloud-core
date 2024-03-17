@@ -797,7 +797,19 @@ class RANControler:
             # Create a POD
             v1.create_namespaced_pod(body=self.pod_manifest, namespace="default")
 
-        print("Staring UE Slave Pods...")
+        # Wait for all eNBs to start
+        print("Waiting for all eNBs to start before starting UEs...")
+        while True:
+            all_connected = True
+            for enb in self.controller_data["eNBs"]:
+                if enb.get_status() != Status.CONNECTED:
+                    all_connected = False
+                    break
+            if all_connected or not self.should_keep_scaling.is_set():
+                break
+            time.sleep(1)
+
+        print("Starting UE Slave Pods...")
         # Scale incrementally if required
         for i in range(enb_pods, enb_pods + ue_pods):
             if not self.should_keep_scaling.is_set():
