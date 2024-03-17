@@ -533,6 +533,7 @@ void receive_controller(int sock_controller, int cp_mode)
     int len, n, res, res_len;
     struct sockaddr_in serv_addr_aux;
 
+    len = sizeof(serv_addr);
     memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
 
     n = recvfrom(sock_controller, (char *)buffer, 1024, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
@@ -613,9 +614,6 @@ int main(int argc, char const *argv[])
 
     /* Send INIT message */
     send_init_controller();
-
-    // wait 5 seconds
-    sleep(5);
 
     while(1)
     {
