@@ -535,9 +535,9 @@ void receive_controller(int sock_controller, int cp_mode)
     memcpy(&serv_addr_aux, (uint8_t *)&serv_addr, sizeof(serv_addr));
 
     n = recvfrom(sock_controller, (char *)buffer, 1024, 0, (struct sockaddr *) &serv_addr_aux, (uint32_t *)&len);
-    if (n == 0)
+    if (n <= 0)
     {
-        printf("warn: 0 bytes received from controller\n");
+        printf("warn: %i bytes received from controller\n", n);
     }
     res = analyze_controller_msg(buffer, n, response, &res_len, cp_mode);
     if(res < 0)
