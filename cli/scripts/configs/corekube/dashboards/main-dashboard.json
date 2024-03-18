@@ -761,15 +761,15 @@
               },
               {
                 "color": "#EAB839",
-                "value": 5
+                "value": 10000
               },
               {
                 "color": "red",
-                "value": 10
+                "value": 15000
               }
             ]
           },
-          "unit": "s"
+          "unit": "µs"
         },
         "overrides": []
       },
@@ -1091,13 +1091,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "CoreKube Dashboard",
   "uid": "be3d8ddb-7d64-4ac5-b27c-3b771e5ec831",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
