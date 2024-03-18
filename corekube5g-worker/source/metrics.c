@@ -105,8 +105,8 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 	// First byte is the length of following header bytes
 	buffer[0] = 0x02;
 	// Bytes 1 and 2 are the length of the message
-	buffer[1] = (buffer_len >> 8) & 0xFF;
-	buffer[2] = buffer_len & 0xFF;
+	buffer[1] = buffer_len & 0xFF;
+	buffer[2] = (buffer_len >> 8) & 0xFF;
 
 	send_response_code = send(conn->sock, buffer, buffer_len, 0);
 
