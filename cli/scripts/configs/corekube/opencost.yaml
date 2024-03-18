@@ -190,20 +190,21 @@ spec:
           name: opencost-ui
 ---
 
-# # Expose both the cost model and UI externally
-# kind: Service
-# apiVersion: v1
-# metadata:
-#   name: opencost
-# spec:
-#   selector:
-#     app: opencost
-#   type: LoadBalancer
-#   ports:
-#     - name: opencost
-#       port: 9003
-#       targetPort: 9003
-#     - name: opencost-ui
-#       port: 9090
-#       targetPort: 9090
-# ---
+# Expose UI externally
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  name: opencost
+spec:
+  selector:
+    app: opencost
+  type: LoadBalancer
+  ports:
+    - name: opencost-ui
+      port: 9090
+      targetPort: 9090
+---
