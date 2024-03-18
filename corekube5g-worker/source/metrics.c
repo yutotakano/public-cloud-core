@@ -82,33 +82,35 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 
   ogs_debug("Creating metrics byte buffer\n");
 
-	buffer_len += 1;
-	buffer_len += 2;
-  buffer_len += sprintf(buffer + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_nas_type:%d|", stats->nas_message_type);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_invalid:%d|", stats->invalid);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_latency:%d|", stats->latency);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_handle_latency:%d|", stats->handle_latency);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_decode_latency:%d|", stats->decode_latency);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
-	buffer_len += sprintf(buffer + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
+	int header_len = 3;
+  buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_type:%d|", stats->nas_message_type);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_invalid:%d|", stats->invalid);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_latency:%d|", stats->latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_handle_latency:%d|", stats->handle_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_decode_latency:%d|", stats->decode_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
 
 	// Sanity check length of buffer
-	if(buffer_len > 512) {
-		ogs_error("Buffer length is too long, %d\n", buffer_len);
+	if(header_len + buffer_len > 512) {
+		ogs_error("Send buffer overflow, %d\n", buffer_len);
 		return -1;
 	}
 
 	// First byte is the length of following header bytes
 	buffer[0] = 0x02;
-	// Bytes 1 and 2 are the length of the message
+	// We currently hardcode the message length to be less than 2^16 bytes long
+	// using two bytes for the length
+	// TODO: dynamically calculate header_len based on some maximum character
+	// limit imposed on the metric descriptions * number of metrics
 	buffer[1] = buffer_len & 0xFF;
 	buffer[2] = (buffer_len >> 8) & 0xFF;
 
-	send_response_code = send(conn->sock, buffer, buffer_len, 0);
+	send_response_code = send(conn->sock, buffer, header_len + buffer_len, 0);
 
 	if(send_response_code < 0) {
 		ogs_error("Error sending metrics data, error code %d: errno %i\n", send_response_code, errno);
