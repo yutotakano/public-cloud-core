@@ -805,7 +805,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(avg (amf_message_latency), \"name\", \"Average Latency\", \"\", \"\")",
+          "expr": "label_replace(avg (amf_message_latency{nas_type!=\"0\"}), \"name\", \"Average Latency\", \"\", \"\")",
           "hide": false,
           "instant": false,
           "legendFormat": "{{name}}",
@@ -901,8 +901,8 @@
             "uid": "prometheus-datasource-1"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(avg by(nas_type) (amf_message_latency), \"name\", \"Registration Request\", \"nas_type\", \"65\"), \"name\", \"Registration Complete\", \"nas_type\", \"67\"), \"name\", \"Authentication\", \"nas_type\", \"87\"), \"name\", \"Registration Accept\", \"nas_type\", \"94\"), \"name\", \"5G PDU Session\", \"nas_type\", \"193\"), \"name\", \"Deregistration\", \"nas_type\", \"69\")",
+          "editorMode": "code",
+          "expr": "(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(avg by(nas_type) (amf_message_latency{nas_type!=\"0\"}), \"name\", \"Registration Request\", \"nas_type\", \"65\"), \"name\", \"Registration Complete\", \"nas_type\", \"67\"), \"name\", \"Authentication\", \"nas_type\", \"87\"), \"name\", \"Registration Accept\", \"nas_type\", \"94\"), \"name\", \"5G PDU Session\", \"nas_type\", \"193\"), \"name\", \"Deregistration\", \"nas_type\", \"69\"))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1091,13 +1091,13 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "CoreKube Dashboard",
   "uid": "be3d8ddb-7d64-4ac5-b27c-3b771e5ec831",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
