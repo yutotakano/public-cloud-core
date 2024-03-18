@@ -82,6 +82,8 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 
   ogs_debug("Creating metrics byte buffer\n");
 
+	buffer_len += 1;
+	buffer_len += 2;
   buffer_len += sprintf(buffer + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
@@ -93,6 +95,18 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
+
+	// Sanity check length of buffer
+	if(buffer_len > 512) {
+		ogs_error("Buffer length is too long, %d\n", buffer_len);
+		return -1;
+	}
+
+	// First byte is the length of following header bytes
+	buffer[0] = 0x02;
+	// Bytes 1 and 2 are the length of the message
+	buffer[1] = (buffer_len >> 8) & 0xFF;
+	buffer[2] = buffer_len & 0xFF;
 
 	send_response_code = send(conn->sock, buffer, buffer_len, 0);
 

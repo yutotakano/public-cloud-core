@@ -26,6 +26,7 @@ typedef struct metrics_conn {
     int port;
 } metrics_conn_t;
 
+
 /**
  * @brief Establish a connection with the metrics server.
  * 

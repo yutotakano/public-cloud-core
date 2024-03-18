@@ -26,12 +26,44 @@ void threadWorker(
   {
     try
     {
-      bytes_transferred = socket.read_some(asio::buffer(buffer));
+      // Read the first byte of the message to get the length of the header
+      bytes_transferred = asio::read(socket, asio::buffer(buffer, 1));
       if (bytes_transferred == 0)
       {
         std::cout << "0 bytes transferred" << std::endl;
         continue;
       }
+
+      // Parse the length of header
+      std::size_t header_length = static_cast<std::size_t>(buffer[0]);
+      std::cout << "Header length: " << header_length << std::endl;
+
+      // Read the header
+      bytes_transferred =
+        asio::read(socket, asio::buffer(buffer, header_length));
+      if (bytes_transferred == 0)
+      {
+        std::cout << "0 bytes transferred" << std::endl;
+        continue;
+      }
+
+      // Parse the length of the message from the header
+      std::size_t message_length = 0;
+      for (std::size_t i = 0; i < header_length; i++)
+      {
+        message_length |= static_cast<std::size_t>(buffer[i]) << (i * 8);
+      }
+      std::cout << "Message length: " << message_length << std::endl;
+
+      // Read the remaining bytes of the message
+      bytes_transferred =
+        asio::read(socket, asio::buffer(buffer, message_length));
+      if (bytes_transferred == 0)
+      {
+        std::cout << "0 bytes transferred" << std::endl;
+        continue;
+      }
+      std::cout << "Received " << bytes_transferred << " bytes" << std::endl;
     }
     catch (std::system_error &e)
     {
