@@ -35,7 +35,7 @@ void threadWorker(
       }
 
       // Parse the length of header
-      std::size_t header_length = static_cast<std::size_t>(buffer[0]);
+      std::uint8_t header_length = static_cast<std::uint8_t>(buffer[0]);
       std::cout << "Header length: " << header_length << std::endl;
 
       // Read the header
