@@ -282,6 +282,7 @@ module "ck_loadbalancer_irsa" {
   }
 }
 
+
 # Install the AWS Load Balancer Controller
 
 provider "helm" {
@@ -346,6 +347,64 @@ resource "helm_release" "alb-controller" {
   set {
     name = "enableBackendSecurityGroup"
     value = "false"
+  }
+}
+
+
+module "ck_kubestatemetrics_irsa" {
+  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version    = "~> 5.34"
+
+  role_name = "kube-state-metrics-role"
+  role_description = "EKS Cluster ${local.ck_cluster_name} Kube State Metrics Role"
+
+  oidc_providers = {
+    main = {
+      provider_arn               = data.aws_iam_openid_connect_provider.ck_cluster_oidc.arn
+      namespace_service_accounts = ["kube-system:kube-state-metrics-sa"]
+    }
+  }
+}
+
+# kube-state-metrics to export pod/node metrics to Prometheus for CoreKube
+
+resource "helm_release" "kube-state-metrics" {
+  provider   = helm.corekube
+  name       = "kube-state-metrics"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-state-metrics"
+  namespace  = "kube-system"
+
+  set {
+    name = "podAnnotations.prometheus\\.io/scrape"
+    value = "true"
+    type = "string"
+  }
+
+  set {
+    name = "podAnnotations.prometheus\\.io/path"
+    value = "/metrics"
+  }
+
+  set {
+    name = "podAnnotations.prometheus\\.io/port"
+    value = "8080"
+    type = "string"
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "kube-state-metrics-sa"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.ck_kubestatemetrics_irsa.iam_role_arn
   }
 }
 
