@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include "core/ogs-core.h"
 #include "metrics.h"
@@ -77,7 +78,6 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
   char buffer[512];
   int buffer_len = 0;
 	
-	int send_retry_attempts = 3;
 	int send_response_code = 0;
 
   ogs_debug("Creating metrics byte buffer\n");
@@ -94,19 +94,10 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
 	buffer_len += sprintf(buffer + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
 
-	do {
-		if(send_response_code < 0) {
-			ogs_error("Error sending metrics data, trying to reconnect to conn\n");
-			metrics_disconnect(conn->sock);
-			*conn = metrics_connect(conn->host, conn->port);
-		}
+	send_response_code = send(conn->sock, buffer, buffer_len, 0);
 
-		send_response_code = send(conn->sock, buffer, buffer_len, 0);
-	} while(send_response_code < 0 && send_retry_attempts-- > 0);
-
-	// If after 3 attempts, we still can't send the data, return an error
 	if(send_response_code < 0) {
-		ogs_error("Error sending metrics data, error code %d\n", send_response_code);
+		ogs_error("Error sending metrics data, error code %d: errno %i\n", send_response_code, errno);
 		return -1;
 	}
 
