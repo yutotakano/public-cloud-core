@@ -5,7 +5,7 @@
 
 LoadTestApp::LoadTestApp()
 {
-  logger = quill::create_logger("loadtest");
+  logger = quill::get_logger();
   executor = Executor();
   ck_app = CKApp();
   nv_app = NVApp();
