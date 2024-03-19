@@ -28,9 +28,9 @@ void InfoApp::info_command_handler(argparse::ArgumentParser &parser)
   }
 
   LOG_INFO(logger, "CoreKube deployment found.");
-  LOG_INFO(logger, "IP (within VPC) of CK frontend: {}", info->frontend_ip);
-  LOG_INFO(logger, "Grafana: http://{}:3000", info->corekube_dns_name);
-  LOG_INFO(logger, "Nervion: http://{}:8080", info->nervion_dns_name);
+  LOG_INFO(logger, "IP (within VPC) of CK frontend: {}", info->ck_frontend_ip);
+  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
+  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
 }
 
 bool InfoApp::check_contexts_exist()
@@ -92,50 +92,84 @@ std::optional<deployment_info_s> InfoApp::get_info()
     return std::nullopt;
   }
 
-  // Get the VPC-internal IP of the frontend node
-  LOG_TRACE_L3(logger, "Getting frontend IP");
-  auto frontend_ip =
-    ck_app
-      .run_kubectl(
-        {"get",
-         "nodes",
-         "-o",
-         "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
-         "address}",
-         "-l",
-         "eks.amazonaws.com/nodegroup"},
-        false
-      )
-      .future.get();
+  try
+  {
+    // Get the VPC-internal IP of the frontend node
+    LOG_TRACE_L3(logger, "Getting frontend IP");
+    auto frontend_ip =
+      ck_app
+        .run_kubectl(
+          {"get",
+           "nodes",
+           "-o",
+           "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
+           "address}",
+           "-l",
+           "eks.amazonaws.com/nodegroup"},
+          false
+        )
+        .future.get();
 
-  // Get the public DNS of the Grafana service.
-  LOG_TRACE_L3(logger, "Getting Grafana public service name");
-  auto ck_grafana_public_dns =
-    ck_app
-      .run_kubectl(
-        {"get",
-         "services/corekube-grafana",
-         "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
-        false
-      )
-      .future.get();
+    // Get the public DNS of the Grafana service.
+    LOG_TRACE_L3(logger, "Getting Grafana public service name");
+    auto ck_grafana_public_dns =
+      ck_app
+        .run_kubectl(
+          {"get",
+           "services/corekube-grafana",
+           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
+          false
+        )
+        .future.get();
 
-  // Get the public DNS of the Nervion controller service.
-  auto nervion_controller_public_dns =
-    nv_app
-      .run_kubectl(
-        {
-          "get",
-          "services/ran-emulator",
-          "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}",
-        },
-        false
-      )
-      .future.get();
+    // Get the public DNS of the Prometheus service.
+    LOG_TRACE_L3(logger, "Getting Prometheus public service name");
+    auto ck_prometheus_public_dns =
+      ck_app
+        .run_kubectl(
+          {"get",
+           "services/corekube-prometheus",
+           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
+          false
+        )
+        .future.get();
 
-  return deployment_info_s{
-    .corekube_dns_name = ck_grafana_public_dns,
-    .nervion_dns_name = nervion_controller_public_dns,
-    .frontend_ip = frontend_ip,
-  };
+    // Get the public DNS of the OpenCost service.
+    LOG_TRACE_L3(logger, "Getting OpenCost public service name");
+    auto ck_opencost_public_dns =
+      ck_app
+        .run_kubectl(
+          {"get",
+           "services/opencost",
+           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
+          false
+        )
+        .future.get();
+
+    // Get the public DNS of the Nervion controller service.
+    auto nervion_controller_public_dns =
+      nv_app
+        .run_kubectl(
+          {
+            "get",
+            "services/ran-emulator",
+            "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}",
+          },
+          false
+        )
+        .future.get();
+
+    return deployment_info_s{
+      .ck_grafana_elb_url = ck_grafana_public_dns,
+      .ck_prometheus_elb_url = ck_prometheus_public_dns,
+      .ck_opencost_elb_url = ck_opencost_public_dns,
+      .nv_controller_elb_url = nervion_controller_public_dns,
+      .ck_frontend_ip = frontend_ip,
+    };
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Error getting info: {}", e.what());
+    return std::nullopt;
+  }
 }

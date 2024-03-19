@@ -2,6 +2,7 @@
 #include "ck.h"
 #include "curl/curl.h"
 #include "deploy.h"
+#include "destroy.h"
 #include "exithandler.h"
 #include "info.h"
 #include "loadtest.h"
@@ -69,6 +70,10 @@ int main(int argc, char **argv)
   auto nv_parser = nv_app.nv_arg_parser();
   program.add_subparser(*nv_parser);
 
+  DestroyApp destroy_app;
+  auto destroy_parser = destroy_app.arg_parser();
+  program.add_subparser(*destroy_parser);
+
   // Parse the command line arguments
   try
   {
@@ -116,6 +121,10 @@ int main(int argc, char **argv)
   else if (program.is_subcommand_used(*nv_parser))
   {
     nv_app.nv_command_handler(*nv_parser);
+  }
+  else if (program.is_subcommand_used(*destroy_parser))
+  {
+    destroy_app.command_handler(*destroy_parser);
   }
   else
   {

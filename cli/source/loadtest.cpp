@@ -1,6 +1,7 @@
 #include "loadtest.h"
-#include "curl/curl.h"
 #include "utils.h"
+#include <cpr/cpr.h>
+#include <json/json.hpp>
 
 LoadTestApp::LoadTestApp()
 {
@@ -23,6 +24,25 @@ std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
     .help("Stop the current loadtest")
     .default_value(false)
     .implicit_value(true);
+  parser->add_argument("--collect-avg-latency")
+    .help("Collect average latency during the loadtest into a file")
+    .default_value(false)
+    .implicit_value(true);
+  parser->add_argument("--collect-avg-throughput")
+    .help("Collect average throughput during the loadtest into a file")
+    .default_value(false)
+    .implicit_value(true);
+  parser->add_argument("--collect-avg-cpu")
+    .help("Collect average CPU usage during the loadtest into a file")
+    .default_value(false)
+    .implicit_value(true);
+  parser->add_argument("--collect-worker-count")
+    .help("Collect worker count during the loadtest into a file")
+    .default_value(false)
+    .implicit_value(true);
+  parser->add_argument("--experiment-name")
+    .help("Name of the experiment")
+    .default_value(Utils::current_time());
   return parser;
 }
 
@@ -56,6 +76,131 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
 
   // Send the loadtest file to the Nervion controller
   post_nervion_controller(file_path, info.value(), minutes);
+  LOG_INFO(logger, "Loadtest started.");
+
+  // If any collection flags are present, collect data
+  if (
+    parser.get<bool>("--collect-avg-latency") ||
+    parser.get<bool>("--collect-avg-throughput") ||
+    parser.get<bool>("--collect-avg-cpu") ||
+    parser.get<bool>("--collect-worker-count")
+  )
+  {
+    std::string experiment_name =
+      "experiment_" + parser.get<std::string>("--experiment-name");
+    // Abort if files already exist
+    if ((std::filesystem::exists(experiment_name + "_latency.csv") ||
+         std::filesystem::exists(experiment_name + "_throughput.csv") ||
+         std::filesystem::exists(experiment_name + "_cpu.csv") ||
+         std::filesystem::exists(experiment_name + "_worker_count.csv")))
+    {
+      LOG_ERROR(
+        logger,
+        "One or more files prefixed with '{}' exit. Aborting.",
+        experiment_name
+      );
+      return;
+    }
+
+    // Perform collection every 5 seconds until 1000 seconds have passed
+    int total_points = 200;
+    for (int i = 0; i < total_points; i++)
+    {
+      LOG_INFO(
+        logger,
+        "Collecting data... {}/200 ({} seconds remaining)",
+        i,
+        1000 - (i * 5)
+      );
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+      collect_data(
+        info.value(),
+        i * 5,
+        experiment_name,
+        parser.get<bool>("--collect-avg-latency"),
+        parser.get<bool>("--collect-avg-throughput"),
+        parser.get<bool>("--collect-avg-cpu"),
+        parser.get<bool>("--collect-worker-count")
+      );
+    }
+  }
+}
+
+void LoadTestApp::collect_data(
+  deployment_info_s info,
+  int time_since_start,
+  std::string experiment_name,
+  bool collect_avg_latency,
+  bool collect_avg_throughput,
+  bool collect_avg_cpu,
+  bool collect_worker_count
+)
+{
+  if (collect_avg_latency)
+  {
+    // Collect data from the Prometheus server
+    std::string url = info.ck_prometheus_elb_url + ":9090/api/v1/query";
+    cpr::Response res = cpr::Get(
+      cpr::Url{url},
+      cpr::Parameters{{"query", "avg (amf_message_latency{nas_type!=\"0\"})"}}
+    );
+
+    if (res.status_code != 200)
+    {
+      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+      return;
+    }
+
+    nlohmann::json stats = nlohmann::json::parse(res.text);
+    int latency = stats["data"]["result"][0]["value"][1].get<int>();
+
+    // Write to file
+    std::ofstream latency_file(
+      experiment_name + "_latency.csv",
+      std::ios::app | std::ios::out
+    );
+    latency_file << time_since_start << ", " << latency << std::endl;
+    latency_file.close();
+  }
+
+  if (collect_worker_count)
+  {
+    // Collect data from the Prometheus server
+    std::string url = info.ck_prometheus_elb_url + ":9090/api/v1/query";
+    cpr::Response res = cpr::Get(
+      cpr::Url{url},
+      cpr::Parameters{
+        {"query",
+         "count(kube_pod_container_info{container=\"corekube-worker\"})"}
+      }
+    );
+
+    if (res.status_code != 200)
+    {
+      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+      return;
+    }
+
+    nlohmann::json stats = nlohmann::json::parse(res.text);
+    int worker_count = stats["data"]["result"][0]["value"][1].get<int>();
+
+    // Write to file
+    std::ofstream worker_count_file(
+      experiment_name + "_worker_count.csv",
+      std::ios::app | std::ios::out
+    );
+    worker_count_file << time_since_start << ", " << worker_count << std::endl;
+    worker_count_file.close();
+  }
+  // if (collect_avg_cpu)
+  // {
+  //   std::ofstream cpu_file(
+  //     experiment_name + "_cpu.csv",
+  //     std::ios::app | std::ios::out
+  //   );
+  //   cpu_file << stats["cpu"] << std::endl;
+  //   cpu_file.close();
+  // }
 }
 
 std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
@@ -63,32 +208,12 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
   return std::async(
     [&, info]()
     {
-      // Send the file to the Nervion controller via libcurl
-      CURL *curl = curl_easy_init();
-      if (!curl)
-        throw std::runtime_error("Could not initialize curl.");
+      std::string url = info.nv_controller_elb_url + ":8080/restart/";
+      cpr::Response res = cpr::Get(cpr::Url{url});
 
-      curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-      curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-
-      std::string url = info.nervion_dns_name + "/restart/";
-      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-      curl_easy_setopt(curl, CURLOPT_PORT, 8080);
-      curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-      std::string reponse;
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_callback);
-      curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reponse);
-
-      CURLcode res = curl_easy_perform(curl);
-
-      if (res != CURLE_OK)
+      if (res.status_code != 200)
       {
-        LOG_ERROR(
-          logger,
-          "curl_easy_perform() failed: {}",
-          curl_easy_strerror(res)
-        );
+        LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
 
         // Manually delete all pods beginning with name 'slave-'
         LOG_INFO(
@@ -112,8 +237,6 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
           }
         }
       }
-
-      curl_easy_cleanup(curl);
 
       // Wait for all pods beginning with name 'slave-' to be deleted
       int last_pod_count = 0;
@@ -146,19 +269,6 @@ std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
   );
 }
 
-size_t LoadTestApp::curl_write_callback(
-  void *buffer,
-  size_t size,
-  size_t count,
-  void *user
-)
-{
-  size_t numBytes = size * count;
-  static_cast<std::string *>(user)
-    ->append(static_cast<char *>(buffer), 0, numBytes);
-  return numBytes;
-}
-
 void LoadTestApp::post_nervion_controller(
   std::string file_path,
   deployment_info_s info,
@@ -166,84 +276,27 @@ void LoadTestApp::post_nervion_controller(
 )
 {
   // Send the file to the Nervion controller via libcurl
-  CURL *curl = curl_easy_init();
-  if (!curl)
-    throw std::runtime_error("Could not initialize curl.");
 
+  // Get last part of file path to get the file name
   std::string file_name = Utils::split(file_path, '/').back();
 
-  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0);
-
-  curl_mime *form = curl_mime_init(curl);
-  curl_mimepart *field;
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "mme_ip");
-  curl_mime_data(field, info.frontend_ip.c_str(), CURL_ZERO_TERMINATED);
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "cp_mode");
-  curl_mime_data(field, "true", CURL_ZERO_TERMINATED);
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "threads");
-  curl_mime_data(field, "100", CURL_ZERO_TERMINATED);
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "scale_minutes");
-  curl_mime_data(
-    field,
-    std::to_string(incremental_duration).c_str(),
-    CURL_ZERO_TERMINATED
+  std::string url = info.nv_controller_elb_url + ":8080/config/";
+  cpr::Response res = cpr::Post(
+    cpr::Url{url},
+    cpr::Multipart{
+      {"mme_ip", info.ck_frontend_ip},
+      {"cp_mode", "true"},
+      {"threads", "100"},
+      {"scale_minutes", std::to_string(incremental_duration)},
+      {"multi_ip", ""},
+      {"config", cpr::File{file_path, file_name}},
+      {"docker_image", "ghcr.io/yutotakano/ran-slave:latest"},
+      {"refresh_time", "10"}
+    }
   );
 
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "multi_ip");
-  curl_mime_data(field, "", CURL_ZERO_TERMINATED);
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "config");
-  curl_mime_filedata(field, file_path.c_str());
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "docker_image");
-  curl_mime_data(
-    field,
-    "ghcr.io/yutotakano/ran-slave:latest",
-    CURL_ZERO_TERMINATED
-  );
-
-  field = curl_mime_addpart(form);
-  curl_mime_name(field, "refresh_time");
-  curl_mime_data(field, "10", CURL_ZERO_TERMINATED);
-
-  curl_slist *headerlist = curl_slist_append(NULL, "Expect:");
-
-  std::string url = info.nervion_dns_name + "/config/";
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_PORT, 8080);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
-  curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
-
-  std::string reponse;
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_callback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reponse);
-
-  CURLcode res = curl_easy_perform(curl);
-
-  if (res != CURLE_OK)
+  if (res.status_code != 200)
   {
-    LOG_ERROR(
-      logger,
-      "curl_easy_perform() failed: {}",
-      curl_easy_strerror(res)
-    );
+    LOG_ERROR(logger, "cpr::Post() failed: {}", res.error.message);
   }
-
-  curl_easy_cleanup(curl);
-  curl_mime_free(form);
-  curl_slist_free_all(headerlist);
 }

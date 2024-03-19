@@ -1,11 +1,11 @@
 CC := g++
-CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/curl_install/include
+CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/cpr_install/include
 CFLAGS := -Wall -DCURL_STATICLIB -std=c++17
-LDFLAGS := -Lexternal/quill_install/lib -Lexternal/curl_install/lib
-LDLIBS := -lpthread -lquill -lcurl
+LDFLAGS := -Lexternal/quill_install/lib -Lexternal/cpr_install/lib
+LDLIBS := -lpthread -lquill -lcpr -lcurl
 
 ifeq ($(OS), Windows_NT)
-		LDLIBS += -lws2_32 -lbcrypt
+		LDLIBS += -lws2_32 -lbcrypt -lcrypt32
 else
 		UNAME_S := $(shell uname -s)
 
@@ -76,7 +76,7 @@ $(EXE): $(OBJ_LIST)
 		$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # If dependencies are needed, install them
-external: external/quill_install external/curl_install
+external: external/quill_install external/cpr_install
 
 # If quill isn't present as an installed library, clone and install it
 external/quill_install:
@@ -91,17 +91,12 @@ external/quill_install:
 		cd external/quill/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../quill_install/ -G "Unix Makefiles" ..
 		cd external/quill/cmake_build && make install
 
-external/curl_install:
+external/cpr_install:
 		@$(call MKDIR, external)
-		@$(call IF_NOT_EXISTS, external/curl, cd external && git clone https://github.com/curl/curl.git)
-		@$(call MKDIR, external/curl/cmake_build)
-# The install prefix is set to the external/curl_install dir -- this will
-# install the library to external/curl_install/lib and the headers to
-# external/curl_install/include.
-# The -G "Unix Makefiles" flag is used to generate GNU Makefiles even on Windows,
-# because the default generator on Windows is the Visual Studio generator.
-		cd external/curl/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../curl_install/ -DBUILD_CURL_EXE=OFF -DBUILD_LIBCURL_DOCS=off -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCURL_DISABLE_DICT=ON -DCURL_DISABLE_KERBEROS_AUTH=ON -DCURL_DISABLE_AWS=ON -DCURL_DISABLE_FILE=ON -DCURL_DISABLE_FTP=ON -DCURL_DISABLE_GOPHER=ON -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_LDAP=ON -DCURL_DISABLE_LDAPS=ON -DCURL_DISABLE_MQTT=ON -DCURL_DISABLE_POP3=ON -DCURL_DISABLE_RTSP=ON -DCURL_DISABLE_SMB=ON -DCURL_DISABLE_SMTP=ON -DCURL_DISABLE_TELNET=ON -DCURL_DISABLE_TFTP=ON -DCURL_ENABLE_SSL=OFF -G "Unix Makefiles" ..
-		cd external/curl/cmake_build && make install
+		@$(call IF_NOT_EXISTS, external/cpr, cd external && git clone https://github.com/libcpr/cpr)
+		@$(call MKDIR, external/cpr/cmake_build)
+		cd external/cpr/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../cpr_install/ -DBUILD_SHARED_LIBS=OFF -DCURL_ZLIB=OFF -G "Unix Makefiles" ..
+		cd external/cpr/cmake_build && make install
 
 clean:
 		@$(call RMDIR, $(OBJ_DIR))

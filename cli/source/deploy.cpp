@@ -10,6 +10,7 @@ DeployApp::DeployApp()
   logger = quill::get_logger();
   executor = Executor();
   info_app = InfoApp();
+  destroy_app = DestroyApp();
 }
 
 std::unique_ptr<argparse::ArgumentParser> DeployApp::deploy_arg_parser()
@@ -60,13 +61,15 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
   LOG_TRACE_L3(logger, "No setup: {}", no_setup);
   LOG_TRACE_L3(logger, "Type: {}", parser.get<std::string>("--type"));
 
+  if (teardown)
+  {
+    destroy_app.teardown_autodetect();
+  }
+  if (no_setup)
+    return;
+
   if (parser.get<std::string>("--type") == "aws-eks-fargate")
   {
-    if (teardown)
-      teardown_aws_eks_fargate();
-    if (no_setup)
-      return;
-
     std::string public_key_path = parser.get<std::string>("--ssh-key");
     if (public_key_path.empty())
       public_key_path = get_public_key_path();
@@ -75,26 +78,14 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
   }
   else if (parser.get<std::string>("--type") == "aws-eks-ec2")
   {
-    if (teardown)
-      teardown_aws_eks_ec2();
-    if (no_setup)
-      return;
     deploy_aws_eks_ec2();
   }
   else if (parser.get<std::string>("--type") == "aws-eks-ec2-spot")
   {
-    if (teardown)
-      teardown_aws_eks_ec2_spot();
-    if (no_setup)
-      return;
     deploy_aws_eks_ec2_spot();
   }
   else if (parser.get<std::string>("--type") == "aws-ec2")
   {
-    if (teardown)
-      teardown_aws_ec2();
-    if (no_setup)
-      return;
     deploy_aws_ec2();
   }
   else
@@ -181,40 +172,15 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
   LOG_INFO(
     logger,
     "IP (within VPC) of CK frontend node: {}",
-    info->frontend_ip
+    info->ck_frontend_ip
   );
-  LOG_INFO(logger, "Grafana: http://{}:3000", info->corekube_dns_name);
-  LOG_INFO(logger, "Nervion: http://{}:8080", info->nervion_dns_name);
+  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
+  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
   LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
-}
-
-void DeployApp::teardown_aws_eks_fargate()
-{
-  LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
-
-  // Destroy the kubernetes layer first, since the LoadBalancers in this layer
-  // will directly prevent the base layer VPCs from being destroyed
-  executor
-    .run(
-      {"terraform", "-chdir=terraform/kubernetes", "destroy", "-auto-approve"}
-    )
-    .future.get();
-
-  executor
-    .run({"terraform", "-chdir=terraform/base", "destroy", "-auto-approve"})
-    .future.get();
-
-  LOG_INFO(logger, "CoreKube tore down successfully!");
 }
 
 void DeployApp::deploy_aws_eks_ec2() { return; }
 
-void DeployApp::teardown_aws_eks_ec2() { return; }
-
 void DeployApp::deploy_aws_eks_ec2_spot() { return; }
 
-void DeployApp::teardown_aws_eks_ec2_spot() { return; }
-
 void DeployApp::deploy_aws_ec2() { return; }
-
-void DeployApp::teardown_aws_ec2() { return; }

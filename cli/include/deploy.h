@@ -2,6 +2,7 @@
 #define DEPLOY_H
 
 #include "argparse/argparse.hpp"
+#include "destroy.h"
 #include "executor.h"
 #include "info.h"
 #include "quill/Quill.h"
@@ -18,11 +19,6 @@ public:
 private:
   std::string get_public_key_path();
 
-  void teardown_aws_eks_fargate();
-  void teardown_aws_eks_ec2();
-  void teardown_aws_eks_ec2_spot();
-  void teardown_aws_ec2();
-
   void deploy_aws_eks_fargate(std::string public_key_path);
   void deploy_aws_eks_ec2();
   void deploy_aws_eks_ec2_spot();
@@ -31,6 +27,7 @@ private:
   quill::Logger *logger;
   Executor executor;
   InfoApp info_app;
+  DestroyApp destroy_app;
 };
 
 #endif // DEPLOY_H
