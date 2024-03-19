@@ -128,7 +128,7 @@ std::optional<deployment_info_s> InfoApp::get_info()
       ck_app
         .run_kubectl(
           {"get",
-           "services/corekube-prometheus",
+           "services/corekube-prometheus-loadbalancer",
            "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
           false
         )
