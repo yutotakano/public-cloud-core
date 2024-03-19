@@ -269,7 +269,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(coremon_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink Rate\", \"\", \"\")",
+          "expr": "label_replace(rate(amf_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink Rate\", \"\", \"\")",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -286,7 +286,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(coremon_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink Rate\", \"\", \"\")",
+          "expr": "label_replace(rate(amf_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink Rate\", \"\", \"\")",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -397,7 +397,7 @@
         "x": 15,
         "y": 0
       },
-      "id": 11,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -419,7 +419,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(coremon_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink\", \"\", \"\")",
+          "expr": "label_replace(rate(amf_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink\", \"\", \"\")",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -435,7 +435,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(coremon_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink\", \"\", \"\")",
+          "expr": "label_replace(rate(amf_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink\", \"\", \"\")",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -1098,6 +1098,6 @@
   "timezone": "",
   "title": "CoreKube Dashboard",
   "uid": "be3d8ddb-7d64-4ac5-b27c-3b771e5ec831",
-  "version": 5,
+  "version": 3,
   "weekStart": ""
 }
