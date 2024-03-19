@@ -115,145 +115,221 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         i,
         1000 - (i * 5)
       );
-      collect_data(
-        info.value(),
-        i * 5,
-        experiment_name,
-        parser.get<bool>("--collect-avg-latency"),
-        parser.get<bool>("--collect-avg-throughput"),
-        parser.get<bool>("--collect-avg-cpu"),
-        parser.get<bool>("--collect-worker-count")
-      );
+      if (parser.get<bool>("--collect-avg-latency"))
+      {
+        collect_avg_latency(
+          i * 5,
+          info->ck_prometheus_elb_url,
+          experiment_name
+        );
+      }
+      if (parser.get<bool>("--collect-worker-count"))
+      {
+        collect_worker_count(
+          i * 5,
+          info->ck_prometheus_elb_url,
+          experiment_name
+        );
+      }
+      if (parser.get<bool>("--collect-avg-throughput"))
+      {
+        collect_avg_throughput(
+          i * 5,
+          info->ck_prometheus_elb_url,
+          experiment_name
+        );
+      }
       std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
 }
 
-void LoadTestApp::collect_data(
-  deployment_info_s info,
+void LoadTestApp::collect_avg_latency(
   int time_since_start,
-  std::string experiment_name,
-  bool collect_avg_latency,
-  bool collect_avg_throughput,
-  bool collect_avg_cpu,
-  bool collect_worker_count
+  std::string prometheus_url,
+  std::string experiment_name
 )
 {
-  if (collect_avg_latency)
+  LOG_TRACE_L3(logger, "Collecting average latency.");
+  // Collect data from the Prometheus server
+  std::string url = prometheus_url + ":9090/api/v1/query";
+  cpr::Response res = cpr::Get(
+    cpr::Url{url},
+    cpr::Parameters{{"query", "avg(amf_message_latency{nas_type!=\"0\"})"}}
+  );
+
+  if (res.status_code != 200)
   {
-    LOG_TRACE_L3(logger, "Collecting average latency.");
-    // Collect data from the Prometheus server
-    std::string url = info.ck_prometheus_elb_url + ":9090/api/v1/query";
-    cpr::Response res = cpr::Get(
-      cpr::Url{url},
-      cpr::Parameters{{"query", "avg (amf_message_latency{nas_type!=\"0\"})"}}
-    );
-
-    if (res.status_code != 200)
-    {
-      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
-      return;
-    }
-
-    LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
-    nlohmann::json stats = nlohmann::json::parse(res.text);
-    int latency = stats["data"]["result"][0]["value"][1].get<int>();
-
-    // Write to file
-    LOG_TRACE_L3(logger, "Writing results to _latency csv.");
-    std::ofstream latency_file(
-      experiment_name + "_latency.csv",
-      std::ios::app | std::ios::out
-    );
-    latency_file << time_since_start << ", " << latency << std::endl;
-    latency_file.close();
-    LOG_TRACE_L3(logger, "Finished writing data.");
+    LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+    return;
   }
 
-  if (collect_worker_count)
+  LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
+  LOG_TRACE_L3(logger, "Response: {}", res.text);
+  nlohmann::json stats = nlohmann::json::parse(res.text);
+  auto latency_j = stats["data"]["result"][0]["value"][1];
+  if (latency_j.get<std::string>() == "NaN")
   {
-    LOG_TRACE_L3(logger, "Collecting worker count.");
-    // Collect data from the Prometheus server
-    std::string url = info.ck_prometheus_elb_url + ":9090/api/v1/query";
-    cpr::Response res = cpr::Get(
-      cpr::Url{url},
-      cpr::Parameters{
-        {"query",
-         "count(kube_pod_container_info{container=\"corekube-worker\"})"}
-      }
-    );
-
-    if (res.status_code != 200)
-    {
-      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
-      return;
-    }
-
-    LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
-    nlohmann::json stats = nlohmann::json::parse(res.text);
-    int worker_count = stats["data"]["result"][0]["value"][1].get<int>();
-
-    // Write to file
-    LOG_TRACE_L3(logger, "Writing results to _worker_count csv.");
-    std::ofstream worker_count_file(
-      experiment_name + "_worker_count.csv",
-      std::ios::app | std::ios::out
-    );
-    worker_count_file << time_since_start << ", " << worker_count << std::endl;
-    worker_count_file.close();
-    LOG_TRACE_L3(logger, "Finished writing data.");
+    LOG_TRACE_L3(logger, "Latency is NaN. Skipping.");
+    return;
+  }
+  int latency;
+  if (latency_j.is_number())
+  {
+    latency = latency_j.get<int>();
+  }
+  else
+  {
+    latency = std::stof(latency_j.get<std::string>());
   }
 
-  if (collect_avg_throughput)
+  // Write to file
+  LOG_TRACE_L3(logger, "Writing results to _latency csv.");
+  std::ofstream latency_file(
+    experiment_name + "_latency.csv",
+    std::ios::app | std::ios::out
+  );
+  latency_file << time_since_start << ", " << latency << std::endl;
+  latency_file.close();
+  LOG_TRACE_L3(logger, "Finished writing data.");
+}
+
+void LoadTestApp::collect_avg_throughput(
+  int time_since_start,
+  std::string prometheus_url,
+  std::string experiment_name
+)
+{
+  LOG_TRACE_L3(logger, "Collecting uplink throughput rate.");
+  // Collect data from the Prometheus server
+  std::string url = prometheus_url + ":9090/api/v1/query";
+  cpr::Response res = cpr::Get(
+    cpr::Url{url},
+    cpr::Parameters{{"query", "rate(amf_uplink_packets_total[5s])"}}
+  );
+
+  if (res.status_code != 200)
   {
-    LOG_TRACE_L3(logger, "Collecting uplink throughput rate.");
-    // Collect data from the Prometheus server
-    std::string url = info.ck_prometheus_elb_url + ":9090/api/v1/query";
-    cpr::Response res = cpr::Get(
-      cpr::Url{url},
-      cpr::Parameters{{"query", "rate(amf_uplink_packets_total[5s])"}}
-    );
-
-    if (res.status_code != 200)
-    {
-      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
-      LOG_DEBUG(logger, "Response: {}", res.text);
-      return;
-    }
-
-    LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
-    nlohmann::json stats = nlohmann::json::parse(res.text);
-    int uplink_packets_rate = stats["data"]["result"][0]["value"][1].get<int>();
-
-    LOG_TRACE_L3(logger, "Collecting downlink throughput rate.");
-    res = cpr::Get(
-      cpr::Url{url},
-      cpr::Parameters{{"query", "rate(amf_downlink_packets_total[5s])"}}
-    );
-
-    if (res.status_code != 200)
-    {
-      LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
-      LOG_DEBUG(logger, "Response: {}", res.text);
-      return;
-    }
-
-    LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
-    stats = nlohmann::json::parse(res.text);
-    int downlink_packets_rate =
-      stats["data"]["result"][0]["value"][1].get<int>();
-
-    // Write to file
-    LOG_TRACE_L3(logger, "Writing results to _throughput csv.");
-    std::ofstream worker_count_file(
-      experiment_name + "_throughput.csv",
-      std::ios::app | std::ios::out
-    );
-    worker_count_file << time_since_start << ", " << uplink_packets_rate << ", "
-                      << downlink_packets_rate << std::endl;
-    worker_count_file.close();
-    LOG_TRACE_L3(logger, "Finished writing data.");
+    LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+    LOG_DEBUG(logger, "Response: {}", res.text);
+    return;
   }
+
+  LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
+  LOG_TRACE_L3(logger, "Response: {}", res.text);
+  nlohmann::json stats = nlohmann::json::parse(res.text);
+  auto uplink_packets_rate_j = stats["data"]["result"][0]["value"][1];
+  if (uplink_packets_rate_j.get<std::string>() == "NaN")
+  {
+    LOG_TRACE_L3(logger, "Uplink packets rate is NaN. Skipping.");
+    return;
+  }
+  int uplink_packets_rate;
+  if (uplink_packets_rate_j.is_number())
+  {
+    uplink_packets_rate = stats["data"]["result"][0]["value"][1].get<int>();
+  }
+  else
+  {
+    uplink_packets_rate =
+      std::stof(stats["data"]["result"][0]["value"][1].get<std::string>());
+  }
+
+  LOG_TRACE_L3(logger, "Collecting downlink throughput rate.");
+  res = cpr::Get(
+    cpr::Url{url},
+    cpr::Parameters{{"query", "rate(amf_downlink_packets_total[5s])"}}
+  );
+
+  if (res.status_code != 200)
+  {
+    LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+    LOG_DEBUG(logger, "Response: {}", res.text);
+    return;
+  }
+
+  LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
+  LOG_TRACE_L3(logger, "Response: {}", res.text);
+  stats = nlohmann::json::parse(res.text);
+  auto downlink_packets_rate_j = stats["data"]["result"][0]["value"][1];
+  if (downlink_packets_rate_j.get<std::string>() == "NaN")
+  {
+    LOG_TRACE_L3(logger, "Downlink packets rate is NaN. Skipping.");
+    return;
+  }
+  int downlink_packets_rate;
+  if (downlink_packets_rate_j.is_number())
+  {
+    downlink_packets_rate = stats["data"]["result"][0]["value"][1].get<int>();
+  }
+  else
+  {
+    downlink_packets_rate =
+      std::stof(stats["data"]["result"][0]["value"][1].get<std::string>());
+  }
+
+  // Write to file
+  LOG_TRACE_L3(logger, "Writing results to _throughput csv.");
+  std::ofstream worker_count_file(
+    experiment_name + "_throughput.csv",
+    std::ios::app | std::ios::out
+  );
+  worker_count_file << time_since_start << ", " << uplink_packets_rate << ", "
+                    << downlink_packets_rate << std::endl;
+  worker_count_file.close();
+  LOG_TRACE_L3(logger, "Finished writing data.");
+}
+
+void LoadTestApp::collect_worker_count(
+  int time_since_start,
+  std::string prometheus_url,
+  std::string experiment_name
+)
+{
+  LOG_TRACE_L3(logger, "Collecting worker count.");
+  // Collect data from the Prometheus server
+  std::string url = prometheus_url + ":9090/api/v1/query";
+  cpr::Response res = cpr::Get(
+    cpr::Url{url},
+    cpr::Parameters{
+      {"query", "count(kube_pod_container_info{container=\"corekube-worker\"})"}
+    }
+  );
+
+  if (res.status_code != 200)
+  {
+    LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+    return;
+  }
+
+  LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
+  LOG_TRACE_L3(logger, "Response: {}", res.text);
+  nlohmann::json stats = nlohmann::json::parse(res.text);
+  auto worker_count_j = stats["data"]["result"][0]["value"][1];
+  if (worker_count_j.get<std::string>() == "NaN")
+  {
+    LOG_TRACE_L3(logger, "Worker count is NaN. Skipping.");
+    return;
+  }
+  int worker_count;
+  if (worker_count_j.is_number())
+  {
+    worker_count = worker_count_j.get<int>();
+  }
+  else
+  {
+    worker_count = std::stoi(worker_count_j.get<std::string>());
+  }
+
+  // Write to file
+  LOG_TRACE_L3(logger, "Writing results to _worker_count csv.");
+  std::ofstream worker_count_file(
+    experiment_name + "_worker_count.csv",
+    std::ios::app | std::ios::out
+  );
+  worker_count_file << time_since_start << ", " << worker_count << std::endl;
+  worker_count_file.close();
+  LOG_TRACE_L3(logger, "Finished writing data.");
 }
 
 std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)

@@ -18,8 +18,6 @@ public:
   void loadtest_command_handler(argparse::ArgumentParser &parser);
 
 private:
-  static size_t
-  curl_write_callback(void *buffer, size_t size, size_t count, void *user);
   std::future<void> stop_nervion_controller(deployment_info_s info);
   void post_nervion_controller(
     std::string file_path,
@@ -27,14 +25,22 @@ private:
     int incremental_duration
   );
 
-  void collect_data(
-    deployment_info_s info,
-  int time_since_start,
-    std::string experiment_name,
-    bool collect_avg_latency,
-    bool collect_avg_throughput,
-    bool collect_avg_cpu,
-    bool collect_worker_count
+  void collect_avg_latency(
+    int time_since_start,
+    std::string prometheus_url,
+    std::string experiment_name
+  );
+
+  void collect_worker_count(
+    int time_since_start,
+    std::string prometheus_url,
+    std::string experiment_name
+  );
+
+  void collect_avg_throughput(
+    int time_since_start,
+    std::string prometheus_url,
+    std::string experiment_name
   );
 
   quill::Logger *logger;
