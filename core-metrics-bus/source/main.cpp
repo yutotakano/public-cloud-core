@@ -15,7 +15,9 @@ void threadWorker(
   prometheus::Family<prometheus::Summary> &handle_latency_summary,
   prometheus::Family<prometheus::Summary> &encode_latency_summary,
   prometheus::Family<prometheus::Summary> &send_latency_summary,
-  prometheus::Family<prometheus::Summary> &num_responses_summary
+  prometheus::Family<prometheus::Summary> &num_responses_summary,
+  prometheus::Family<prometheus::Counter> &num_uplink_packets_count,
+  prometheus::Family<prometheus::Counter> &num_downlink_packets_count
 )
 {
   std::cout << "Accepted connection from " << socket.remote_endpoint()
@@ -109,6 +111,7 @@ void threadWorker(
           ue_id = metric_value;
           std::cout << "Starting to read message from UE " << ue_id
                     << std::endl;
+          num_uplink_packets_count.Add({}).Increment();
         }
         else if (metric_name == "amf_message_ngap_type")
         {
@@ -192,6 +195,7 @@ void threadWorker(
               quantiles
             )
             .Observe(std::stod(metric_value));
+          num_downlink_packets_count.Add({}).Increment(std::stod(metric_value));
         }
       }
     }
@@ -267,6 +271,18 @@ int main(int argc, char *argv[])
       .Help("Number of responses sent by AMF")
       .Register(*registry);
 
+  auto &num_uplink_packets_count =
+    prometheus::BuildCounter()
+      .Name("amf_uplink_packets_total")
+      .Help("Number of uplink packets")
+      .Register(*registry);
+
+  auto &num_downlink_packets_count =
+    prometheus::BuildCounter()
+      .Name("amf_downlink_packets_total")
+      .Help("Number of downlink packets")
+      .Register(*registry);
+
   auto quantiles =
     prometheus::Summary::Quantiles{{0.5, 0.05}, {0.7, 0.03}, {0.90, 0.01}};
 
@@ -297,7 +313,9 @@ int main(int argc, char *argv[])
       std::ref(handle_latency_summary),
       std::ref(encode_latency_summary),
       std::ref(send_latency_summary),
-      std::ref(num_responses_summary)
+      std::ref(num_responses_summary),
+      std::ref(num_uplink_packets_count),
+      std::ref(num_downlink_packets_count)
     )
       .detach();
   }
