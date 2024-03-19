@@ -292,11 +292,12 @@ void LoadTestApp::post_nervion_controller(
       {"config", cpr::File{file_path, file_name}},
       {"docker_image", "ghcr.io/yutotakano/ran-slave:latest"},
       {"refresh_time", "10"}
-    }
+    },
+    cpr::Redirect{cpr::PostRedirectFlags::POST_301}
   );
 
   if (res.status_code != 200)
   {
-    LOG_ERROR(logger, "cpr::Post() failed: {}", res.error.message);
+    LOG_ERROR(logger, "cpr::Post() failed ({}): {}", res.status_code, res.text);
   }
 }
