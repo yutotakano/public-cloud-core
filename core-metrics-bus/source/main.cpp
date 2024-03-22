@@ -42,8 +42,6 @@ void threadWorker(
         std::cout << "0 bytes transferred" << std::endl;
         continue;
       }
-      std::cout << "Received first byte: " << std::hex
-                << unsigned(header_buffer[0]) << std::dec << std::endl;
       if (header_buffer[0] != 0x99)
       {
         continue;
@@ -55,8 +53,6 @@ void threadWorker(
         std::cout << "0 bytes transferred" << std::endl;
         continue;
       }
-      std::cout << "Received second byte: " << std::hex
-                << unsigned(header_buffer[0]) << std::dec << std::endl;
       if (header_buffer[0] != 0x99)
       {
         continue;
