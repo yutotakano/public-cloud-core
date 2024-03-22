@@ -30,7 +30,32 @@ void threadWorker(
   {
     try
     {
-      // Read the first byte of the message to get the length of the header
+      // Wait until we see a two-byte sequence of 0x99 0x99.
+      // We process the bytes one by one to avoid missing the sequence by
+      // reading two bytes at once and missing the sequence boundary.
+      bytes_transferred = asio::read(socket, asio::buffer(buffer, 1));
+      if (bytes_transferred == 0)
+      {
+        std::cout << "0 bytes transferred" << std::endl;
+        continue;
+      }
+      if (buffer[0] != 0x99)
+      {
+        continue;
+      }
+
+      bytes_transferred = asio::read(socket, asio::buffer(buffer, 1));
+      if (bytes_transferred == 0)
+      {
+        std::cout << "0 bytes transferred" << std::endl;
+        continue;
+      }
+      if (buffer[0] != 0x99)
+      {
+        break;
+      }
+
+      // Read the third byte of the message to get the length of the header
       bytes_transferred = asio::read(socket, asio::buffer(buffer, 1));
       if (bytes_transferred == 0)
       {
@@ -50,7 +75,12 @@ void threadWorker(
         std::cout << "0 bytes transferred" << std::endl;
         continue;
       }
-      std::cout << "Buffer: " << buffer.data() << std::endl;
+      std::cout << "Buffer (hex): ";
+      for (std::size_t i = 0; i < header_length; i++)
+      {
+        std::cout << std::hex << unsigned(buffer[i]) << " ";
+      }
+      std::cout << std::dec << std::endl;
 
       // Parse the length of the message from the header
       std::size_t message_length = 0;
