@@ -239,6 +239,32 @@ void LoadTestApp::collect_avg_latency(
     return;
   }
 
+  std::optional<int> nas_handle_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_nas_handle_latency{nas_type!=\"0\"})"
+  );
+  if (!nas_handle_latency.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "NAS Handle latency not available currently. Skipping."
+    );
+    return;
+  }
+
+  std::optional<int> build_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_build_latency{nas_type!=\"0\"})"
+  );
+  if (!build_latency.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Response build latency not available currently. Skipping."
+    );
+    return;
+  }
+
   std::optional<int> encode_latency = get_prometheus_value_int(
     prometheus_url,
     "avg(amf_message_encode_latency{nas_type!=\"0\"})"
@@ -267,8 +293,9 @@ void LoadTestApp::collect_avg_latency(
   );
   latency_file << time_since_start << ", " << latency.value() << ", "
                << decode_latency.value() << ", " << handle_latency.value()
-               << ", " << encode_latency.value() << ", " << send_latency.value()
-               << std::endl;
+               << ", " << nas_handle_latency.value() << ", "
+               << build_latency.value() << ", " << encode_latency.value()
+               << ", " << send_latency.value() << std::endl;
   latency_file.close();
   if (!latency_file.good())
   {
