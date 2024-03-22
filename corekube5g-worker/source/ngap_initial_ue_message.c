@@ -51,9 +51,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     bzero(&nas_params, sizeof(nas_ngap_params_t));
     nas_params.ran_ue_ngap_id = RAN_UE_NGAP_ID;
 
-    unsigned long long nas_start_time = get_microtime();
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
-    response->stats->nas_handle_latency = (int)(get_microtime() - nas_start_time);
     ogs_assert(handle_nas == OGS_OK);
     // expect a single NAS response (Authentication Request)
     ogs_assert(response->num_responses == 1);

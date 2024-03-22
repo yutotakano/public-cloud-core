@@ -20,10 +20,13 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
         params->nas_security_params = ogs_calloc(1, sizeof(nas_security_params_t));
     }
 
+    unsigned long long nas_start_time = get_microtime();
     int convertToBytes = nas_bytes_to_message(params, nasPdu, &nasMessage, &messageType);
     ogs_assert(convertToBytes == OGS_OK); // Failed to convert NAS message to bytes
     ogs_info("NAS Message converted to bytes");
 
+    unsigned long long nas_decode_end_time = get_microtime();
+    response->stats->nas_decode_latency = (int)(nas_decode_end_time - nas_start_time);
     int handle_outcome;
     switch (messageType) {
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GMM:
@@ -36,12 +39,17 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
             ogs_error("Unknown NAS message type: %d", messageType);
             return OGS_ERROR;
     }
+    unsigned long long nas_handle_end_time = get_microtime();
+    response->stats->nas_handle_latency = (int)(nas_handle_end_time - nas_start_time);
 
     response->stats->nas_message_type = params->nas_message_type;
 
     ogs_assert(handle_outcome == OGS_OK);
 
-    return nas_message_to_bytes(params, response);
+    int status = nas_message_to_bytes(params, response);
+    response->stats->nas_encode_latency = (int)(get_microtime() - nas_handle_end_time);
+
+    return status;
 }
 
 int nas_security_params_free(nas_security_params_t * params) {

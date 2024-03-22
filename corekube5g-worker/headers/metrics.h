@@ -14,7 +14,9 @@ typedef struct worker_metrics {
     int latency;
     int decode_latency;
     int handle_latency; // includes NAS handle latency + response build latency
+    int nas_decode_latency;
     int nas_handle_latency;
+    int nas_encode_latency;
     int response_build_latency;
     int encode_latency;
     int send_latency;

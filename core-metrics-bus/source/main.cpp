@@ -13,7 +13,9 @@ void threadWorker(
   prometheus::Family<prometheus::Summary> &latency_summary,
   prometheus::Family<prometheus::Summary> &decode_latency_summary,
   prometheus::Family<prometheus::Summary> &handle_latency_summary,
+  prometheus::Family<prometheus::Summary> &nas_decode_latency_summary,
   prometheus::Family<prometheus::Summary> &nas_handle_latency_summary,
+  prometheus::Family<prometheus::Summary> &nas_encode_latency_summary,
   prometheus::Family<prometheus::Summary> &build_latency_summary,
   prometheus::Family<prometheus::Summary> &encode_latency_summary,
   prometheus::Family<prometheus::Summary> &send_latency_summary,
@@ -202,9 +204,29 @@ void threadWorker(
             )
             .Observe(std::stod(metric_value));
         }
+        else if (metric_name == "amf_message_nas_decode_latency")
+        {
+          nas_decode_latency_summary
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
+            .Observe(std::stod(metric_value));
+        }
         else if (metric_name == "amf_message_nas_handle_latency")
         {
           nas_handle_latency_summary
+            .Add(
+              {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
+              },
+              quantiles
+            )
+            .Observe(std::stod(metric_value));
+        }
+        else if (metric_name == "amf_message_nas_encode_latency")
+        {
+          nas_encode_latency_summary
             .Add(
               {{"nas_type", nas_message_type}, {"ngap_type", ngap_message_type}
               },
@@ -305,12 +327,32 @@ int main(int argc, char *argv[])
       .Register(*registry);
 
   // Metric for the latency between AMF starting to handle NGAP-enclosed NAS
+  // messages and finishing decoding the NAS message
+  auto &nas_handle_latency_summary =
+    prometheus::BuildSummary()
+      .Name("amf_message_nas_decode_latency")
+      .Help("Latency between AMF starting to handle NGAP-enclosed NAS messages "
+            "and finishing decoding it")
+      .Register(*registry);
+
+  // Metric for the latency between AMF starting to decoding NAS
   // messages and finishing handling it
   auto &nas_handle_latency_summary =
     prometheus::BuildSummary()
       .Name("amf_message_nas_handle_latency")
-      .Help("Latency between AMF starting to handle NGAP-enclosed NAS messages "
+      .Help("Latency between AMF starting to decoding NAS messages "
             "and finishing handling it")
+      .Register(*registry);
+
+  // Metric for the latency between AMF finishing to handle NGAP-enclosed NAS
+  // messages and finishing encoding the NAS message
+  auto &nas_handle_latency_summary =
+    prometheus::BuildSummary()
+      .Name("amf_message_nas_encode_latency")
+      .Help(
+        "Latency between AMF finishing to handle NGAP-enclosed NAS messages "
+        "and finishing encoding it"
+      )
       .Register(*registry);
 
   // Metric for the latency between AMF building NAS responses and packing them
@@ -385,7 +427,9 @@ int main(int argc, char *argv[])
       std::ref(latency_summary),
       std::ref(decode_latency_summary),
       std::ref(handle_latency_summary),
+      std::ref(nas_decode_latency_summary),
       std::ref(nas_handle_latency_summary),
+      std::ref(nas_encode_latency_summary),
       std::ref(build_latency_summary),
       std::ref(encode_latency_summary),
       std::ref(send_latency_summary),
