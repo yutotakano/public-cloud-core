@@ -82,7 +82,7 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 
   ogs_debug("Creating metrics byte buffer\n");
 
-	int header_len = 3;
+	int header_len = 5;
   buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
@@ -104,14 +104,18 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 		return -1;
 	}
 
-	// First byte is the length of following header bytes
-	buffer[0] = 0x02;
+	// First two bytes are magic number to identify the start of the header
+	buffer[0] = 0x99;
+	buffer[1] = 0x99;
+
+	// Third byte is the length of following header bytes
+	buffer[2] = 0x02;
 	// We currently hardcode the message length to be less than 2^16 bytes long
 	// using two bytes for the length
 	// TODO: dynamically calculate header_len based on some maximum character
 	// limit imposed on the metric descriptions * number of metrics
-	buffer[1] = buffer_len & 0xFF;
-	buffer[2] = (buffer_len >> 8) & 0xFF;
+	buffer[3] = buffer_len & 0xFF;
+	buffer[4] = (buffer_len >> 8) & 0xFF;
 
 	send_response_code = send(conn->sock, buffer, header_len + buffer_len, 0);
 
