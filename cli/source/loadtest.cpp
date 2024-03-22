@@ -104,6 +104,15 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
       return;
     }
 
+    // Create any parent directories for the files
+    std::filesystem::path p = experiment_name;
+    std::filesystem::create_directories(p.parent_path());
+    if (!std::filesystem::is_directory(p.parent_path()))
+    {
+      LOG_ERROR(logger, "Could not create directory for experiment files.");
+      return;
+    }
+
     // Perform collection every 5 seconds until 1000 seconds have passed
     int total_points = 200;
     LOG_TRACE_L3(logger, "Collecting 200 points of data.");
@@ -210,14 +219,66 @@ void LoadTestApp::collect_avg_latency(
     return;
   }
 
+  std::optional<int> decode_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_decode_latency{nas_type!=\"0\"})"
+  );
+  if (!decode_latency.has_value())
+  {
+    LOG_TRACE_L3(logger, "Decode latency not available currently. Skipping.");
+    return;
+  }
+
+  std::optional<int> handle_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_handle_latency{nas_type!=\"0\"})"
+  );
+  if (!handle_latency.has_value())
+  {
+    LOG_TRACE_L3(logger, "Handle latency not available currently. Skipping.");
+    return;
+  }
+
+  std::optional<int> encode_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_encode_latency{nas_type!=\"0\"})"
+  );
+  if (!encode_latency.has_value())
+  {
+    LOG_TRACE_L3(logger, "Encode latency not available currently. Skipping.");
+    return;
+  }
+
+  std::optional<int> send_latency = get_prometheus_value_int(
+    prometheus_url,
+    "avg(amf_message_send_latency{nas_type!=\"0\"})"
+  );
+  if (!send_latency.has_value())
+  {
+    LOG_TRACE_L3(logger, "Send latency not available currently. Skipping.");
+    return;
+  }
+
   // Write to file
   LOG_TRACE_L3(logger, "Writing results to _latency csv.");
   std::ofstream latency_file(
     experiment_name + "_latency.csv",
     std::ios::app | std::ios::out
   );
-  latency_file << time_since_start << ", " << latency.value() << std::endl;
+  latency_file << time_since_start << ", " << latency.value() << ", "
+               << decode_latency.value() << ", " << handle_latency.value()
+               << ", " << encode_latency.value() << ", " << send_latency.value()
+               << std::endl;
   latency_file.close();
+  if (!latency_file.good())
+  {
+    LOG_ERROR(
+      logger,
+      "Error writing to file {}: {}",
+      experiment_name + "_latency.csv",
+      strerror(errno)
+    );
+  }
   LOG_TRACE_L3(logger, "Finished writing data.");
 }
 
@@ -246,13 +307,22 @@ void LoadTestApp::collect_avg_throughput(
 
   // Write to file
   LOG_TRACE_L3(logger, "Writing results to _throughput csv.");
-  std::ofstream worker_count_file(
+  std::ofstream throughput_file(
     experiment_name + "_throughput.csv",
     std::ios::app | std::ios::out
   );
-  worker_count_file << time_since_start << ", " << uplink_packets_rate << ", "
-                    << downlink_packets_rate << std::endl;
-  worker_count_file.close();
+  throughput_file << time_since_start << ", " << uplink_packets_rate << ", "
+                  << downlink_packets_rate << std::endl;
+  throughput_file.close();
+  if (!throughput_file.good())
+  {
+    LOG_ERROR(
+      logger,
+      "Error writing to file {}: {}",
+      experiment_name + "_throughput.csv",
+      strerror(errno)
+    );
+  }
   LOG_TRACE_L3(logger, "Finished writing data.");
 }
 
@@ -279,6 +349,15 @@ void LoadTestApp::collect_worker_count(
   );
   worker_count_file << time_since_start << ", " << worker_count << std::endl;
   worker_count_file.close();
+  if (!worker_count_file.good())
+  {
+    LOG_ERROR(
+      logger,
+      "Error writing to file {}: {}",
+      experiment_name + "_worker_count.csv",
+      strerror(errno)
+    );
+  }
   LOG_TRACE_L3(logger, "Finished writing data.");
 }
 
