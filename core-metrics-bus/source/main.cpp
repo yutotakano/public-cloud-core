@@ -50,6 +50,7 @@ void threadWorker(
         std::cout << "0 bytes transferred" << std::endl;
         continue;
       }
+      std::cout << "Buffer: " << buffer.data() << std::endl;
 
       // Parse the length of the message from the header
       std::size_t message_length = 0;
