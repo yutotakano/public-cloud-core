@@ -225,8 +225,8 @@ void LoadTestApp::collect_avg_latency(
   );
   if (!decode_latency.has_value())
   {
-    LOG_TRACE_L3(logger, "Decode latency not available currently. Skipping.");
-    return;
+    LOG_TRACE_L3(logger, "Decode latency not available currently. Assuming 0.");
+    decode_latency = 0;
   }
 
   std::optional<int> handle_latency = get_prometheus_value_int(
@@ -235,8 +235,8 @@ void LoadTestApp::collect_avg_latency(
   );
   if (!handle_latency.has_value())
   {
-    LOG_TRACE_L3(logger, "Handle latency not available currently. Skipping.");
-    return;
+    LOG_TRACE_L3(logger, "Handle latency not available currently. Assuming 0.");
+    handle_latency = 0;
   }
 
   std::optional<int> nas_handle_latency = get_prometheus_value_int(
@@ -247,9 +247,9 @@ void LoadTestApp::collect_avg_latency(
   {
     LOG_TRACE_L3(
       logger,
-      "NAS Handle latency not available currently. Skipping."
+      "NAS Handle latency not available currently. Assuming 0."
     );
-    return;
+    nas_handle_latency = 0;
   }
 
   std::optional<int> build_latency = get_prometheus_value_int(
@@ -260,9 +260,9 @@ void LoadTestApp::collect_avg_latency(
   {
     LOG_TRACE_L3(
       logger,
-      "Response build latency not available currently. Skipping."
+      "Response build latency not available currently. Assuming 0."
     );
-    return;
+    build_latency = 0;
   }
 
   std::optional<int> encode_latency = get_prometheus_value_int(
@@ -271,8 +271,8 @@ void LoadTestApp::collect_avg_latency(
   );
   if (!encode_latency.has_value())
   {
-    LOG_TRACE_L3(logger, "Encode latency not available currently. Skipping.");
-    return;
+    LOG_TRACE_L3(logger, "Encode latency not available currently. Assuming 0.");
+    encode_latency = 0;
   }
 
   std::optional<int> send_latency = get_prometheus_value_int(
@@ -281,8 +281,8 @@ void LoadTestApp::collect_avg_latency(
   );
   if (!send_latency.has_value())
   {
-    LOG_TRACE_L3(logger, "Send latency not available currently. Skipping.");
-    return;
+    LOG_TRACE_L3(logger, "Send latency not available currently. Assuming 0.");
+    send_latency = 0;
   }
 
   // Write to file
