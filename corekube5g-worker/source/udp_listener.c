@@ -115,13 +115,13 @@ void *process_message(void *raw_args) {
 	stats.end_time = send_end;
 	stats.latency = (int)(stats.end_time - stats.start_time);
 
-	ogs_trace("Finished handling message, sending metrics data");
+	ogs_info("Finished handling message, sending metrics data");
 	// If there is an IP to send metrics to, send them to args->metrics_addr
 	int error = metrics_send(args->metrics_conn, response.stats);
 	if (error != 0) {
 		ogs_warn("Error sending metrics data, error code %d", error);
 	}
-	ogs_trace("Finished sending metrics data");
+	ogs_info("Finished sending metrics data");
 
 	// free the dynamically-allocated structures
 	ogs_free(args->client_addr);
