@@ -52,7 +52,7 @@ void threadWorker(
       }
       if (buffer[0] != 0x99)
       {
-        break;
+        continue;
       }
 
       // Read the third byte of the message to get the length of the header
