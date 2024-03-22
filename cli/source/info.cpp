@@ -110,41 +110,32 @@ std::optional<deployment_info_s> InfoApp::get_info()
         )
         .future.get();
 
-    // Get the public DNS of the Grafana service.
-    LOG_TRACE_L3(logger, "Getting Grafana public service name");
-    auto ck_grafana_public_dns =
+    // Get the public DNS of various services
+    auto ck_service_hostnames_str =
       ck_app
         .run_kubectl(
           {"get",
-           "services/corekube-grafana",
-           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
+           "services",
+           "-o",
+           "jsonpath={.items[?(@.metadata.name==\"opencost\")].status."
+           "loadBalancer.ingress[0].hostname} "
+           "{.items[?(@.metadata.name==\"corekube-grafana\")].status."
+           "loadBalancer.ingress[0].hostname} "
+           "{.items[?(@.metadata.name==\"corekube-prometheus-loadbalancer\")]."
+           "status.loadBalancer.ingress[0].hostname}"},
           false
         )
         .future.get();
 
-    // Get the public DNS of the Prometheus service.
-    LOG_TRACE_L3(logger, "Getting Prometheus public service name");
-    auto ck_prometheus_public_dns =
-      ck_app
-        .run_kubectl(
-          {"get",
-           "services/corekube-prometheus-loadbalancer",
-           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
-          false
-        )
-        .future.get();
+    // Split by space
+    auto ck_service_hostnames = Utils::split(ck_service_hostnames_str, ' ');
 
-    // Get the public DNS of the OpenCost service.
-    LOG_TRACE_L3(logger, "Getting OpenCost public service name");
-    auto ck_opencost_public_dns =
-      ck_app
-        .run_kubectl(
-          {"get",
-           "services/opencost",
-           "-o=jsonpath={.status.loadBalancer.ingress[0].hostname}"},
-          false
-        )
-        .future.get();
+    // Get the public DNS of the CK OpenCost service.
+    auto ck_opencost_public_dns = ck_service_hostnames[0];
+    // Get the public DNS of the CK Grafana service.
+    auto ck_grafana_public_dns = ck_service_hostnames[1];
+    // Get the public DNS of the CK Prometheus service.
+    auto ck_prometheus_public_dns = ck_service_hostnames[2];
 
     // Get the public DNS of the Nervion controller service.
     auto nervion_controller_public_dns =
