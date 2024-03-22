@@ -76,6 +76,24 @@ module "vpc" {
   }
 }
 
+locals {
+  default_ck_nodegroups = {
+    frontend = {
+      name = "corekube-ng-1"
+
+      instance_types = ["t3.small"]
+
+      min_size     = 1
+      max_size     = 1
+      desired_size = 1
+      volume_size  = 20
+
+      # SSH key pair to allow for direct node access
+      key_name = "personal_key"
+    }
+  }
+}
+
 
 # Use the eks module to create the EKS cluster: uses the aws provider to create
 # and the kubernetes provider to setup the EKS service
@@ -116,24 +134,35 @@ module "ck_cluster" {
 
   # Create a node group for the frontend and other kube-system pods: this isn't
   # meant to scale
-  eks_managed_node_groups = {
-    frontend = {
+  eks_managed_node_groups = merge(local.default_ck_nodegroups, var.deployment_type == "ec2" ? {
+    // Define a spot worker node group for the CoreKube cluster only if the
+    // deployment_type variable is set to "spot"
+    spot_workers = {
       name = "corekube-ng-1"
 
       instance_types = ["t3.small"]
 
       min_size     = 1
-      max_size     = 1
+      max_size     = 20
       desired_size = 1
       volume_size  = 20
 
       # SSH key pair to allow for direct node access
       key_name = "personal_key"
-    }
-  }
 
-  # Create a fargate profile for the actual CoreKube worker pods
-  fargate_profiles = {
+      capacity_type  = "SPOT"
+
+      tags = {
+        "k8s.io/cluster-autoscaler/enabled"                  = "true"
+        "k8s.io/cluster-autoscaler/${local.ck_cluster_name}" = "owned"
+        "kubernetes.io/cluster/${local.ck_cluster_name}"     = "owned"
+      }
+    }
+  } : null)
+
+  # Create a fargate profile for the actual CoreKube worker pods if type is
+  # fargate
+  fargate_profiles = var.deployment_type == "fargate" ? {
     app_wildcard = {
       selectors = [
         { namespace = "default" },
@@ -141,13 +170,7 @@ module "ck_cluster" {
         { namespace = "prometheus" }
       ]
     }
-    # kube_system = {
-    #   name = "kube-system"
-    #   selectors = [
-    #     { namespace = "kube-system" }
-    #   ]
-    # }
-  }
+  } : {}
 
   # Enable Prefix Delegation for the VPC CNI, so we get more IPv4 addresses:
   # this is required to simply run more pods
@@ -174,6 +197,7 @@ module "ck_cluster" {
 // Fargate can reach each other without any security group rules, the frontend
 // being a node group cannot.
 resource "aws_security_group_rule" "ingress_all" {
+  count = var.deployment_type == "fargate" ? 1 : 0
   description      = "Allow all incoming traffic from nodes (inherited by Fargate pods; needed for nodegroups to reach Fargate)"
   type        = "ingress"
   from_port   = 0

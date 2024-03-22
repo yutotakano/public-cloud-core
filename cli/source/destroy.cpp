@@ -29,9 +29,52 @@ void DestroyApp::command_handler(argparse::ArgumentParser &parser)
 
 void DestroyApp::teardown_autodetect()
 {
-  // TODO: auto-detect type from a cache or database of some sort
-  // For now, assume EKS Fargate
-  teardown_aws_eks_fargate();
+  // Determine the value of the deployment_type variable used in the Terraform
+  // state
+  LOG_TRACE_L3(logger, "Autodetecting deployment type...");
+  std::string deployment_type;
+  try
+  {
+    deployment_type =
+      executor
+        .run(
+          {"terraform",
+           "-chdir=terraform/base",
+           "output",
+           "-raw",
+           "deployment_type"}
+        , false, true, true)
+        .future.get();
+  }
+  catch (const SubprocessError &e)
+  {
+    LOG_ERROR(
+      logger,
+      "Error getting deployment type from Terraform state: {}",
+      e.what()
+    );
+    LOG_ERROR(logger, "Is there an active deployment?");
+    return;
+  }
+
+  LOG_INFO(logger, "Detected deployment type: {}", deployment_type);
+
+  if (deployment_type == "fargate")
+  {
+    teardown_aws_eks_fargate();
+  }
+  else if (deployment_type == "ec2")
+  {
+    teardown_aws_eks_ec2();
+  }
+  else
+  {
+    LOG_ERROR(
+      logger,
+      "Unknown deployment type in existing Terraform state: {}",
+      deployment_type
+    );
+  }
 }
 
 void DestroyApp::teardown_aws_eks_fargate()
@@ -47,13 +90,44 @@ void DestroyApp::teardown_aws_eks_fargate()
     .future.get();
 
   executor
-    .run({"terraform", "-chdir=terraform/base", "destroy", "-auto-approve"})
+    .run(
+      {"terraform",
+       "-chdir=terraform/base",
+       "destroy",
+       "-auto-approve",
+       "-var",
+       "deployment_type=fargate"}
+    )
     .future.get();
 
   LOG_INFO(logger, "CoreKube tore down successfully!");
 }
 
-void DestroyApp::teardown_aws_eks_ec2() { return; }
+void DestroyApp::teardown_aws_eks_ec2()
+{
+  LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
+
+  // Destroy the kubernetes layer first, since the LoadBalancers in this layer
+  // will directly prevent the base layer VPCs from being destroyed
+  executor
+    .run(
+      {"terraform", "-chdir=terraform/kubernetes", "destroy", "-auto-approve"}
+    )
+    .future.get();
+
+  executor
+    .run(
+      {"terraform",
+       "-chdir=terraform/base",
+       "destroy",
+       "-auto-approve",
+       "-var",
+       "deployment_type=ec2"}
+    )
+    .future.get();
+
+  LOG_INFO(logger, "CoreKube tore down successfully!");
+}
 
 void DestroyApp::teardown_aws_eks_ec2_spot() { return; }
 

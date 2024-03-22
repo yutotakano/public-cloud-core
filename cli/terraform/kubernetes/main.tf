@@ -70,7 +70,7 @@ provider "helm" {
 # Deploy the cluster-autoscaler to the Nervion cluster
 resource "helm_release" "nv_cluster_autoscaler" {
   provider   = helm.nervion
-  name       = "cluster-autoscaler"
+  name       = "nv-cluster-autoscaler-release"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
   namespace  = "kube-system"
@@ -103,7 +103,7 @@ resource "helm_release" "nv_cluster_autoscaler" {
 
   set {
     name  = "rbac.serviceAccount.name"
-    value = "cluster-autoscaler"
+    value = "nv-cluster-autoscaler"
   }
 
   set {
@@ -127,7 +127,7 @@ module "nv_cluster_autoscaler_irsa" {
   source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version    = "~> 5.34"
 
-  role_name = "cluster-autoscaler"
+  role_name = "nv-cluster-autoscaler"
   role_description = "EKS Cluster ${local.nv_cluster_name} Autoscaler"
 
   attach_cluster_autoscaler_policy = true
@@ -408,6 +408,76 @@ resource "helm_release" "kube-state-metrics" {
   }
 }
 
+
+# Deploy the cluster-autoscaler to the CoreKube cluster
+resource "helm_release" "ck_cluster_autoscaler" {
+  provider   = helm.nervion
+  name       = "ck-cluster-autoscaler-release"
+  repository = "https://kubernetes.github.io/autoscaler"
+  chart      = "cluster-autoscaler"
+  namespace  = "kube-system"
+  version    = "9.35.0"
+
+  set {
+    name  = "autoDiscovery.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "autoDiscovery.clusterName"
+    value = local.ck_cluster_name
+  }
+
+  set {
+    name  = "cloudProvider"
+    value = "aws"
+  }
+
+  set {
+    name  = "awsRegion"
+    value = data.aws_region.current.name
+  }
+
+  set {
+    name  = "rbac.create"
+    value = "true"
+  }
+
+  set {
+    name  = "rbac.serviceAccount.name"
+    value = "ck-cluster-autoscaler"
+  }
+
+  set {
+    name  = "rbac.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.ck_cluster_autoscaler_irsa.iam_role_arn
+    type  = "string"
+  }
+
+  set {
+    name  = "sslCertPath"
+    value = "/etc/ssl/certs/ca-bundle.crt"
+  }
+}
+
+# Create an IAM role for the cluster-autoscaler to use
+module "ck_cluster_autoscaler_irsa" {
+  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version    = "~> 5.34"
+
+  role_name = "ck-cluster-autoscaler"
+  role_description = "EKS Cluster ${local.ck_cluster_name} Autoscaler"
+
+  attach_cluster_autoscaler_policy = true
+  cluster_autoscaler_cluster_names   = [local.ck_cluster_name]
+
+  oidc_providers = {
+    main = {
+      provider_arn               = data.aws_iam_openid_connect_provider.ck_cluster_oidc.arn
+      namespace_service_accounts = ["kube-system:cluster-autoscaler"]
+    }
+  }
+}
 
 # Nervion
 

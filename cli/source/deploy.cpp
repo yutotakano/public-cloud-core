@@ -66,7 +66,17 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
     destroy_app.teardown_autodetect();
   }
   if (no_setup)
+  {
     return;
+  }
+
+  if (!parser.is_used("--type"))
+  {
+    LOG_INFO(
+      logger,
+      "No deployment type specified, defaulting to aws-eks-fargate"
+    );
+  }
 
   if (parser.get<std::string>("--type") == "aws-eks-fargate")
   {
@@ -130,7 +140,15 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 {
   LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
 
-  executor.run({"terraform", "-chdir=terraform/base", "apply", "-auto-approve"})
+  executor
+    .run(
+      {"terraform",
+       "-chdir=terraform/base",
+       "apply",
+       "-auto-approve",
+       "-var",
+       "deployment_type=fargate"}
+    )
     .future.get();
 
   // Register the two clusters with the local kubeconfig
@@ -179,7 +197,66 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
   LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 
-void DeployApp::deploy_aws_eks_ec2() { return; }
+void DeployApp::deploy_aws_eks_ec2()
+{
+  LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
+
+  executor
+    .run(
+      {"terraform",
+       "-chdir=terraform/base",
+       "apply",
+       "-auto-approve",
+       "-var",
+       "deployment_type=ec2"}
+    )
+    .future.get();
+
+  // Register the two clusters with the local kubeconfig
+  executor
+    .run(
+      {"aws",
+       "eks",
+       "update-kubeconfig",
+       "--kubeconfig",
+       "config",
+       "--name",
+       "corekube-eks",
+       "--alias",
+       "corekube-eks"}
+    )
+    .future.get();
+  executor
+    .run(
+      {"aws",
+       "eks",
+       "update-kubeconfig",
+       "--kubeconfig",
+       "config",
+       "--name",
+       "nervion-eks",
+       "--alias",
+       "nervion-eks"}
+    )
+    .future.get();
+
+  executor
+    .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
+    .future.get();
+
+  // Get info
+  auto info = info_app.get_info();
+
+  LOG_INFO(logger, "CoreKube deployed successfully!");
+  LOG_INFO(
+    logger,
+    "IP (within VPC) of CK frontend node: {}",
+    info->ck_frontend_ip
+  );
+  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
+  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
+  LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
+}
 
 void DeployApp::deploy_aws_eks_ec2_spot() { return; }
 
