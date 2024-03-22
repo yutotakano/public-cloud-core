@@ -101,6 +101,8 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         "One or more files prefixed with '{}' exit. Aborting.",
         experiment_name
       );
+
+      stop_nervion_controller(info.value()).get();
       return;
     }
 
@@ -110,6 +112,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     if (!std::filesystem::is_directory(p.parent_path()))
     {
       LOG_ERROR(logger, "Could not create directory for experiment files.");
+      stop_nervion_controller(info.value()).get();
       return;
     }
 
