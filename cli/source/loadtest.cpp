@@ -75,7 +75,15 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   LOG_TRACE_L3(logger, "Incremental duration: {}", minutes);
 
   // Send the loadtest file to the Nervion controller
-  post_nervion_controller(file_path, info.value(), minutes);
+  try
+  {
+    post_nervion_controller(file_path, info.value(), minutes);
+  }
+  catch (const std::exception &e)
+  {
+    LOG_ERROR(logger, "Failed to start loadtest: {}", e.what());
+    return;
+  }
   LOG_INFO(logger, "Loadtest started.");
 
   // If any collection flags are present, collect data
@@ -516,8 +524,18 @@ void LoadTestApp::post_nervion_controller(
     cpr::Verbose()
   );
 
+  if (res.status_code == 200)
+  {
+    // No redirect, there was an error -- probably because there is already a
+    // loadtest running
+    LOG_ERROR(logger, "Starting loadtest failed, is there an existing run?");
+    LOG_ERROR(logger, "Stop it with --stop and try again.");
+    throw std::runtime_error("Failed to start loadtest.");
+  }
+
   if (res.status_code != 302)
   {
     LOG_ERROR(logger, "cpr::Post() failed ({}): {}", res.status_code, res.text);
+    throw std::runtime_error("Failed to start loadtest.");
   }
 }
