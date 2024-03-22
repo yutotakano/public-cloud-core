@@ -612,6 +612,7 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
+    printf("Sending INIT message to controller\n");
     /* Send INIT message */
     send_init_controller();
 
