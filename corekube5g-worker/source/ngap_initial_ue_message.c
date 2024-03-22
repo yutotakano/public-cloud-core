@@ -4,6 +4,8 @@
 
 #include "ngap_initial_ue_message.h"
 
+#include "metrics.h"
+
 int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_response_t *response) {
     ogs_info("Handling Initial UE Message");
 
@@ -49,7 +51,9 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     bzero(&nas_params, sizeof(nas_ngap_params_t));
     nas_params.ran_ue_ngap_id = RAN_UE_NGAP_ID;
 
+    unsigned long long nas_start_time = get_microtime();
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
+    response->stats->nas_handle_latency = (int)(get_microtime() - nas_start_time);
     ogs_assert(handle_nas == OGS_OK);
     // expect a single NAS response (Authentication Request)
     ogs_assert(response->num_responses == 1);
@@ -58,6 +62,8 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
 
     // free up the NAS security parameters
     nas_security_params_free(nas_params.nas_security_params);
+
+    unsigned long long start_time = get_microtime();
 
     // prepare the parameters for the response (a Downlink NAS Transport)
     ngap_downlink_nas_transport_params_t response_params;
@@ -77,7 +83,9 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     // build the NGAP response
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
+
     int build_response = ngap_build_downlink_nas_transport(&response_params, response->responses[0]);
+    response->stats->response_build_latency = (int)(get_microtime() - start_time);
     ogs_assert(build_response == OGS_OK);
     
     return OGS_OK;

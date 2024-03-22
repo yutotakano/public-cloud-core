@@ -2,7 +2,7 @@
 #include "nas_handler.h"
 #include "ngap_pdu_session_resource_setup_request_transfer.h"
 #include "ngap_pdu_session_resource_setup_response_transfer.h"
-
+#include "metrics.h"
 #include "ngap_pdu_session_resource_setup_response.h"
 
 int ngap_handle_pdu_session_resource_setup_response(ogs_ngap_message_t *message, message_handler_response_t *response) {
@@ -51,6 +51,7 @@ int ngap_handle_pdu_session_resource_setup_response(ogs_ngap_message_t *message,
 
     ogs_assert(PDUSessionList);
 
+    unsigned long long nas_start_time = get_microtime();
     for (int i = 0; i < PDUSessionList->list.count; i++) {
         PDUSessionItem = (NGAP_PDUSessionResourceSetupItemSURes_t *) PDUSessionList->list.array[i];
 
@@ -63,12 +64,13 @@ int ngap_handle_pdu_session_resource_setup_response(ogs_ngap_message_t *message,
 
         ogs_pkbuf_t * transfer_pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
         ogs_pkbuf_put_data(transfer_pkbuf, transfer->buf, transfer->size);
-
+    
         int handle_transfer = ngap_handle_pdu_session_resource_setup_response_transfer(amf_ue_ngap_id, transfer_pkbuf);
         ogs_assert(handle_transfer == OGS_OK);
 
         ogs_pkbuf_free(transfer_pkbuf);
     }
+    response->stats->nas_handle_latency = (int)(get_microtime() - nas_start_time);
 
     // There is no response to this message
     response->num_responses=0;

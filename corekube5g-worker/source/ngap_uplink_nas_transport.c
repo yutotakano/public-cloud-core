@@ -6,6 +6,7 @@
 #include "ngap_ue_context_release_command.h"
 #include "db_accesses.h"
 #include "corekube_config.h"
+#include "metrics.h"
 
 #include "ngap_uplink_nas_transport.h"
 
@@ -66,10 +67,15 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
     // set metric ue ids
     response->stats->ue_id = *nas_params.amf_ue_ngap_id;
 
+    unsigned long long nas_start_time = get_microtime();
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
+    response->stats->nas_handle_latency = (int)(get_microtime() - nas_start_time);
     ogs_assert(handle_nas == OGS_OK);
 
     int build_response;
+
+    
+    unsigned long long start_time = get_microtime();
 
     switch (nas_params.nas_message_type) {
         case OGS_NAS_5GS_SECURITY_MODE_COMPLETE:
@@ -207,6 +213,8 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
 
             break;
     }
+
+    response->stats->response_build_latency = (int)(get_microtime() - start_time);
 
     // free up the NAS security parameters
     nas_security_params_free(nas_params.nas_security_params);

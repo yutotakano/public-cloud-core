@@ -5,15 +5,13 @@
 
 #include "ngap_handler.h"
 
-#include <time.h>
-
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response) {
     ogs_info("Reached NGAP Handler entrypoint");
 
     ogs_ngap_message_t incoming_ngap;
 
     // Decode the incoming message
-    clock_t decode_start = clock();
+    unsigned long long decode_start = get_microtime();
     int b_to_m = bytes_to_message(incoming, incoming_len, &incoming_ngap);
     if (b_to_m != OGS_OK) {
         // Failed to decode incoming NGAP message
@@ -23,22 +21,21 @@ int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_re
         ogs_log_hexdump(OGS_LOG_ERROR, incoming, incoming_len);
         return OGS_OK;
     }
-    clock_t decode_end = clock();
-    response->stats->decode_latency = (int)((decode_end - decode_start) / (CLOCKS_PER_SEC / 1000));
+    unsigned long long decode_end = get_microtime();
+    response->stats->decode_latency = (int)(decode_end - decode_start);
 
     // Handle the decoded message
     int message_handle = ngap_message_handler(&incoming_ngap, response);
     ogs_assert(message_handle == OGS_OK); // Failed to handle NGAP message
-    clock_t handle_end = clock();
-    response->stats->handle_latency = (int)((handle_end - decode_end) / (CLOCKS_PER_SEC / 1000));
+    unsigned long long handle_end = get_microtime();
+    response->stats->handle_latency = (int)(handle_end - decode_end);
 
     // handle the outgoing messages, if there are any
     for (int i = 0; i < response->num_responses; i++) {
         int m_to_b = message_to_bytes(response->responses[i], (ogs_pkbuf_t **) &response->responses[i]);
         ogs_assert(m_to_b == OGS_OK); // Failed to encode outgoing NGAP message
     }
-    clock_t encode_end = clock();
-    response->stats->encode_latency = (int)((encode_end - handle_end) / (CLOCKS_PER_SEC / 1000));
+    response->stats->encode_latency = (int)(get_microtime() - handle_end);
 
     // Free up memory
     ogs_ngap_free(&incoming_ngap);

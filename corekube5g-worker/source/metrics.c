@@ -91,6 +91,8 @@ int metrics_send(metrics_conn_t * conn, worker_metrics_t *stats)
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_latency:%d|", stats->latency);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_decode_latency:%d|", stats->decode_latency);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_handle_latency:%d|", stats->handle_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_handle_latency", stats->nas_handle_latency);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_build_latency:%d|", stats->response_build_latency);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_responses:%d|", stats->num_responses);

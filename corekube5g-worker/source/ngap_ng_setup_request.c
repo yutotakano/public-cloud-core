@@ -2,6 +2,8 @@
 
 #include "ngap_ng_setup_response.h"
 
+#include "metrics.h"
+
 int ngap_handle_ng_setup_request(ogs_ngap_message_t *message, message_handler_response_t *response) {
     ogs_info("Handling NG Setup Request");
 
@@ -67,7 +69,9 @@ int ngap_handle_ng_setup_request(ogs_ngap_message_t *message, message_handler_re
 
     response->num_responses = 1;
     response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
+    unsigned long long start_time = get_microtime();
     int build_response = ngap_build_ng_setup_response(response->responses[0]);
+    response->stats->response_build_latency = (int)(get_microtime() - start_time);
     ogs_assert(build_response == OGS_OK);
     
     return OGS_OK;
