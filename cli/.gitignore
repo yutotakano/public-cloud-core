@@ -9,3 +9,5 @@ external
 terraform.tfstate*
 config
 **/publicore.yaml
+*.csv
+
