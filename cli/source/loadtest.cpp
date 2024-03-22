@@ -162,6 +162,11 @@ LoadTestApp::get_prometheus_value(std::string url, std::string query)
   LOG_TRACE_L3(logger, "HTTP Request to Prometheus succeeded.");
   LOG_TRACE_L3(logger, "Response: {}", res.text);
   nlohmann::json stats = nlohmann::json::parse(res.text);
+  if (stats["data"]["result"][0]["value"][1].is_null())
+  {
+    return "NaN";
+  }
+
   return stats["data"]["result"][0]["value"][1].get<std::string>();
 }
 
