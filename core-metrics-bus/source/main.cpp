@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 
   // Metric for the latency between AMF starting to handle NGAP-enclosed NAS
   // messages and finishing decoding the NAS message
-  auto &nas_handle_latency_summary =
+  auto &nas_decode_latency_summary =
     prometheus::BuildSummary()
       .Name("amf_message_nas_decode_latency")
       .Help("Latency between AMF starting to handle NGAP-enclosed NAS messages "
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
   // Metric for the latency between AMF finishing to handle NGAP-enclosed NAS
   // messages and finishing encoding the NAS message
-  auto &nas_handle_latency_summary =
+  auto &nas_encode_latency_summary =
     prometheus::BuildSummary()
       .Name("amf_message_nas_encode_latency")
       .Help(
