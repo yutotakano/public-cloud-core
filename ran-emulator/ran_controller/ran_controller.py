@@ -808,6 +808,7 @@ class RANControler:
                 if enb.get_status() != Status.CONNECTED:
                     print(enb.get_id(), end=", ", flush=True)
                     all_connected = False
+            print()
             if all_connected or not self.should_keep_scaling.is_set():
                 print("eNB Check succeeded or aborted!")
                 break
