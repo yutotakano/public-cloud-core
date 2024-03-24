@@ -136,7 +136,7 @@ module "nv_cluster_autoscaler_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = data.aws_iam_openid_connect_provider.nv_cluster_oidc.arn
-      namespace_service_accounts = ["kube-system:cluster-autoscaler"]
+      namespace_service_accounts = ["kube-system:nv-cluster-autoscaler"]
     }
   }
 }
@@ -474,7 +474,7 @@ module "ck_cluster_autoscaler_irsa" {
   oidc_providers = {
     main = {
       provider_arn               = data.aws_iam_openid_connect_provider.ck_cluster_oidc.arn
-      namespace_service_accounts = ["kube-system:cluster-autoscaler"]
+      namespace_service_accounts = ["kube-system:ck-cluster-autoscaler"]
     }
   }
 }
