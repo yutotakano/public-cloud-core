@@ -1,8 +1,8 @@
 CC := g++
-CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/cpr_install/include
+CPPFLAGS := -Iinclude -Iexternal/quill_install/include -Iexternal/cpr_install/include -Iexternal/tiny-process-library_install/include
 CFLAGS := -Wall -DCURL_STATICLIB -std=c++17
-LDFLAGS := -Lexternal/quill_install/lib -Lexternal/cpr_install/lib
-LDLIBS := -lpthread -lquill -lcpr -lcurl
+LDFLAGS := -Lexternal/quill_install/lib -Lexternal/cpr_install/lib -Lexternal/tiny-process-library_install/lib
+LDLIBS := -lpthread -lquill -lcpr -lcurl -ltiny-process-library
 
 ifeq ($(OS), Windows_NT)
 		LDLIBS += -lws2_32 -lbcrypt -lcrypt32
@@ -76,7 +76,7 @@ $(EXE): $(OBJ_LIST)
 		$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # If dependencies are needed, install them
-external: external/quill_install external/cpr_install
+external: external/quill_install external/cpr_install external/tiny-process-library_install
 
 # If quill isn't present as an installed library, clone and install it
 external/quill_install:
@@ -97,6 +97,13 @@ external/cpr_install:
 		@$(call MKDIR, external/cpr/cmake_build)
 		cd external/cpr/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../cpr_install/ -DBUILD_SHARED_LIBS=OFF -DCURL_ZLIB=OFF -G "Unix Makefiles" ..
 		cd external/cpr/cmake_build && make install
+
+external/tiny-process-library_install:
+		@$(call MKDIR, external)
+		@$(call IF_NOT_EXISTS, external/tiny-process-library, cd external && git clone http://gitlab.com/eidheim/tiny-process-library)
+		@$(call MKDIR, external/tiny-process-library/cmake_build)
+		cd external/tiny-process-library/cmake_build && cmake -DCMAKE_INSTALL_PREFIX=../../tiny-process-library_install/ -G "Unix Makefiles" ..
+		cd external/tiny-process-library/cmake_build && make install
 
 clean:
 		@$(call RMDIR, $(OBJ_DIR))

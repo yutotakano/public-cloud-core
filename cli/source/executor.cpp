@@ -39,55 +39,53 @@ ExecutingProcess Executor::run(
     LOG_DEBUG(logger, "Running command: {}", command_parts);
   }
 
-  // Convert the command parts to a C-style array of C-style strings by
-  // iterating over the vector and pushing the c_str() of each string into a
-  // reserved vector of char pointers.
-  std::vector<char *> cstr_command_parts;
-  cstr_command_parts.reserve(command_parts.size());
+  std::string output;
+  std::string error;
 
-  for (size_t i = 0; i < command_parts.size(); ++i)
-  {
-    cstr_command_parts.push_back(const_cast<char *>(command_parts[i].c_str()));
-  }
-  // Push NULL at the end since subprocess_create requires it to know when the
-  // array ends.
-  cstr_command_parts.push_back(nullptr);
+  // Create the subprocess, inheriting the environment variables from the
+  // current process
+  std::shared_ptr<TinyProcessLib::Process> process =
+    std::make_shared<TinyProcessLib::Process>(
+      command_parts,
+      "",
+      [&, stream_cout, suppress_err](const char *bytes, size_t n)
+      {
+        // Callback for stdout
+        if (n > 0)
+        {
+          LOG_TRACE_L3(logger, "{} bytes read from stdout", n);
+        }
 
-  // Create the subprocess struct that will contain the process handles - make
-  // it shared as it will be used in the future (in the async lambda below) and
-  // we want to keep it alive until the future is done.
-  std::shared_ptr<subprocess_s> process = std::make_shared<subprocess_s>();
-  int process_result = subprocess_create(
-    &cstr_command_parts[0],
-    // enable_async is required to use the subprocess_read_stdout and
-    // subprocess_read_stderr functions, which are used to stream the output of
-    // the process instead of waiting for the process to end.
-    subprocess_option_enable_async | subprocess_option_inherit_environment,
-    process.get()
-  );
+        output += std::string(bytes, n);
+        if (stream_cout)
+        {
+          std::cout << std::string(bytes, n);
+        }
+      },
+      [&, stream_cout, suppress_err](const char *bytes, size_t n)
+      {
+        // Callback for stderr
+        if (n > 0)
+        {
+          LOG_TRACE_L3(logger, "{} bytes read from stderr", n);
+        }
 
-  // Sanity check the result of subprocess_create
-  if (process_result != 0)
-  {
-    LOG_ERROR(logger, "Error creating subprocess: {}", process_result);
-  }
+        error += std::string(bytes, n);
+        if (!suppress_err)
+        {
+          std::cerr << std::string(bytes, n);
+        }
+      }
+    );
 
   // Create the ExecutingProcess struct that will be returned to the caller
   auto result = ExecutingProcess();
-  result.subprocess = process.get();
+  result.subprocess = process;
   result.future = std::async(
-    [this, process, stream_cout, suppress_err]()
+    [this, process, &output, stream_cout, suppress_err]()
     {
-      // Stream the output of the process stdout to a small buffer that gets
-      // processed into the output string
-      char out_buffer[2048] = {0};
-      char err_buffer[2048] = {0};
-      std::string output;
-      std::string error;
-      int bread = 0;
-      int bread_err = 0;
-
-      while (subprocess_alive(process.get()) || bread > 0 || bread_err > 0)
+      int exit_status = 0;
+      while (!process->try_get_exit_status(exit_status))
       {
         // Check if program has received Ctrl-C, since we are in another thread
         // and won't receive it. Wait up to 100ms to prevent busy-waiting on the
@@ -97,49 +95,21 @@ ExecutingProcess Executor::run(
         if (ExitHandler::exit_condition_met(100))
         {
           LOG_INFO(logger, "Aborting subprocess due to exit condition");
+          process->kill();
           throw SubprocessUserAbort("Aborting due to user interrupt");
         }
 
-        // Zero out the buffers before reading into them
-        std::fill(std::begin(out_buffer), std::end(out_buffer), 0);
-        std::fill(std::begin(err_buffer), std::end(err_buffer), 0);
-
-        bread = subprocess_read_stdout(process.get(), out_buffer, 2048);
-        if (bread > 0)
-        {
-          LOG_TRACE_L3(logger, "{} bytes read from stdout", bread);
-        }
-
-        output += out_buffer;
-        if (stream_cout)
-          std::cout << out_buffer;
-
-        bread_err = subprocess_read_stderr(process.get(), err_buffer, 2048);
-        if (bread_err > 0)
-        {
-          LOG_TRACE_L3(logger, "{} bytes read from stderr", bread_err);
-        }
-
-        error += err_buffer;
+        // Sleep for a bit to prevent busy-waiting
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
       }
 
-      // Get exit code and log it
-      int exit_code;
-      subprocess_join(process.get(), &exit_code);
-      LOG_DEBUG(logger, "Process exited with code: {}", exit_code);
+      LOG_DEBUG(logger, "Process exited with code: {}", exit_status);
 
-      if (exit_code != 0)
+      if (exit_status != 0)
       {
         // Throw an exception and abort if the process exited badly
         if (!suppress_err)
-          LOG_ERROR(logger, "Error: {}", error);
-        throw SubprocessError("Subprocess exited with non-zero code");
-      }
-      else if (!error.empty() && !suppress_err)
-      {
-        // Log the errors here, since the future will return only the stdout for
-        // convenience.
-        LOG_WARNING(logger, "Warning: {}", error);
+          throw SubprocessError("Subprocess exited with non-zero code");
       }
 
       return Utils::trim(output);

@@ -1,18 +1,15 @@
 #ifndef EXECUTOR_H
 #define EXECUTOR_H
 
+#include "process.hpp"
 #include "quill/Quill.h"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion-null"
-#include "subprocess/subprocess.h"
-#pragma GCC diagnostic pop
 #include <future>
 #include <string>
 
 struct ExecutingProcess
 {
   std::future<std::string> future;
-  subprocess_s *subprocess;
+  std::shared_ptr<TinyProcessLib::Process> subprocess;
 };
 
 class Executor
