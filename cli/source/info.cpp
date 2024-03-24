@@ -100,12 +100,11 @@ std::optional<deployment_info_s> InfoApp::get_info()
       ck_app
         .run_kubectl(
           {"get",
-           "nodes",
+           "pods",
+           "-n",
+           "corekube-frontend",
            "-o",
-           "jsonpath={.items[0].status.addresses[?(@.type==\"InternalIP\")]."
-           "address}",
-           "-l",
-           "eks.amazonaws.com/nodegroup"},
+           "jsonpath={.items[0].status.hostIP}"},
           false
         )
         .future.get();
