@@ -140,7 +140,7 @@ module "ck_cluster" {
     spot_workers = {
       name = "corekube-ng-1"
 
-      instance_types = ["t3.small"]
+      instance_types = [var.ec2_instance_type]
 
       min_size     = 1
       max_size     = 20
