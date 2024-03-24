@@ -73,8 +73,9 @@ private:
    * @param time_since_start
    * @param prometheus_url
    * @param experiment_name
+   * @return bool True if the query was successful, false otherwise.
    */
-  void collect_avg_latency(
+  bool collect_avg_latency(
     int time_since_start,
     std::string prometheus_url,
     std::string experiment_name
@@ -88,8 +89,9 @@ private:
    * @param time_since_start
    * @param prometheus_url
    * @param experiment_name
+   * @return bool True if the query was successful, false otherwise.
    */
-  void collect_worker_count(
+  bool collect_worker_count(
     int time_since_start,
     std::string prometheus_url,
     std::string experiment_name
@@ -103,8 +105,9 @@ private:
    * @param time_since_start
    * @param prometheus_url
    * @param experiment_name
+   * @return bool True if the query was successful, false otherwise.
    */
-  void collect_avg_throughput(
+  bool collect_avg_throughput(
     int time_since_start,
     std::string prometheus_url,
     std::string experiment_name

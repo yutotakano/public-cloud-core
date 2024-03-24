@@ -146,17 +146,28 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     {
       LOG_INFO(
         logger,
-        "Collecting data... {}/200 ({} seconds remaining)",
+        "Collecting data... {}/{} ({} seconds remaining)",
         i,
-        1000 - (i * 5)
+        total_points,
+        (total_points * 5) - (i * 5)
       );
       if (parser.get<bool>("--collect-avg-latency"))
       {
-        collect_avg_latency(
+        bool result = collect_avg_latency(
           i * 5,
           info->ck_prometheus_elb_url,
           experiment_name
         );
+        // Latency doesn't get collected until the first UE is connected, and
+        // there's no meaning to reducing timer before that point.
+        if (!result)
+        {
+          LOG_INFO(
+            logger,
+            "No latency data available yet. Extending experiment."
+          );
+          total_points += 1;
+        }
       }
       if (parser.get<bool>("--collect-worker-count"))
       {
@@ -227,7 +238,7 @@ LoadTestApp::get_prometheus_value_float(std::string url, std::string query)
   return std::stof(value);
 }
 
-void LoadTestApp::collect_avg_latency(
+bool LoadTestApp::collect_avg_latency(
   int time_since_start,
   std::string prometheus_url,
   std::string experiment_name
@@ -242,7 +253,7 @@ void LoadTestApp::collect_avg_latency(
   if (!latency.has_value())
   {
     LOG_TRACE_L3(logger, "Latency not available currently. Skipping.");
-    return;
+    return false;
   }
 
   std::optional<int> decode_latency = get_prometheus_value_int(
@@ -359,11 +370,14 @@ void LoadTestApp::collect_avg_latency(
       experiment_name + "_latency.csv",
       strerror(errno)
     );
+    return false;
   }
   LOG_TRACE_L3(logger, "Finished writing data.");
+
+  return true;
 }
 
-void LoadTestApp::collect_avg_throughput(
+bool LoadTestApp::collect_avg_throughput(
   int time_since_start,
   std::string prometheus_url,
   std::string experiment_name
@@ -403,11 +417,14 @@ void LoadTestApp::collect_avg_throughput(
       experiment_name + "_throughput.csv",
       strerror(errno)
     );
+    return false;
   }
   LOG_TRACE_L3(logger, "Finished writing data.");
+
+  return true;
 }
 
-void LoadTestApp::collect_worker_count(
+bool LoadTestApp::collect_worker_count(
   int time_since_start,
   std::string prometheus_url,
   std::string experiment_name
@@ -438,8 +455,11 @@ void LoadTestApp::collect_worker_count(
       experiment_name + "_worker_count.csv",
       strerror(errno)
     );
+    return false;
   }
   LOG_TRACE_L3(logger, "Finished writing data.");
+
+  return true;
 }
 
 std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)
