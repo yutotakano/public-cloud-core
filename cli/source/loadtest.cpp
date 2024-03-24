@@ -74,6 +74,51 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   int minutes = parser.present<int>("--incremental").value_or(0);
   LOG_TRACE_L3(logger, "Incremental duration: {}", minutes);
 
+  std::string experiment_name =
+    "experiment_" + parser.get<std::string>("--experiment-name");
+  LOG_TRACE_L3(logger, "Experiment name: {}", experiment_name);
+
+  // Check experiment destinations if we are collecting anything
+  if (
+    parser.get<bool>("--collect-avg-latency") ||
+    parser.get<bool>("--collect-avg-throughput") ||
+    parser.get<bool>("--collect-avg-cpu") ||
+    parser.get<bool>("--collect-worker-count")
+  )
+  {
+    // Abort if files already exist
+    if ((std::filesystem::exists(experiment_name + "_latency.csv") ||
+         std::filesystem::exists(experiment_name + "_throughput.csv") ||
+         std::filesystem::exists(experiment_name + "_cpu.csv") ||
+         std::filesystem::exists(experiment_name + "_worker_count.csv")))
+    {
+      LOG_ERROR(
+        logger,
+        "One or more files prefixed with '{}' exit. Aborting.",
+        experiment_name
+      );
+
+      return;
+    }
+
+    // Create any parent directories for the files
+    std::filesystem::path p = experiment_name;
+    LOG_TRACE_L3(logger, "Experiment path prefix: {}", p);
+    if (!std::filesystem::is_directory(p.parent_path()) && !p.parent_path().empty())
+    {
+      try
+      {
+        std::filesystem::create_directories(p.parent_path());
+      }
+      catch (const std::exception &e)
+      {
+        LOG_ERROR(logger, "Could not create directory for experiment files.");
+        LOG_ERROR(logger, "Error: {}", e.what());
+        return;
+      }
+    }
+  }
+
   // Send the loadtest file to the Nervion controller
   try
   {
@@ -94,36 +139,6 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     parser.get<bool>("--collect-worker-count")
   )
   {
-    std::string experiment_name =
-      "experiment_" + parser.get<std::string>("--experiment-name");
-    LOG_TRACE_L3(logger, "Experiment name: {}", experiment_name);
-
-    // Abort if files already exist
-    if ((std::filesystem::exists(experiment_name + "_latency.csv") ||
-         std::filesystem::exists(experiment_name + "_throughput.csv") ||
-         std::filesystem::exists(experiment_name + "_cpu.csv") ||
-         std::filesystem::exists(experiment_name + "_worker_count.csv")))
-    {
-      LOG_ERROR(
-        logger,
-        "One or more files prefixed with '{}' exit. Aborting.",
-        experiment_name
-      );
-
-      stop_nervion_controller(info.value()).get();
-      return;
-    }
-
-    // Create any parent directories for the files
-    std::filesystem::path p = experiment_name;
-    std::filesystem::create_directories(p.parent_path());
-    if (!std::filesystem::is_directory(p.parent_path()))
-    {
-      LOG_ERROR(logger, "Could not create directory for experiment files.");
-      stop_nervion_controller(info.value()).get();
-      return;
-    }
-
     // Perform collection every 5 seconds until 1000 seconds have passed
     int total_points = 200;
     LOG_TRACE_L3(logger, "Collecting 200 points of data.");
@@ -520,8 +535,7 @@ void LoadTestApp::post_nervion_controller(
       {"refresh_time", "10"}
     },
     // Follow no redirects
-    cpr::Redirect{0, false, false, cpr::PostRedirectFlags::NONE},
-    cpr::Verbose()
+    cpr::Redirect{0, false, false, cpr::PostRedirectFlags::NONE}
   );
 
   if (res.status_code == 200)
@@ -536,6 +550,10 @@ void LoadTestApp::post_nervion_controller(
   if (res.status_code != 302)
   {
     LOG_ERROR(logger, "cpr::Post() failed ({}): {}", res.status_code, res.text);
+    if (res.status_code == 0)
+    {
+      LOG_ERROR(logger, "Could not conect: {}", res.error.message);
+    }
     throw std::runtime_error("Failed to start loadtest.");
   }
 }
