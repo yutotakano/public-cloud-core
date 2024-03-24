@@ -199,7 +199,7 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 
 void DeployApp::deploy_aws_eks_ec2()
 {
-  LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
+  LOG_INFO(logger, "Deploying CoreKube on AWS EKS with EC2...");
 
   executor
     .run(
