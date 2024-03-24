@@ -51,8 +51,10 @@ module "vpc" {
   cidr = "192.168.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
 
-  private_subnets = ["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"]
-  public_subnets  = ["192.168.4.0/24", "192.168.5.0/24", "192.168.6.0/24"]
+  # /24 with 256*3 addresses was too small to run experiments with 1000 UEs, so
+  # we're using /22 with 1024*3 addresses
+  private_subnets = ["192.168.0.0/22", "192.168.4.0/22", "192.168.8.0/22"]
+  public_subnets  = ["192.168.12.0/22", "192.168.16.0/22", "192.168.20.0/22"]
 
   enable_nat_gateway = true
   single_nat_gateway = true
