@@ -42,8 +42,11 @@ void DestroyApp::teardown_autodetect()
            "-chdir=terraform/base",
            "output",
            "-raw",
-           "deployment_type"}
-        , false, true, true)
+           "deployment_type"},
+          false,
+          true,
+          true
+        )
         .future.get();
   }
   catch (const SubprocessError &e)
@@ -105,7 +108,7 @@ void DestroyApp::teardown_aws_eks_fargate()
 
 void DestroyApp::teardown_aws_eks_ec2()
 {
-  LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with Fargate...");
+  LOG_INFO(logger, "Tearing down CoreKube on AWS EKS with EC2...");
 
   // Destroy the kubernetes layer first, since the LoadBalancers in this layer
   // will directly prevent the base layer VPCs from being destroyed
