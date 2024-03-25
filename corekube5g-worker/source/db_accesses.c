@@ -36,9 +36,11 @@ int db_access(corekube_db_pulls_t * dbPulls, ITEM_TYPE dbKey, uint8_t * dbKeyVal
         dbPulls->head = outputBuffer;
 
         int n = recv_response(db_sock, outputBuffer, bufferOutputSize);
+        ogs_error("DB response size mismatch: %d != %d", n, (17 * numPull));
         ogs_trace("DB Response:");
-        if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
+        if ((ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE) || (n != (17 * numPull)))
             ogs_log_hexdump(OGS_LOG_INFO, outputBuffer, bufferOutputSize);
+
         ogs_assert(n == (17 * numPull));
         extract_db_values(outputBuffer, n, dbPulls);
     }
