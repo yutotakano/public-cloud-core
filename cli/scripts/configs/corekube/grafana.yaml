@@ -65,6 +65,23 @@ data:
         jsonData:
           timeInterval: 5s
 
+      - name: KubeCost Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        uid: kubecost-prometheus-datasource
+        url: http://aws-kubecost-prometheus-server.kubecost.svc
+        user:
+        database:
+        basicAuth:
+        basicAuthUser:
+        withCredentials:
+        isDefault: false
+        version: 1
+        editable: false
+        jsonData:
+          timeInterval: 5s
+
 ---
 
 apiVersion: v1
