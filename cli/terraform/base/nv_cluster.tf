@@ -19,13 +19,13 @@ module "nv_cluster" {
   # IP might work, it can't resolve any cluster DNSes (svc.cluster.internal) or
   # domains (like the apt repo)
   node_security_group_additional_rules = {
-    ingress_self_all  = {
-      description      = "Allow all incoming traffic"
-      type             = "ingress"
-      from_port        = 0
-      to_port          = 0
-      protocol         = "-1"
-      cidr_blocks      = ["0.0.0.0/0"]
+    ingress_self_all = {
+      description       = "Allow all incoming traffic"
+      type              = "ingress"
+      from_port         = 0
+      to_port           = 0
+      protocol          = "-1"
+      cidr_blocks       = ["0.0.0.0/0"]
       security_group_id = module.vpc.default_security_group_id
     }
   }

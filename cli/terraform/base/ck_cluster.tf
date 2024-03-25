@@ -38,13 +38,13 @@ module "ck_cluster" {
   # IP might work, it can't resolve any cluster DNSes (svc.cluster.internal) or
   # domains (like the apt repo)
   node_security_group_additional_rules = {
-    ingress_self_all  = {
-      description      = "Allow all incoming traffic"
-      type             = "ingress"
-      from_port        = 0
-      to_port          = 0
-      protocol         = "-1"
-      cidr_blocks      = ["0.0.0.0/0"]
+    ingress_self_all = {
+      description       = "Allow all incoming traffic"
+      type              = "ingress"
+      from_port         = 0
+      to_port           = 0
+      protocol          = "-1"
+      cidr_blocks       = ["0.0.0.0/0"]
       security_group_id = module.vpc.default_security_group_id
     }
   }
@@ -72,7 +72,7 @@ module "ck_cluster" {
       # SSH key pair to allow for direct node access
       key_name = "personal_key"
 
-      capacity_type  = "SPOT"
+      capacity_type = "SPOT"
 
       tags = {
         "k8s.io/cluster-autoscaler/enabled"                  = "true"
@@ -119,13 +119,13 @@ module "ck_cluster" {
 // Fargate can reach each other without any security group rules, the frontend
 // being a node group cannot.
 resource "aws_security_group_rule" "ingress_all" {
-  count = var.deployment_type == "fargate" ? 1 : 0
-  description      = "Allow all incoming traffic from nodes (inherited by Fargate pods; needed for nodegroups to reach Fargate)"
-  type        = "ingress"
-  from_port   = 0
-  to_port     = 0
-  protocol    = "-1"
-  cidr_blocks = ["0.0.0.0/0"]
+  count             = var.deployment_type == "fargate" ? 1 : 0
+  description       = "Allow all incoming traffic from nodes (inherited by Fargate pods; needed for nodegroups to reach Fargate)"
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = module.ck_cluster.cluster_primary_security_group_id
 }
 

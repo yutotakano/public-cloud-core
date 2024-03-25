@@ -1,11 +1,11 @@
 # Data source to fetch the EKS cluster details
 data "aws_eks_cluster" "nervion" {
-  name       = local.nv_cluster_name
+  name = local.nv_cluster_name
 }
 
 # Data source to fetch the EKS cluster authentication details
 data "aws_eks_cluster_auth" "nervion" {
-  name       = local.nv_cluster_name
+  name = local.nv_cluster_name
 }
 
 # Deploy the cluster-autoscaler to the Nervion cluster (using Helm, which means
@@ -81,14 +81,14 @@ data "aws_iam_openid_connect_provider" "nv_cluster_oidc" {
 
 # Create an IAM role for the cluster-autoscaler to use
 module "nv_cluster_autoscaler_irsa" {
-  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version    = "~> 5.34"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.34"
 
-  role_name = "nv-cluster-autoscaler"
+  role_name        = "nv-cluster-autoscaler"
   role_description = "EKS Cluster ${local.nv_cluster_name} Autoscaler"
 
   attach_cluster_autoscaler_policy = true
-  cluster_autoscaler_cluster_names   = [local.nv_cluster_name]
+  cluster_autoscaler_cluster_names = [local.nv_cluster_name]
 
   oidc_providers = {
     main = {
@@ -99,8 +99,8 @@ module "nv_cluster_autoscaler_irsa" {
 }
 
 provider "kubectl" {
-  apply_retry_count      = 3
-  load_config_file       = false
+  apply_retry_count = 3
+  load_config_file  = false
 
   host                   = data.aws_eks_cluster.nervion.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.nervion.certificate_authority[0].data)
@@ -115,29 +115,29 @@ provider "kubectl" {
 resource "kubectl_manifest" "nervion_common_setup" {
   # Need to keep AWS Load Balancer Controller activated while we destroy the
   # deployments so this dependency is explicitly stated
-  depends_on = [ helm_release.nv_alb_controller, module.nv_loadbalancer_irsa ]
-  wait = true
-  for_each  = data.kubectl_path_documents.common_manifest.manifests
-  yaml_body = each.value
+  depends_on = [helm_release.nv_alb_controller, module.nv_loadbalancer_irsa]
+  wait       = true
+  for_each   = data.kubectl_path_documents.common_manifest.manifests
+  yaml_body  = each.value
   provider   = kubectl.nervion
 }
 
 resource "kubectl_manifest" "nervion_setup" {
   # Need to keep AWS Load Balancer Controller activated while we destroy the
   # deployments so this dependency is explicitly stated
-  depends_on = [ helm_release.nv_alb_controller, module.nv_loadbalancer_irsa ]
-  wait = true
-  for_each  = data.kubectl_path_documents.nervion_manifest.manifests
-  yaml_body = each.value
+  depends_on = [helm_release.nv_alb_controller, module.nv_loadbalancer_irsa]
+  wait       = true
+  for_each   = data.kubectl_path_documents.nervion_manifest.manifests
+  yaml_body  = each.value
   provider   = kubectl.nervion
 }
 
 # Create an IAM role for the load-balancer-controller to use
 module "nv_loadbalancer_irsa" {
-  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version    = "~> 5.34"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.34"
 
-  role_name = "nv-load-balancer-controller"
+  role_name        = "nv-load-balancer-controller"
   role_description = "EKS Cluster ${local.nv_cluster_name} Load Balancer Controller"
 
   attach_load_balancer_controller_policy = true
@@ -189,7 +189,7 @@ resource "helm_release" "nv_alb_controller" {
   }
 
   set {
-    name = "enableBackendSecurityGroup"
+    name  = "enableBackendSecurityGroup"
     value = "false"
   }
 }

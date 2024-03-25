@@ -1,11 +1,11 @@
 # Data source to fetch the EKS cluster details
 data "aws_eks_cluster" "corekube" {
-  name       = local.ck_cluster_name
+  name = local.ck_cluster_name
 }
 
 # Data source to fetch the EKS cluster authentication details
 data "aws_eks_cluster_auth" "corekube" {
-  name       = local.ck_cluster_name
+  name = local.ck_cluster_name
 }
 
 data "aws_iam_openid_connect_provider" "ck_cluster_oidc" {
@@ -13,8 +13,8 @@ data "aws_iam_openid_connect_provider" "ck_cluster_oidc" {
 }
 
 provider "kubectl" {
-  apply_retry_count      = 3
-  load_config_file       = false
+  apply_retry_count = 3
+  load_config_file  = false
 
   host                   = data.aws_eks_cluster.corekube.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.corekube.certificate_authority[0].data)
@@ -54,26 +54,26 @@ provider "helm" {
 resource "kubectl_manifest" "corekube_common_setup" {
   # Need to keep AWS Load Balancer Controller activated while we destroy the
   # deployments so this dependency is explicitly stated
-  depends_on = [ helm_release.alb-controller, module.ck_loadbalancer_irsa ]
-  for_each  = data.kubectl_path_documents.common_manifest.manifests
-  yaml_body = each.value
-  wait = true
+  depends_on = [helm_release.alb-controller, module.ck_loadbalancer_irsa]
+  for_each   = data.kubectl_path_documents.common_manifest.manifests
+  yaml_body  = each.value
+  wait       = true
   provider   = kubectl.corekube
 }
 
 resource "kubectl_manifest" "corekube_setup" {
   # Need to keep AWS Load Balancer Controller activated while we destroy the
   # deployments so this dependency is explicitly stated
-  depends_on = [ helm_release.alb-controller, module.ck_loadbalancer_irsa ]
-  for_each  = data.kubectl_path_documents.corekube_manifest.manifests
-  yaml_body = each.value
-  wait = true
+  depends_on = [helm_release.alb-controller, module.ck_loadbalancer_irsa]
+  for_each   = data.kubectl_path_documents.corekube_manifest.manifests
+  yaml_body  = each.value
+  wait       = true
   provider   = kubectl.corekube
 }
 
 resource "kubernetes_config_map" "corekube_dashboard_configmap" {
   metadata {
-    name      = "corekube-grafana-dashboards"
+    name = "corekube-grafana-dashboards"
   }
 
   data = {
@@ -85,10 +85,10 @@ resource "kubernetes_config_map" "corekube_dashboard_configmap" {
 ## doesn't support the classic LB, i.e. the ALB is the only option to get any
 ## traffic into the cluster
 module "ck_loadbalancer_irsa" {
-  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version    = "~> 5.34"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.34"
 
-  role_name = "load-balancer-controller"
+  role_name        = "load-balancer-controller"
   role_description = "EKS Cluster ${local.ck_cluster_name} Load Balancer Controller"
 
   attach_load_balancer_controller_policy = true
@@ -144,7 +144,7 @@ resource "helm_release" "alb-controller" {
   // the Helm chart when destroyed will not delete the security groups (bug?)
   // and the VPC will not be deleted due to this hanging resource
   set {
-    name = "enableBackendSecurityGroup"
+    name  = "enableBackendSecurityGroup"
     value = "false"
   }
 }
@@ -152,10 +152,10 @@ resource "helm_release" "alb-controller" {
 
 # Create an IAM role for the kube-state-metrics to use
 module "ck_kubestatemetrics_irsa" {
-  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version    = "~> 5.34"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.34"
 
-  role_name = "kube-state-metrics-role"
+  role_name        = "kube-state-metrics-role"
   role_description = "EKS Cluster ${local.ck_cluster_name} Kube State Metrics Role"
 
   oidc_providers = {
@@ -175,20 +175,20 @@ resource "helm_release" "kube-state-metrics" {
   namespace  = "kube-system"
 
   set {
-    name = "podAnnotations.prometheus\\.io/scrape"
+    name  = "podAnnotations.prometheus\\.io/scrape"
     value = "true"
-    type = "string"
+    type  = "string"
   }
 
   set {
-    name = "podAnnotations.prometheus\\.io/path"
+    name  = "podAnnotations.prometheus\\.io/path"
     value = "/metrics"
   }
 
   set {
-    name = "podAnnotations.prometheus\\.io/port"
+    name  = "podAnnotations.prometheus\\.io/port"
     value = "8080"
-    type = "string"
+    type  = "string"
   }
 
   set {
@@ -209,14 +209,14 @@ resource "helm_release" "kube-state-metrics" {
 
 # Create an IAM role for the cluster-autoscaler to use
 module "ck_cluster_autoscaler_irsa" {
-  source     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version    = "~> 5.34"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.34"
 
-  role_name = "ck-cluster-autoscaler"
+  role_name        = "ck-cluster-autoscaler"
   role_description = "EKS Cluster ${local.ck_cluster_name} Autoscaler"
 
   attach_cluster_autoscaler_policy = true
-  cluster_autoscaler_cluster_names   = [local.ck_cluster_name]
+  cluster_autoscaler_cluster_names = [local.ck_cluster_name]
 
   oidc_providers = {
     main = {
