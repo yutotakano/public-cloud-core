@@ -62,7 +62,13 @@ void DestroyApp::teardown_autodetect()
 
   LOG_INFO(logger, "Detected deployment type: {}", deployment_type);
 
-  if (deployment_type == "fargate")
+  if (deployment_type.empty())
+  {
+    LOG_ERROR(logger, "Deployment type is empty. Exiting...");
+    LOG_ERROR(logger, "Is there an active deployment?");
+    return;
+  }
+  else if (deployment_type == "fargate")
   {
     teardown_aws_eks_fargate();
   }
