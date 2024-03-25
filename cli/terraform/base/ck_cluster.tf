@@ -109,6 +109,9 @@ module "ck_cluster" {
         }
       })
     }
+    aws-ebs-csi-driver = {
+      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+    }
   }
 }
 
@@ -129,3 +132,24 @@ resource "aws_security_group_rule" "ingress_all" {
   security_group_id = module.ck_cluster.cluster_primary_security_group_id
 }
 
+# For the AWS KubeCost integration, we need t oenable the EBS CSI addon for the
+# cluster, which requires an IAM role for the service account as per this example:
+# https://github.com/clowdhaus/eks-reference-architecture/blob/main/ephemeral-vol-test/eks.tf
+# and as per these docs:
+# https://docs.aws.amazon.com/eks/latest/userguide/cost-monitoring.html
+module "ebs_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.20"
+
+  # create_role      = false
+  role_name_prefix = "corekube-ebs-csi-driver-"
+
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.ck_cluster.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+}

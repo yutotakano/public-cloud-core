@@ -276,3 +276,21 @@ resource "helm_release" "ck_cluster_autoscaler" {
     value = "/etc/ssl/certs/ca-bundle.crt"
   }
 }
+
+
+# Install AWS-tweaked KubeCost, following https://docs.aws.amazon.com/eks/latest/userguide/cost-monitoring.html
+resource "helm_release" "kubecost-release" {
+  provider   = helm.corekube
+  name       = "aws-kubecost"
+
+  repository      = "oci://public.ecr.aws/kubecost"
+  chart = "cost-analyzer"
+  version    = "2.1.1"
+  namespace  = "kubecost"
+
+  values = [
+    "${file("${path.module}/values-eks-cost-monitoring.yaml")}"
+  ]
+
+  create_namespace = true
+}
