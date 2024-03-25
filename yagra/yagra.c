@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #include "core/ogs-core.h"
-#include "metrics.h"
+#include "yagra.h"
 
 metrics_conn_t metrics_connect(char * host, int port)
 {

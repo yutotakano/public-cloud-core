@@ -3,7 +3,7 @@
 
 #include "core/ogs-core.h"
 #include "ngap/ogs-ngap.h"
-#include "metrics.h"
+#include "yagra.h"
 
 extern int __corekube_log_domain;
 

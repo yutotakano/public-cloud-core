@@ -35,6 +35,10 @@ COPY ./corekube5g-worker/source/ corekube_worker/source/
 COPY ./corekube5g-worker/headers/ corekube_worker/headers/
 COPY ./corekube5g-worker/lib corekube_worker/lib/
 
+# Copy Yagra components
+COPY ./yagra/yagra.c corekube_worker/source/yagra.c
+COPY ./yagra/yagra.h corekube_worker/headers/yagra.h
+
 # Copy the libraries to the worker directory
 RUN mkdir corekube_worker/bin
 RUN LIBS=`find open5gs-corekube/build/lib/ -type f -name "libogs*.so.2.3.0"` && \

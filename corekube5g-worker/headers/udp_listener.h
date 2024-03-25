@@ -7,22 +7,23 @@
 #undef OGS_LOG_DOMAIN
 #define OGS_LOG_DOMAIN __corekube_log_domain
 
-#include "metrics.h"
+#include "yagra.h"
 
-int configure_udp_socket(char * mme_ip_address);
+int configure_udp_socket(char *mme_ip_address);
 
-typedef struct process_message_args {
+typedef struct process_message_args
+{
 	int sock_udp;
 	socklen_t from_len;
 	struct sockaddr_in *client_addr;
 	uint8_t *buffer;
 	int num_bytes_received;
-	metrics_conn_t * metrics_conn;
+	metrics_conn_t *metrics_conn;
 } process_message_args_t;
 
 void *process_message(void *raw_args);
 
-void start_listener(char * mme_ip_address, metrics_conn_t * metrics_con, int use_threads);
+void start_listener(char *mme_ip_address, metrics_conn_t *metrics_con, int use_threads);
 
 int main(int argc, char const *argv[]);
 

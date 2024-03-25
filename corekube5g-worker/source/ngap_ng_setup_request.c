@@ -2,7 +2,7 @@
 
 #include "ngap_ng_setup_response.h"
 
-#include "metrics.h"
+#include "yagra.h"
 
 int ngap_handle_ng_setup_request(ogs_ngap_message_t *message, message_handler_response_t *response) {
     ogs_info("Handling NG Setup Request");

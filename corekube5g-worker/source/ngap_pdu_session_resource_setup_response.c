@@ -2,7 +2,7 @@
 #include "nas_handler.h"
 #include "ngap_pdu_session_resource_setup_request_transfer.h"
 #include "ngap_pdu_session_resource_setup_response_transfer.h"
-#include "metrics.h"
+#include "yagra.h"
 #include "ngap_pdu_session_resource_setup_response.h"
 
 int ngap_handle_pdu_session_resource_setup_response(ogs_ngap_message_t *message, message_handler_response_t *response) {

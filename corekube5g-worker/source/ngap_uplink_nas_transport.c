@@ -6,7 +6,7 @@
 #include "ngap_ue_context_release_command.h"
 #include "db_accesses.h"
 #include "corekube_config.h"
-#include "metrics.h"
+#include "yagra.h"
 
 #include "ngap_uplink_nas_transport.h"
 

@@ -4,7 +4,7 @@
 
 #include "ngap_initial_ue_message.h"
 
-#include "metrics.h"
+#include "yagra.h"
 
 int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_response_t *response) {
     ogs_info("Handling Initial UE Message");
