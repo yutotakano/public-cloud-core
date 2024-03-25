@@ -78,30 +78,53 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
     );
   }
 
-  if (parser.get<std::string>("--type") == "aws-eks-fargate")
+  try
   {
-    std::string public_key_path = parser.get<std::string>("--ssh-key");
-    if (public_key_path.empty())
-      public_key_path = get_public_key_path();
 
-    deploy_aws_eks_fargate(public_key_path);
+    if (parser.get<std::string>("--type") == "aws-eks-fargate")
+    {
+      std::string public_key_path = parser.get<std::string>("--ssh-key");
+      if (public_key_path.empty())
+        public_key_path = get_public_key_path();
+
+      deploy_aws_eks_fargate(public_key_path);
+    }
+    else if (parser.get<std::string>("--type") == "aws-eks-ec2")
+    {
+      deploy_aws_eks_ec2();
+    }
+    else if (parser.get<std::string>("--type") == "aws-eks-ec2-spot")
+    {
+      deploy_aws_eks_ec2_spot();
+    }
+    else if (parser.get<std::string>("--type") == "aws-ec2")
+    {
+      deploy_aws_ec2();
+    }
+    else
+    {
+      LOG_ERROR(logger, "Invalid deployment type specified");
+    }
   }
-  else if (parser.get<std::string>("--type") == "aws-eks-ec2")
+  catch (SubprocessError &e)
   {
-    deploy_aws_eks_ec2();
+    LOG_ERROR(logger, "Aborting due to error during deployment");
+    return;
   }
-  else if (parser.get<std::string>("--type") == "aws-eks-ec2-spot")
-  {
-    deploy_aws_eks_ec2_spot();
-  }
-  else if (parser.get<std::string>("--type") == "aws-ec2")
-  {
-    deploy_aws_ec2();
-  }
-  else
-  {
-    LOG_ERROR(logger, "Invalid deployment type specified");
-  }
+
+  // Get info
+  auto info = info_app.get_info();
+
+  LOG_INFO(logger, "CoreKube deployed successfully!");
+  LOG_INFO(logger, "Deployment Type: {}", parser.get<std::string>("--type"));
+  LOG_INFO(
+    logger,
+    "IP (within VPC) of CK frontend node: {}",
+    info->ck_frontend_ip
+  );
+  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
+  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
+  LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 
 std::string DeployApp::get_public_key_path()
@@ -189,19 +212,6 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
   executor
     .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
     .future.get();
-
-  // Get info
-  auto info = info_app.get_info();
-
-  LOG_INFO(logger, "CoreKube deployed successfully!");
-  LOG_INFO(
-    logger,
-    "IP (within VPC) of CK frontend node: {}",
-    info->ck_frontend_ip
-  );
-  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
-  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
-  LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 
 void DeployApp::deploy_aws_eks_ec2()
