@@ -10,7 +10,7 @@ else
 		UNAME_S := $(shell uname -s)
 
 		ifeq ($(UNAME_S), Darwin)
-				LDLIBS += -framework CoreFoundation -framework SystemConfiguration -lz -lssh2
+				LDLIBS += -framework CoreFoundation -framework SystemConfiguration -framework Security -lz -lssh2
 		endif
 endif
 
