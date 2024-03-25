@@ -140,6 +140,9 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 {
   LOG_INFO(logger, "Deploying CoreKube on AWS EKS with Fargate...");
 
+  // Install any modules first
+  executor.run({"terraform", "-chdir=terraform/base", "init"}).future.get();
+
   executor
     .run(
       {"terraform",
@@ -179,6 +182,10 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
     )
     .future.get();
 
+  // Install any modules first
+  executor.run({"terraform", "-chdir=terraform/kubernetes", "init"})
+    .future.get();
+
   executor
     .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
     .future.get();
@@ -200,6 +207,9 @@ void DeployApp::deploy_aws_eks_fargate(std::string public_key_path)
 void DeployApp::deploy_aws_eks_ec2()
 {
   LOG_INFO(logger, "Deploying CoreKube on AWS EKS with EC2...");
+
+  // Install any modules first
+  executor.run({"terraform", "-chdir=terraform/base", "init"}).future.get();
 
   executor
     .run(
@@ -240,12 +250,25 @@ void DeployApp::deploy_aws_eks_ec2()
     )
     .future.get();
 
+  // Install any modules first
+  executor.run({"terraform", "-chdir=terraform/kubernetes", "init"})
+    .future.get();
+
   executor
     .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
     .future.get();
 
   // Get info
   auto info = info_app.get_info();
+  if (!info.has_value())
+  {
+    LOG_ERROR(logger, "Could not get deployment info for some reason.");
+    LOG_ERROR(
+      logger,
+      "Check deployment manually, and destroy/deploy again as necessary."
+    );
+    return;
+  }
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
   LOG_INFO(

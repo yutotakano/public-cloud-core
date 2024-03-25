@@ -75,7 +75,7 @@ bool InfoApp::check_contexts_exist()
   }
   if (corekube_context.empty() || nervion_context.empty())
   {
-    LOG_TRACE_L3(logger, "No active deployment found.");
+    LOG_TRACE_L3(logger, "Either CoreKube or Nervion deployment not found.");
     return false;
   }
 
