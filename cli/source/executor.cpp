@@ -48,7 +48,7 @@ ExecutingProcess Executor::run(
     std::make_shared<TinyProcessLib::Process>(
       command_parts,
       "",
-      [&, stream_cout, suppress_err](const char *bytes, size_t n)
+      [&, stream_cout](const char *bytes, size_t n)
       {
         // Callback for stdout
         if (n > 0)
@@ -62,7 +62,7 @@ ExecutingProcess Executor::run(
           std::cout << std::string(bytes, n);
         }
       },
-      [&, stream_cout, suppress_err](const char *bytes, size_t n)
+      [&, suppress_err](const char *bytes, size_t n)
       {
         // Callback for stderr
         if (n > 0)
@@ -82,7 +82,7 @@ ExecutingProcess Executor::run(
   auto result = ExecutingProcess();
   result.subprocess = process;
   result.future = std::async(
-    [this, process, &output, stream_cout, suppress_err]()
+    [this, process, &output, suppress_err]()
     {
       int exit_status = 0;
       while (!process->try_get_exit_status(exit_status))
@@ -123,15 +123,12 @@ void Executor::print_versions()
 {
   LOG_INFO(logger, "Printing versions...");
 
-  auto docker_version = run("docker --version", false).future.get();
-  LOG_INFO(logger, "Docker version: {}", docker_version);
-
   auto kubectl_version = run("kubectl version --client", false).future.get();
   LOG_INFO(logger, "Kubectl version: {}", kubectl_version);
 
   auto aws_version = run("aws --version", false).future.get();
   LOG_INFO(logger, "AWS version: {}", aws_version);
 
-  auto eksctl_version = run("eksctl version", false).future.get();
-  LOG_INFO(logger, "Eksctl version: {}", eksctl_version);
+  auto eksctl_version = run("terraform -version", false).future.get();
+  LOG_INFO(logger, "Terraform version: {}", eksctl_version);
 }
