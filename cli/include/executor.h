@@ -55,6 +55,12 @@ public:
     bool show_command = true
   );
 
+  void show_help_message(
+    std::vector<std::string> command_parts,
+    std::string &error,
+    std::string &output
+  );
+
   /**
    * @brief Print the versions of the tools used by the executor.
    */

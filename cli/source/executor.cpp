@@ -82,7 +82,7 @@ ExecutingProcess Executor::run(
   auto result = ExecutingProcess();
   result.subprocess = process;
   result.future = std::async(
-    [this, process, &output, suppress_err]()
+    [this, process, &output, &error, &command_parts, suppress_err]()
     {
       int exit_status = 0;
       while (!process->try_get_exit_status(exit_status))
@@ -107,6 +107,9 @@ ExecutingProcess Executor::run(
 
       if (exit_status != 0)
       {
+        // Command-and-error specific help messages
+        show_help_message(command_parts, error, output);
+
         // Throw an exception and abort if the process exited badly
         if (!suppress_err)
           throw SubprocessError("Subprocess exited with non-zero code");
@@ -117,6 +120,29 @@ ExecutingProcess Executor::run(
   );
 
   return result;
+}
+
+void Executor::show_help_message(
+  std::vector<std::string> command_parts,
+  std::string &error,
+  std::string &output
+)
+{
+  // If both error and output are empty, the command probably failed to run
+  if (error.empty() && output.empty())
+  {
+    LOG_ERROR(logger, "Hint: Is the command '{}' installed?", command_parts[0]);
+    return;
+  }
+  // If aws failed with finding credentials, encourage them to set up aws
+  if (command_parts[0] == "aws" && (error.find("No valid credential sources found") != std::string::npos))
+  {
+    LOG_ERROR(
+      logger,
+      "Hint: Maybe you need to run 'aws configure' to set up your AWS "
+      "credentials?"
+    );
+  }
 }
 
 void Executor::print_versions()
