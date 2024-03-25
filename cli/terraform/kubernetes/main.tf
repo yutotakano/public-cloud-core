@@ -411,7 +411,7 @@ resource "helm_release" "kube-state-metrics" {
 
 # Deploy the cluster-autoscaler to the CoreKube cluster
 resource "helm_release" "ck_cluster_autoscaler" {
-  provider   = helm.nervion
+  provider   = helm.corekube
   name       = "ck-cluster-autoscaler-release"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
