@@ -114,6 +114,15 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
 
   // Get info
   auto info = info_app.get_info();
+  if (!info.has_value())
+  {
+    LOG_ERROR(logger, "Could not get deployment info for some reason.");
+    LOG_ERROR(
+      logger,
+      "Check deployment manually, and destroy/deploy again as necessary."
+    );
+    return;
+  }
 
   LOG_INFO(logger, "CoreKube deployed successfully!");
   LOG_INFO(logger, "Deployment Type: {}", parser.get<std::string>("--type"));
@@ -267,28 +276,6 @@ void DeployApp::deploy_aws_eks_ec2()
   executor
     .run({"terraform", "-chdir=terraform/kubernetes", "apply", "-auto-approve"})
     .future.get();
-
-  // Get info
-  auto info = info_app.get_info();
-  if (!info.has_value())
-  {
-    LOG_ERROR(logger, "Could not get deployment info for some reason.");
-    LOG_ERROR(
-      logger,
-      "Check deployment manually, and destroy/deploy again as necessary."
-    );
-    return;
-  }
-
-  LOG_INFO(logger, "CoreKube deployed successfully!");
-  LOG_INFO(
-    logger,
-    "IP (within VPC) of CK frontend node: {}",
-    info->ck_frontend_ip
-  );
-  LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
-  LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
-  LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 
 void DeployApp::deploy_aws_eks_ec2_spot() { return; }
