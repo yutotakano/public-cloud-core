@@ -23,6 +23,9 @@
 		},
 		{
 			"path": ".github"
+		},
+		{
+			"path": "yagra"
 		}
 	],
 	"settings": {
@@ -131,7 +134,10 @@
 			"string_view": "cpp",
 			"hash_map": "cpp",
 			"cfenv": "cpp",
-			"cinttypes": "cpp"
+			"cinttypes": "cpp",
+			"resumable": "cpp",
+			"yagra.h": "c",
+			"errno.h": "c"
 		}
 	}
 }
