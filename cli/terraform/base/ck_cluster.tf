@@ -1,7 +1,15 @@
 locals {
   default_ck_nodegroups = {
     frontend = {
-      name = "corekube-ng-1"
+      name = "corekube-frontend-node"
+
+      # The frontend node group will run the CoreKube frontend. It has to be
+      # in the public subnet so it can be reached by the users over the public
+      # internet using HostPort (which is like NodePort but allows for any port).
+      # We can't use a LoadBalancer like other services (which is the recommended
+      # way to expose services) because this is SCTP, and LoadBalancers don't
+      # support SCTP.
+      subnet_ids = module.vpc.public_subnets
 
       instance_types = ["t3.small"]
 
@@ -12,6 +20,13 @@ locals {
 
       # SSH key pair to allow for direct node access
       key_name = "personal_key"
+
+      # Make all nodes within the node group have the label "frontend=true".
+      # This is then used by a nodeAffinity in the frontend service to ensure
+      # that the frontend pods are scheduled on this nodegroup.
+      labels = {
+        frontend = "true"
+      }
     }
   }
 }
@@ -60,7 +75,7 @@ module "ck_cluster" {
     // Define a spot worker node group for the CoreKube cluster only if the
     // deployment_type variable is set to "spot"
     spot_workers = {
-      name = "corekube-ng-1"
+      name = "corekube-worker-nodes"
 
       instance_types = [var.ec2_instance_type]
 

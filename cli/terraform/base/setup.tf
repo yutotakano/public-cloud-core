@@ -51,6 +51,11 @@ module "vpc" {
   enable_dns_hostnames = true
   create_igw           = true
 
+  # Enable for the frontend nodes (etc) that are launched into the public
+  # subnets get a public IP address -- otherwise it will error that there is
+  # no automatic public IP address assignment during nodegroup creation
+  map_public_ip_on_launch = true
+
   # These tags are required for things like the load balancer
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.ck_cluster_name}" = "shared"

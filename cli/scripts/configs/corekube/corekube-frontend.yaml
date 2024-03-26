@@ -26,6 +26,11 @@ metadata:
   namespace: corekube-frontend
 spec:
   replicas: 1
+  # Since we're using HostPort which takes up the sole port on the node, we need
+  # to make sure that the old deployment is terminated before the new one is
+  # started. We do this using spec.strategy.type == Recreate
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: corekube-frontend
@@ -40,6 +45,17 @@ spec:
         namespace: corekube-frontend
     spec:
       serviceAccountName: corekube-core-sa
+      # Make sure the pod is scheduled on a node with the label "frontend: true".
+      # The worker nodes aren't in the public subnet.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: frontend
+                operator: In
+                values:
+                - "true"
       containers:
       - name: corekube-frontend
         image: ghcr.io/yutotakano/corekube-frontend:latest
