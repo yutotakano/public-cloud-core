@@ -11,7 +11,6 @@ struct deployment_info_s
 {
   std::string ck_grafana_elb_url;
   std::string ck_prometheus_elb_url;
-  std::string ck_opencost_elb_url;
   std::string nv_controller_elb_url;
   std::string ck_frontend_ip;
 };

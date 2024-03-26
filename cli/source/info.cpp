@@ -116,9 +116,7 @@ std::optional<deployment_info_s> InfoApp::get_info()
           {"get",
            "services",
            "-o",
-           "jsonpath={.items[?(@.metadata.name==\"opencost\")].status."
-           "loadBalancer.ingress[0].hostname} "
-           "{.items[?(@.metadata.name==\"corekube-grafana\")].status."
+           "jsonpath={.items[?(@.metadata.name==\"corekube-grafana\")].status."
            "loadBalancer.ingress[0].hostname} "
            "{.items[?(@.metadata.name==\"corekube-prometheus-loadbalancer\")]."
            "status.loadBalancer.ingress[0].hostname}"},
@@ -129,12 +127,10 @@ std::optional<deployment_info_s> InfoApp::get_info()
     // Split by space
     auto ck_service_hostnames = Utils::split(ck_service_hostnames_str, ' ');
 
-    // Get the public DNS of the CK OpenCost service.
-    auto ck_opencost_public_dns = ck_service_hostnames[0];
     // Get the public DNS of the CK Grafana service.
-    auto ck_grafana_public_dns = ck_service_hostnames[1];
+    auto ck_grafana_public_dns = ck_service_hostnames[0];
     // Get the public DNS of the CK Prometheus service.
-    auto ck_prometheus_public_dns = ck_service_hostnames[2];
+    auto ck_prometheus_public_dns = ck_service_hostnames[1];
 
     // Get the public DNS of the Nervion controller service.
     auto nervion_controller_public_dns =
@@ -152,7 +148,6 @@ std::optional<deployment_info_s> InfoApp::get_info()
     return deployment_info_s{
       .ck_grafana_elb_url = ck_grafana_public_dns,
       .ck_prometheus_elb_url = ck_prometheus_public_dns,
-      .ck_opencost_elb_url = ck_opencost_public_dns,
       .nv_controller_elb_url = nervion_controller_public_dns,
       .ck_frontend_ip = frontend_ip,
     };
