@@ -15,7 +15,7 @@
 
 int __corekube_log_domain;
 int db_sock;
-metrics_conn_t metrics_conn;
+yagra_conn_t metrics_conn;
 pthread_mutex_t db_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #include "core/ogs-core.h"
@@ -73,19 +73,19 @@ void *process_message(void *raw_args) {
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	message_handler_response_t response;
-	worker_metrics_t stats = {0};
+	yagra_batch_data_t batch = yagra_init_batch(args->metrics_conn);
 
 	// initialise the default response values
 	response.num_responses = 0;
 	response.responses = ogs_malloc(sizeof(void *) * MAX_NUM_RESPONSES);
-	response.stats = &stats;
-	stats.start_time = get_microtime();
+	response.batch = &batch;
+	unsigned long long start_time = get_microtime();
 
 	int outcome = ngap_handler_entrypoint(buffer+4, (args->num_bytes_received)-4, &response);
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
 	unsigned long long send_start = get_microtime();
-	stats.num_responses = response.num_responses;
+	yagra_observe_metric(&batch, "num_responses", response.num_responses);
 	if (response.num_responses == 0)
 		ogs_info("Finished handling NO_RESPONSE message");
 
@@ -111,13 +111,12 @@ void *process_message(void *raw_args) {
 	}
 
 	unsigned long long send_end = get_microtime();
-	stats.send_latency = (int)(send_end - send_start);
-	stats.end_time = send_end;
-	stats.latency = (int)(stats.end_time - stats.start_time);
+	yagra_observe_metric(&batch, "send_latency", (int)(send_end - send_start));
+	yagra_observe_metric(&batch, "latency", (int)(send_end - start_time));
 
 	ogs_info("Finished handling message, sending metrics data");
 	// If there is an IP to send metrics to, send them to args->metrics_addr
-	int error = metrics_send(args->metrics_conn, response.stats);
+	int error = yagra_send_batch(&batch);
 	if (error != 0) {
 		ogs_warn("Error sending metrics data, error code %d", error);
 	}
@@ -134,7 +133,7 @@ void *process_message(void *raw_args) {
 }
 
 
-void start_listener(char * mme_ip_address, metrics_conn_t * metrics_conn, int use_threads)
+void start_listener(char * mme_ip_address, yagra_conn_t * metrics_conn, int use_threads)
 {
 	int sock_udp;
 	int n;
@@ -235,7 +234,7 @@ int main(int argc, char const *argv[])
 	ogs_pkbuf_default_create(&config);
 
 	// connecto to the metrics server
-	metrics_conn = metrics_connect((char *)argv[5], 0);
+	metrics_conn = yagra_init((char *)argv[5], 0);
 	ogs_assert(metrics_conn.sock != -1);
 	ogs_info("Metrics socket configured correctly.\n");
 
@@ -249,7 +248,7 @@ int main(int argc, char const *argv[])
 	start_listener((char *)argv[1], &metrics_conn, use_threads);
 
 	db_disconnect(db_sock);
-	metrics_disconnect(metrics_conn.sock);
+	yagra_finalize(&metrics_conn);
 
 	// delete the pkbuf pools
 	ogs_pkbuf_default_destroy();

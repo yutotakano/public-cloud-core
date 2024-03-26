@@ -18,12 +18,12 @@ typedef struct process_message_args
 	struct sockaddr_in *client_addr;
 	uint8_t *buffer;
 	int num_bytes_received;
-	metrics_conn_t *metrics_conn;
+	yagra_conn_t *metrics_conn;
 } process_message_args_t;
 
 void *process_message(void *raw_args);
 
-void start_listener(char *mme_ip_address, metrics_conn_t *metrics_con, int use_threads);
+void start_listener(char *mme_ip_address, yagra_conn_t *metrics_con, int use_threads);
 
 int main(int argc, char const *argv[]);
 

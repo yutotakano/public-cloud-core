@@ -65,11 +65,11 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
     nas_params.amf_ue_ngap_id = &amf_ue_ngap_id;
 
     // set metric ue ids
-    response->stats->ue_id = *nas_params.amf_ue_ngap_id;
+    yagra_observe_metric(response->batch, "ue_id", *nas_params.amf_ue_ngap_id);
 
     unsigned long long nas_start_time = get_microtime();
     int handle_nas = nas_handler_entrypoint(NAS_PDU, &nas_params, response);
-    response->stats->nas_handle_latency = (int)(get_microtime() - nas_start_time);
+    yagra_observe_metric(response->batch, "nas_handle_latency", (int)(get_microtime() - nas_start_time));
     ogs_assert(handle_nas == OGS_OK);
 
     int build_response;
@@ -214,7 +214,7 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             break;
     }
 
-    response->stats->response_build_latency = (int)(get_microtime() - start_time);
+    yagra_observe_metric(response->batch, "response_build_latency", (int)(get_microtime() - start_time));
 
     // free up the NAS security parameters
     nas_security_params_free(nas_params.nas_security_params);

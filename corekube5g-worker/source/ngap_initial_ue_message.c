@@ -73,7 +73,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     response_params.num_of_s_nssai = 0;
 
     // set metric ue ids
-    response->stats->ue_id = response_params.amf_ue_ngap_id;
+    yagra_observe_metric(response->batch, "ue_id", response_params.amf_ue_ngap_id);
 
     // free the dynamically-allocated AMF_UE_NGAP_ID
     ogs_free(nas_params.amf_ue_ngap_id);
@@ -83,7 +83,7 @@ int ngap_handle_initial_ue_message(ogs_ngap_message_t *message, message_handler_
     response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
 
     int build_response = ngap_build_downlink_nas_transport(&response_params, response->responses[0]);
-    response->stats->response_build_latency = (int)(get_microtime() - start_time);
+    yagra_observe_metric(response->batch, "response_build_latency", (int)(get_microtime() - start_time));
     ogs_assert(build_response == OGS_OK);
     
     return OGS_OK;
