@@ -64,7 +64,7 @@ int ngap_handle_pdu_session_resource_setup_response(ogs_ngap_message_t *message,
         ogs_pkbuf_t * transfer_pkbuf = ogs_pkbuf_alloc(NULL, OGS_MAX_SDU_LEN);
         ogs_pkbuf_put_data(transfer_pkbuf, transfer->buf, transfer->size);
     
-        int handle_transfer = ngap_handle_pdu_session_resource_setup_response_transfer(amf_ue_ngap_id, transfer_pkbuf);
+        int handle_transfer = ngap_handle_pdu_session_resource_setup_response_transfer(amf_ue_ngap_id, transfer_pkbuf, response);
         ogs_assert(handle_transfer == OGS_OK);
 
         ogs_pkbuf_free(transfer_pkbuf);

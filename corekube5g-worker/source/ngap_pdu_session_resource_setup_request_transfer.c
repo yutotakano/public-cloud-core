@@ -3,7 +3,7 @@
 
 #include "ngap_pdu_session_resource_setup_request_transfer.h"
 
-ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_t amf_ue_ngap_id)
+ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_t amf_ue_ngap_id, message_handler_response_t *response)
 {
     ogs_info("Building NGAP PDU Session Resource Setup Request Transfer message");
 
@@ -60,7 +60,7 @@ ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_
 
     pdu_session_resource_setup_request_transfer_params_t fetch_params;
     fetch_params.amf_ue_ngap_id = amf_ue_ngap_id;
-    int fetch_result = nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(&fetch_params);
+    int fetch_result = nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(&fetch_params, response);
     ogs_assert(fetch_result == OGS_OK);
 
     upf_n3_ip.ipv4 = 1;
@@ -137,7 +137,7 @@ ogs_pkbuf_t * nas_build_ngap_pdu_session_resource_setup_request_transfer(uint64_
 }
 
 
-int nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(pdu_session_resource_setup_request_transfer_params_t * params) {
+int nas_fetch_ngap_pdu_session_resource_setup_request_transfer_fetch_prerequisites(pdu_session_resource_setup_request_transfer_params_t * params, message_handler_response_t * response) {
     ogs_info("Fetching EPC-side EPC_TEID and SPGW_IP from database");
 
     ogs_assert(params);

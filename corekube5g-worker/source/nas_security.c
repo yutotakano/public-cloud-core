@@ -1,5 +1,6 @@
 #include "ngap/ogs-ngap.h"
 #include "db_accesses.h"
+#include "yagra.h"
 
 #include "nas_security.h"
 

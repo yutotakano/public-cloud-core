@@ -15,6 +15,6 @@ typedef struct ngap_pdu_session_resource_setup_request_params_t {
     ogs_pkbuf_t * nasPdu;
 } ngap_pdu_session_resource_setup_request_params_t;
 
-int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setup_request_params_t * params, ogs_ngap_message_t * response);
+int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setup_request_params_t * params, message_handler_response_t * response);
 
 #endif /* __COREKUBE_NGAP_PDU_SESSION_RESOURCE_SETUP_REQUEST_H__ */

@@ -132,7 +132,7 @@ int ngap_handle_uplink_nas_transport(ogs_ngap_message_t *message, message_handle
             // build the NGAP response
             response->num_responses = 1;
             response->responses[0] = ogs_calloc(1, sizeof(ogs_ngap_message_t));
-            build_response = ngap_build_pdu_session_resource_setup_request(&pdu_session_resource_setup_request_params, response->responses[0]);
+            build_response = ngap_build_pdu_session_resource_setup_request(&pdu_session_resource_setup_request_params, response);
             ogs_assert(build_response == OGS_OK);
 
             break;

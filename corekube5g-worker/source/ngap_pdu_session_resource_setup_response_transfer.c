@@ -1,10 +1,11 @@
 #include "corekube_config.h"
 #include "db_accesses.h"
+#include "yagra.h"
 
 #include "ngap_pdu_session_resource_setup_response_transfer.h"
 
 
-int ngap_handle_pdu_session_resource_setup_response_transfer(uint64_t amf_ue_ngap_id, ogs_pkbuf_t *pkbuf) {
+int ngap_handle_pdu_session_resource_setup_response_transfer(uint64_t amf_ue_ngap_id, ogs_pkbuf_t *pkbuf, message_handler_response_t *response) {
     ogs_info("Handling NGAP PDU Session Resource Setup Response Transfer message");
 
     uint32_t gnb_n3_teid;
@@ -52,7 +53,7 @@ int ngap_handle_pdu_session_resource_setup_response_transfer(uint64_t amf_ue_nga
     params.ue_teid = teid_buf.buf;
 
     // Store the IP and TEID in the DB
-    int store_result = nas_store_ngap_pdu_session_resource_setup_response_transfer_fetch_prerequisites(&params);
+    int store_result = nas_store_ngap_pdu_session_resource_setup_response_transfer_fetch_prerequisites(&params, response);
     ogs_assert(store_result == OGS_OK);
 
     // Free the structs used for the DB access
@@ -65,7 +66,7 @@ int ngap_handle_pdu_session_resource_setup_response_transfer(uint64_t amf_ue_nga
 }
 
 
-int nas_store_ngap_pdu_session_resource_setup_response_transfer_fetch_prerequisites(pdu_session_resource_setup_response_transfer_params_t * params) {
+int nas_store_ngap_pdu_session_resource_setup_response_transfer_fetch_prerequisites(pdu_session_resource_setup_response_transfer_params_t * params, message_handler_response_t *response) {
     ogs_info("Storing RAN-side UE_TEID and ENB_IP into database");
 
     ogs_assert(params);

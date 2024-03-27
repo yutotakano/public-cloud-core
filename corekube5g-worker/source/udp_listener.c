@@ -69,12 +69,12 @@ void *process_message(void *raw_args) {
 	ogs_free(args->buffer);
 
 	ogs_info("New SCTP message received.");
-	yagra_observe_metric(&batch, "uplink_packets", 1);
 	if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
 	message_handler_response_t response;
 	yagra_batch_data_t batch = yagra_init_batch(args->metrics_conn);
+	yagra_observe_metric(&batch, "uplink_packets", 1);
 
 	// initialise the default response values
 	response.num_responses = 0;

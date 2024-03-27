@@ -3,7 +3,7 @@
 
 #include "ngap_pdu_session_resource_setup_request.h"
 
-int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setup_request_params_t * params, ogs_ngap_message_t * response) {
+int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setup_request_params_t * params, message_handler_response_t * orig_response) {
     ogs_info("Building NGAP PDU Session Resource Setup Request");
 
     // check the required parameters are present
@@ -28,6 +28,8 @@ int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setu
     NGAP_UEAggregateMaximumBitRate_t *UEAggregateMaximumBitRate = NULL;
 
     ogs_debug("PDUSessionResourceSetupRequest(Session)");
+
+    ogs_ngap_message_t *response = orig_response->responses[0];
 
     memset(response, 0, sizeof (NGAP_NGAP_PDU_t));
     response->present = NGAP_NGAP_PDU_PR_initiatingMessage;
@@ -96,7 +98,7 @@ int ngap_build_pdu_session_resource_setup_request(ngap_pdu_session_resource_setu
     ogs_asn_uint8_to_OCTET_STRING(CoreKube_NSSAI_sST, sST);
 
     ogs_pkbuf_t * transferBuf = NULL;
-    transferBuf = nas_build_ngap_pdu_session_resource_setup_request_transfer(params->amf_ue_ngap_id);
+    transferBuf = nas_build_ngap_pdu_session_resource_setup_request_transfer(params->amf_ue_ngap_id, orig_response);
     ogs_assert(transferBuf);
 
     transfer = &PDUSessionItem->pDUSessionResourceSetupRequestTransfer;

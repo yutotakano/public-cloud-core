@@ -12,7 +12,7 @@ int nas_handle_pdu_session_establishment_request(ogs_nas_5gs_pdu_session_establi
     uint32_t pdu_ip;
     ogs_assert(params);
     ogs_assert(params->amf_ue_ngap_id);
-    int fetch_pdu_ip = nas_pdu_session_establishment_fetch_pdu_ip(*params->amf_ue_ngap_id, &pdu_ip);
+    int fetch_pdu_ip = nas_pdu_session_establishment_fetch_pdu_ip(*params->amf_ue_ngap_id, &pdu_ip, response->batch);
     ogs_assert(fetch_pdu_ip == OGS_OK);
 
     response->num_responses = 1;
@@ -21,7 +21,7 @@ int nas_handle_pdu_session_establishment_request(ogs_nas_5gs_pdu_session_establi
     return nas_build_pdu_session_establishment_accept(pdu_ip, response->responses[0]);
 }
 
-int nas_pdu_session_establishment_fetch_pdu_ip(uint32_t amf_ue_ngap_id, uint32_t *pdn_ip) {
+int nas_pdu_session_establishment_fetch_pdu_ip(uint32_t amf_ue_ngap_id, uint32_t *pdn_ip, yagra_batch_data_t *yagra_batch) {
     ogs_info("Fetching the PDN IP address from the DB");
 
     // convert the AMF_UE_NGAP_ID to a buffer, suitable for the DB
@@ -34,7 +34,7 @@ int nas_pdu_session_establishment_fetch_pdu_ip(uint32_t amf_ue_ngap_id, uint32_t
     int db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 1, PDN_IP);
     ogs_assert(db == OGS_OK);
     unsigned long long end_time = get_microtime();
-    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
+    yagra_observe_metric(yagra_batch, "db_access_latency", (int)(end_time - start_time));
 
     // store the fetched values in the return structure
     OCTET_STRING_t pdn_ip_str;
