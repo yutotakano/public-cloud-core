@@ -4,7 +4,7 @@
 
 #include "nas_security.h"
 
-ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_message_t *message) {
+ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_message_t *message, yagra_batch_data_t * batch) {
     ogs_info("Encoding NAS 5GS message");
 
     int integrity_protected = 0;
@@ -60,7 +60,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
         // the NAS encryption key is required, check it exists
         if (!params->nas_security_params->knas_enc) {
             // security key is missing, fetch it from the DB
-            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL);
+            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL, batch);
             ogs_assert(fetch_keys == OGS_OK);
         }
 
@@ -79,7 +79,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
         // the NAS integrity key is required, check it exists
         if (!params->nas_security_params->knas_int) {
             // integrity key is missing, fetch it from the DB
-            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL);
+            int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_JUST_DL, batch);
             ogs_assert(fetch_keys == OGS_OK);
         }
 
@@ -100,7 +100,7 @@ ogs_pkbuf_t *nas_5gs_security_encode(nas_ngap_params_t * params, ogs_nas_5gs_mes
     return new;
 }
 
-int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_type_t security_header_type, ogs_pkbuf_t *pkbuf)
+int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_type_t security_header_type, ogs_pkbuf_t *pkbuf, yagra_batch_data_t * batch)
 {
     ogs_info("Decoding NAS 5GS message");
 
@@ -138,7 +138,7 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
             // the NAS integrity key is required, check it exists
             if (!params->nas_security_params->knas_int) {
                 // integrity key is missing, fetch it from the DB
-                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL);
+                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL, batch);
                 ogs_assert(fetch_keys == OGS_OK);
             }
 
@@ -164,7 +164,7 @@ int nas_5gs_security_decode(nas_ngap_params_t * params, ogs_nas_security_header_
             // the NAS security key is required, check it exists
             if (!params->nas_security_params->knas_enc) {
                 // security key is missing, fetch it from the DB
-                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL);
+                int fetch_keys = nas_security_fetch_keys(params, NAS_COUNTS_BOTH_UL_DL, batch);
                 ogs_assert(fetch_keys == OGS_OK);
             }
 
@@ -223,7 +223,7 @@ int nas_5gs_generate_keys(ogs_nas_5gs_mobile_identity_t * mob_ident, uint8_t * o
     return OGS_OK;
 }
 
-int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
+int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts, yagra_batch_data_t * batch) {
     ogs_info("Fetching NAS security keys from database");
 
     ogs_assert(params);
@@ -253,7 +253,7 @@ int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
     }
     ogs_assert(db == OGS_OK);
     unsigned long long end_time = get_microtime();
-    yagra_observe_metric(NULL, "db_access_latency", (int)(end_time - start_time));
+    yagra_observe_metric(batch, "db_access_latency", (int)(end_time - start_time));
 
     // store the KNAS_INT, KNAS_ENC and DL count in the NAS params
     int store_keys = nas_security_store_keys_in_params(&db_pulls, params->nas_security_params);

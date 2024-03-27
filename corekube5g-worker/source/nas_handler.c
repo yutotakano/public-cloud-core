@@ -21,7 +21,7 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
     }
 
     unsigned long long nas_start_time = get_microtime();
-    int convertToBytes = nas_bytes_to_message(params, nasPdu, &nasMessage, &messageType);
+    int convertToBytes = nas_bytes_to_message(params, nasPdu, &nasMessage, &messageType, response->batch);
     ogs_assert(convertToBytes == OGS_OK); // Failed to convert NAS message to bytes
     ogs_info("NAS Message converted to bytes");
 
@@ -128,7 +128,7 @@ int nas_5gsm_handler(ogs_nas_5gsm_message_t *nasMessage, nas_ngap_params_t *para
 }
 
 
-int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message, uint8_t *messageType) {
+int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs_nas_5gs_message_t *message, uint8_t *messageType, yagra_batch_data_t * batch) {
     ogs_info("NAS bytes to message");
 
     ogs_nas_5gmm_header_t *h = NULL;
@@ -144,7 +144,7 @@ int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs
     ogs_pkbuf_reserve(nasbuf, OGS_NAS_HEADROOM);
     ogs_pkbuf_put_data(nasbuf, nasPdu->buf, nasPdu->size);
 
-    int security_decode = security_decode_gsm(params, nasbuf);
+    int security_decode = security_decode_gsm(params, nasbuf, batch);
     ogs_assert(security_decode == OGS_OK);
 
     h = (ogs_nas_5gmm_header_t *)nasbuf->data;
@@ -170,7 +170,7 @@ int nas_bytes_to_message(nas_ngap_params_t * params, NGAP_NAS_PDU_t *nasPdu, ogs
     return OGS_OK;
 }
 
-int security_decode_gsm(nas_ngap_params_t * params, ogs_pkbuf_t *nasbuf) {
+int security_decode_gsm(nas_ngap_params_t * params, ogs_pkbuf_t *nasbuf, yagra_batch_data_t * batch) {
     ogs_info("Security Decoding GSM Message");
 
     ogs_nas_5gs_security_header_t * sh = (ogs_nas_5gs_security_header_t *)nasbuf->data;
@@ -209,7 +209,7 @@ int security_decode_gsm(nas_ngap_params_t * params, ogs_pkbuf_t *nasbuf) {
             return OGS_ERROR;
         }
 
-        int security_decode = nas_5gs_security_decode(params, security_header_type, nasbuf);
+        int security_decode = nas_5gs_security_decode(params, security_header_type, nasbuf, batch);
         ogs_assert(security_decode == OGS_OK);
     }
 
@@ -229,7 +229,7 @@ int nas_message_to_bytes(nas_ngap_params_t * nas_params, message_handler_respons
     for (int i = 0; i < response->num_responses; i++) {
         ogs_info("NAS message to bytes for message %d of %d", i+i, response->num_responses);
         nasMessage = response->responses[i];
-        pkbuf = nas_5gs_security_encode(nas_params, nasMessage);
+        pkbuf = nas_5gs_security_encode(nas_params, nasMessage, response->batch);
         ogs_assert(pkbuf);
         ogs_free(nasMessage);
         response->responses[i] = pkbuf;
