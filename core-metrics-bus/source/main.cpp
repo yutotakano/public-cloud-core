@@ -73,7 +73,8 @@ void register_metric(
   std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries,
   std::shared_ptr<prometheus::Exposer> exposer,
   std::string metric_name,
-  std::string metric_description
+  std::string metric_description,
+  std::string metric_type
 );
 
 void threadWorker(
@@ -204,6 +205,7 @@ void process_metric_definition(
 
     std::string metric_name;
     std::string metric_description;
+    std::string metric_type; // either counter, gauge or summary
 
     // Loop through all parts within the line
     while (std::getline(line_stream, metric, '|'))
@@ -223,6 +225,10 @@ void process_metric_definition(
       {
         metric_description = key_value;
       }
+      else if (key_name == "type")
+      {
+        metric_type = key_value;
+      }
     }
 
     // Register the metric
@@ -232,7 +238,8 @@ void process_metric_definition(
       captive_registries,
       exposer,
       metric_name,
-      metric_description
+      metric_description,
+      metric_type
     );
   }
 }
@@ -427,7 +434,8 @@ void register_metric(
   std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries,
   std::shared_ptr<prometheus::Exposer> exposer,
   std::string metric_name,
-  std::string metric_description
+  std::string metric_description,
+  std::string metric_type
 )
 {
   // Lock the mutex to prevent adding two of the same metric at the same time
@@ -446,17 +454,35 @@ void register_metric(
   // Create a new registry
   auto registry = std::make_shared<prometheus::Registry>();
 
-  // Register the metric. The registry owns the reference to the metric, and
+  // Create a metric. The registry owns the reference to the metric, and
   // will live as long as the registry does.
-  auto &metric = prometheus::BuildCounter()
-                   .Name(metric_name)
-                   .Help(metric_description)
-                   .Register(*registry);
-
-  // Add a reference of the registry to the map. The metric is owned by the
-  // registry, so we can safely store a reference to the metric in the map as
-  // long as the registry is alive.
-  metrics[metric_name] = MultiTypeMetricRef{&metric};
+  // Then, add a reference of the registry to the global map. The metric is
+  // owned by the registry, so we can safely store a reference to the metric in
+  // the map as long as the registry is alive.
+  if (metric_type == "summary")
+  {
+    auto &metric = prometheus::BuildSummary()
+                     .Name(metric_name)
+                     .Help(metric_description)
+                     .Register(*registry);
+    metrics[metric_name] = MultiTypeMetricRef{&metric};
+  }
+  else if (metric_type == "gauge")
+  {
+    auto &metric = prometheus::BuildGauge()
+                     .Name(metric_name)
+                     .Help(metric_description)
+                     .Register(*registry);
+    metrics[metric_name] = MultiTypeMetricRef{&metric};
+  }
+  else
+  {
+    auto &metric = prometheus::BuildCounter()
+                     .Name(metric_name)
+                     .Help(metric_description)
+                     .Register(*registry);
+    metrics[metric_name] = MultiTypeMetricRef{&metric};
+  }
 
   std::cout << "Registered metric " << metric_name << std::endl;
 
