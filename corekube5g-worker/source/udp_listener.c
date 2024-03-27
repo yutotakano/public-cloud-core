@@ -245,6 +245,22 @@ int main(int argc, char const *argv[])
 	ogs_assert(db_sock != -1);
 	ogs_info("DB socket configured correctly.\n");
 
+	// Define all the metrics that will be used
+	yagra_define_metric(&metrics_conn, "ue_id", "The UE ID", YAGRA_AGGREGATION_TYPE_KEEP_FIRST);
+	yagra_define_metric(&metrics_conn, "ngap_message_type", "The NGAP message type", YAGRA_AGGREGATION_TYPE_KEEP_FIRST);
+	yagra_define_metric(&metrics_conn, "nas_message_type", "The NAS message type", YAGRA_AGGREGATION_TYPE_KEEP_FIRST);
+	yagra_define_metric(&metrics_conn, "invalid", "Whether the received message was invalid", YAGRA_AGGREGATION_TYPE_KEEP_FIRST);
+	yagra_define_metric(&metrics_conn, "latency", "Time taken to process message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "decode_latency", "Time taken to decode NGAP message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "handle_latency", "Time taken to handle NGAP message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "nas_decode_latency", "Time taken to decode NAS message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "nas_handle_latency", "Time taken to handle NAS message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "nas_encode_latency", "Time taken to encode NAS message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "response_build_latency", "Time taken to build a response message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "encode_latency", "Time taken to encode NGAP message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "send_latency", "Time taken to send message", YAGRA_AGGREGATION_TYPE_AVERAGE);
+	yagra_define_metric(&metrics_conn, "num_responses", "Number of responses sent",  YAGRA_AGGREGATION_TYPE_COUNT);
+
 	start_listener((char *)argv[1], &metrics_conn, use_threads);
 
 	db_disconnect(db_sock);

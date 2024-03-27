@@ -31,6 +31,7 @@
 // Enum describing the type of aggregation to use for a metric when there are
 // multiple collections with the same ID. 
 typedef enum {
+    YAGRA_AGGREGATION_TYPE_KEEP_FIRST,
     // Keep the minimum value of all collections with the same ID
     YAGRA_AGGREGATION_TYPE_MIN,
     // Keep the maximum value of all collections with the same ID
