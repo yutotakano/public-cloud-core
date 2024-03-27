@@ -275,7 +275,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 
 int yagra_send_batch(yagra_batch_data_t *batch)
 {
-  char buffer[512];
+  char buffer[1024];
   int buffer_len = 0;
 	
 	int send_response_code = 0;
