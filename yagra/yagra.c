@@ -251,12 +251,13 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		yagra_metric_data_t *metric_data = &batch->metric_data[i];
 		// Go through the linked list of metrics to find the name of this metric
 		yagra_metric_t *metric = batch->conn->metrics;
-		int i = 0;
+		unsigned int i = 0;
 		while(metric != NULL) {
 			if(i == metric_data->metric_index) {
 				break;
 			}
 			metric = metric->next;
+			i++;
 		}
 		if (metric == NULL)
 		{

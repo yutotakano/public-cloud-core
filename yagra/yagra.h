@@ -62,7 +62,7 @@ typedef struct yagra_metric_data yagra_metric_data_t;
  */
 typedef struct yagra_metric_data {
     // Index into the global metrics list for the name and type of this metric.
-    int metric_index;
+    unsigned int metric_index;
     // The current value of this metric.
     int value;
     // Extra data as necessary for the aggregation of the metric, e.g. a count.
