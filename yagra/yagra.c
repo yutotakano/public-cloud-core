@@ -92,7 +92,7 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
-		printf("Send buffer overflow, %d\n", buffer_len);
+		printf("Send buffer overflow, %d\n", header_len + buffer_len);
 		return -1;
 	}
 
