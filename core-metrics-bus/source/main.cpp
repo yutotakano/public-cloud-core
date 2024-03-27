@@ -268,12 +268,6 @@ void process_metric_batch_observation(
     std::cout << "0 bytes transferred" << std::endl;
     return;
   }
-  std::cout << "Buffer (hex): ";
-  for (std::size_t i = 0; i < header_length; i++)
-  {
-    std::cout << std::hex << unsigned(header_buffer[i]) << " ";
-  }
-  std::cout << std::dec << std::endl;
 
   // Parse the length of the message from the header
   std::size_t message_length = 0;
