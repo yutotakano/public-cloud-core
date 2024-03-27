@@ -74,7 +74,7 @@ void *process_message(void *raw_args) {
 
 	message_handler_response_t response;
 	yagra_batch_data_t batch = yagra_init_batch(args->metrics_conn);
-	yagra_observe_metric(&batch, "uplink_packets", 1);
+	yagra_observe_metric(&batch, "uplink_packets_total", 1);
 
 	// initialise the default response values
 	response.num_responses = 0;
@@ -86,7 +86,7 @@ void *process_message(void *raw_args) {
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
 	unsigned long long send_start = get_microtime();
-	yagra_observe_metric(&batch, "downlink_packets", response.num_responses);
+	yagra_observe_metric(&batch, "downlink_packets_total", response.num_responses);
 	if (response.num_responses == 0)
 		ogs_info("Finished handling NO_RESPONSE message");
 
