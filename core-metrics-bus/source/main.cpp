@@ -166,7 +166,7 @@ void process_metric_definition(
   // Read length of remaining message
   size_t bytes_transferred = 0;
 
-  std::array<uint8_t, 1> header_buffer;
+  std::array<uint8_t, 2> header_buffer;
   std::array<char, 1024> buffer;
 
   // Read the third and fourth byte of the message to get the length of the body
