@@ -7,6 +7,8 @@
 
 int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_response_t *response) {
     ogs_info("Reached NGAP Handler entrypoint");
+    yagra_print_metrics(response->batch->conn);
+    yagra_print_batch(response->batch);
 
     ogs_ngap_message_t incoming_ngap;
 
