@@ -178,12 +178,15 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 
 	// Found, so perform aggregation strategy
 	if(existing_metric_data != NULL) {
+		printf("Found existing metric data for %s\n", metric_name);
 		yagra_batch_aggregation_strategy type = metric->type;
 		// Update the existing metric data using the aggregation type
 		// TODO: use the aggregation type
 		existing_metric_data->value = value + existing_metric_data->value;
 		return 0;
 	}
+
+	printf("Adding metric data for %s\n", metric_name);
 
 	// Add the metric data to the batch
 	yagra_metric_data_t *metric_data = malloc(sizeof(yagra_metric_data_t));
