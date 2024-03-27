@@ -173,7 +173,6 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
 		}
-		YAGRA_LOG(data->conn, "Metric %s != %s, trying next\n", metric_name, metric->name);
 		metric = metric->next;
 		metric_index++;
 	}
@@ -191,7 +190,6 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
-		YAGRA_LOG(data->conn, "Data %s != %s, trying next\n", metric_name, existing_metric_data->metric_name);
 		last_metric_data = existing_metric_data;
 		existing_metric_data = existing_metric_data->next;
 	}
