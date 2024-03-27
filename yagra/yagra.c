@@ -145,6 +145,7 @@ yagra_batch_data_t yagra_init_batch(yagra_conn_t * conn)
 	yagra_batch_data_t batch;
 	batch.metric_data = NULL;
 	batch.num_metrics = 0;
+	batch.conn = conn;
 
 	return batch;
 }
