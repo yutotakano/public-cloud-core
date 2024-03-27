@@ -169,8 +169,8 @@ void process_metric_definition(
   std::array<uint8_t, 1> header_buffer;
   std::array<char, 1024> buffer;
 
-  // Read the third byte of the message to get the length of the body
-  bytes_transferred = asio::read(socket, asio::buffer(header_buffer, 1));
+  // Read the third and fourth byte of the message to get the length of the body
+  bytes_transferred = asio::read(socket, asio::buffer(header_buffer, 2));
   if (bytes_transferred == 0)
   {
     std::cout << "0 bytes transferred" << std::endl;
@@ -178,7 +178,9 @@ void process_metric_definition(
   }
 
   // Parse the length of the body
-  std::uint8_t body_length = static_cast<std::uint8_t>(header_buffer[0]);
+  std::uint16_t body_length = 0;
+  body_length |= static_cast<std::uint16_t>(header_buffer[0]);
+  body_length |= static_cast<std::uint16_t>(header_buffer[1]) << 8;
   std::cout << "Body length: " << unsigned(body_length) << std::endl;
 
   // Read the body
