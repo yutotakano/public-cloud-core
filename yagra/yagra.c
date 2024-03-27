@@ -102,7 +102,7 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 
 	// Third and fourth bytes are the length of the following header bytes.
 	// We use two bytes since name length + description length will be over 256
-	buffer[2] = (buffer_len >> 0) & 0xFF;
+	buffer[2] = buffer_len & 0xFF;
 	buffer[3] = (buffer_len >> 8) & 0xFF;
 
 	send_response_code = send(data->sock, buffer, header_len + buffer_len, 0);
