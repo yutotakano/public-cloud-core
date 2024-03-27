@@ -95,6 +95,15 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 	buffer_len += sprintf(buffer + header_len + buffer_len, "name:amf_%s|", metric_name);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "description:%s|", metric_description);
 
+	if (aggregation_type == YAGRA_AGGREGATION_TYPE_SUM)
+	{
+		buffer_len += sprintf(buffer + header_len + buffer_len, "type:counter|");
+	}
+	else if (aggregation_type == YAGRA_AGGREGATION_TYPE_NONE || aggregation_type == YAGRA_AGGREGATION_TYPE_AVERAGE)
+	{
+		buffer_len += sprintf(buffer + header_len + buffer_len, "type:summary|");
+	}
+
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
 		printf("Send buffer overflow, %d\n", header_len + buffer_len);
