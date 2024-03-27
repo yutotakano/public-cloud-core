@@ -200,7 +200,7 @@ void ogs_callback(char *message, ...) {
 	va_start(args, message);
 	vsnprintf(buffer, sizeof(buffer), message, args);
 	va_end(args);
-	ogs_info("Yagra: %s", buffer);
+	ogs_info("Yagra:%s", buffer);
 }
 
 
