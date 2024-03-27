@@ -189,7 +189,6 @@ void process_metric_definition(
     std::cout << "0 bytes transferred" << std::endl;
     return;
   }
-  std::cout << "Received " << bytes_transferred << " bytes" << std::endl;
 
   // Process the body
   std::string message(buffer.data(), bytes_transferred);
@@ -236,8 +235,6 @@ void process_metric_definition(
       metric_description
     );
   }
-
-  std::cout << "Finished processing metric definition" << std::endl;
 }
 
 void process_metric_batch_observation(
@@ -293,7 +290,6 @@ void process_metric_batch_observation(
     std::cout << "0 bytes transferred" << std::endl;
     return;
   }
-  std::cout << "Received " << bytes_transferred << " bytes" << std::endl;
 
   // Process the body
   // Each line of the message is  metric in the format:
@@ -328,9 +324,6 @@ void process_metric_batch_observation(
       std::getline(metric_stream, metric_name, ':');
       std::getline(metric_stream, metric_value);
 
-      std::cout << "Processing metric " << metric_name << " with value "
-                << metric_value << std::endl;
-
       // Get the right counter for the metric
       if (metrics.find(metric_name) == metrics.end())
       {
@@ -346,12 +339,12 @@ void process_metric_batch_observation(
         std::cout << "Starting to read message from UE " << ue_id << std::endl;
       }
 
-      if (metric_name == "amf_ngap_type")
+      if (metric_name == "amf_ngap_message_type")
       {
         ngap_message_type = metric_value;
       }
 
-      if (metric_name == "amf_nas_type")
+      if (metric_name == "amf_nas_message_type")
       {
         nas_message_type = metric_value;
       }
@@ -387,8 +380,6 @@ void process_metric_batch_observation(
       }
     }
   }
-
-  std::cout << "Finished processing metric batch observation" << std::endl;
 }
 
 int main(int argc, char *argv[])
