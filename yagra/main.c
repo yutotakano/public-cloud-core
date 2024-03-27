@@ -13,6 +13,6 @@ int main(const int argc, const char *argv[]) {
   yagra_print_batch( &batch);
   yagra_print_metrics(&conn);
 
-  yagra_send_batch(&conn, &batch);
+  yagra_send_batch(&batch);
   return 0;
 }
