@@ -154,6 +154,8 @@ yagra_batch_data_t yagra_init_batch(yagra_conn_t * conn)
 
 int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t value)
 {
+	printf("Trying to observe data for metric %s\n", metric_name);
+
 	// Find the metric in the global list
 	yagra_metric_t *metric = data->conn->metrics;
 	unsigned int metric_index = 0;
@@ -161,6 +163,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
 		}
+		printf("Metric %s != %s, trying next\n", metric_name, metric->name);
 		metric = metric->next;
 		metric_index++;
 	}
@@ -169,6 +172,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		printf("Could not find metric %s\n", metric_name);
 		return -1;
 	}
+	printf("Found metric %s\n", metric_name);
 
 	// Check if the metric is already in the batch
 	yagra_metric_data_t *existing_metric_data = data->metric_data;
@@ -177,6 +181,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
+		printf("Data %s != %s, trying next\n", metric_name, existing_metric_data->metric_name);
 		last_metric_data = existing_metric_data;
 		existing_metric_data = existing_metric_data->next;
 	}
