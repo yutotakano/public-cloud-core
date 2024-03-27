@@ -7,26 +7,14 @@
 #define YAGRA_MAX_METRIC_NAME_LENGTH 64
 #define YAGRA_MAX_METRIC_DESCRIPTION_LENGTH 512
 
-// Struct that is passed around to all message handlers to fill in with stats.
-// This will be sent to a UDP endpoint at the very end of the message handling.
-// typedef struct worker_metrics {
-//     unsigned long long start_time;
-//     uint64_t ue_id;
-//     int ngap_message_type;
-//     int nas_message_type;
-//     int invalid;
-//     int latency;
-//     int decode_latency;
-//     int handle_latency; // includes NAS handle latency + response build latency
-//     int nas_decode_latency;
-//     int nas_handle_latency;
-//     int nas_encode_latency;
-//     int response_build_latency;
-//     int encode_latency;
-//     int send_latency;
-//     int num_responses;
-//     unsigned long long end_time;
-// } worker_metrics_t;
+#define YAGRA_LOG(conn, ...)                   \
+{                                              \
+    if (conn->log != NULL)                     \
+        conn->log(__VA_ARGS__);                \
+    else                                       \
+        printf(__VA_ARGS__);                   \
+} 
+
 
 // Enum describing the type of aggregation to use for a metric when there are
 // multiple collections with the same ID. 
@@ -84,6 +72,8 @@ typedef struct yagra_conn {
     // List of metrics that have been registered with the metrics server. 
     // Just names and types, no values.
     yagra_metric_t *metrics;
+
+    void (*log)(char *, ...);
 } yagra_conn_t;
 
 // Struct to hold a batch of metrics to send to the metrics server, such as all
@@ -101,9 +91,10 @@ typedef struct yagra_batch_data {
  * 
  * @param host The IP address of the metrics server.
  * @param port The port to connect. If 0, will use DEFAULT_METRICS_PORT.
+ * @param log_calledback A callback function that will be called witha integer level and string message arguments.
  * @return int The socket file descriptor, or -1 if an error occurred.
  */
-yagra_conn_t yagra_init(char * host, int port);
+yagra_conn_t yagra_init(char * host, int port, void (*log_callback)(char *, ...));
 
 /**
  * @brief Disconnect from the metrics server.

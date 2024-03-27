@@ -14,7 +14,7 @@
 
 #include "yagra.h"
 
-yagra_conn_t yagra_init(char * host, int port)
+yagra_conn_t yagra_init(char * host, int port, void (*log_callback)(char *, ...))
 {
 	int flag = 1;
 	struct sockaddr_in metrics_addr;
@@ -61,6 +61,7 @@ yagra_conn_t yagra_init(char * host, int port)
 	conn.port	= port == 0 ? YAGRA_DEFAULT_BUS_PORT : port;
 
 	conn.metrics = NULL;
+	conn.log = log_callback;
 	return conn;
 }
 
@@ -106,7 +107,7 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
-		printf("Send buffer overflow, %d\n", header_len + buffer_len);
+		YAGRA_LOG(data, "Send buffer overflow, %d\n", header_len + buffer_len);
 		return -1;
 	}
 
@@ -122,7 +123,7 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 	send_response_code = send(data->sock, buffer, header_len + buffer_len, 0);
 
 	if(send_response_code < 0) {
-		printf("Error sending register data, error code %d: errno %i\n", send_response_code, errno);
+		YAGRA_LOG(data, "Error sending register data, error code %d: errno %i\n", send_response_code, errno);
 		return -1;
 	}
 
@@ -163,7 +164,7 @@ yagra_batch_data_t yagra_init_batch(yagra_conn_t * conn)
 
 int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t value)
 {
-	printf("Trying to observe data for metric %s\n", metric_name);
+	YAGRA_LOG(data->conn, "Trying to observe data for metric %s\n", metric_name);
 
 	// Find the metric in the global list
 	yagra_metric_t *metric = data->conn->metrics;
@@ -172,16 +173,16 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
 		}
-		printf("Metric %s != %s, trying next\n", metric_name, metric->name);
+		YAGRA_LOG(data->conn, "Metric %s != %s, trying next\n", metric_name, metric->name);
 		metric = metric->next;
 		metric_index++;
 	}
 
 	if(metric == NULL) {
-		printf("Could not find metric %s\n", metric_name);
+		YAGRA_LOG(data->conn, "Could not find metric %s\n", metric_name);
 		return -1;
 	}
-	printf("Found metric %s\n", metric_name);
+	YAGRA_LOG(data->conn, "Found metric %s\n", metric_name);
 
 	// Check if the metric is already in the batch
 	yagra_metric_data_t *existing_metric_data = data->metric_data;
@@ -190,14 +191,14 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
-		printf("Data %s != %s, trying next\n", metric_name, existing_metric_data->metric_name);
+		YAGRA_LOG(data->conn, "Data %s != %s, trying next\n", metric_name, existing_metric_data->metric_name);
 		last_metric_data = existing_metric_data;
 		existing_metric_data = existing_metric_data->next;
 	}
 
 	// Found, so perform aggregation strategy
 	if(existing_metric_data != NULL) {
-		printf("Found existing metric data for %s\n", metric_name);
+		YAGRA_LOG(data->conn, "Found existing metric data for %s\n", metric_name);
 		yagra_batch_aggregation_strategy type = metric->type;
 		// Update the existing metric data using the aggregation type
 		if (type == YAGRA_AGGREGATION_TYPE_KEEP_FIRST)
@@ -239,12 +240,12 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		}
 		else
 		{
-			printf("Unknown aggregation type %d\n", type);
+			YAGRA_LOG(data->conn, "Unknown aggregation type %d\n", type);
 			return -1;
 		}
 	}
 
-	printf("Adding metric data for %s\n", metric_name);
+	YAGRA_LOG(data->conn, "No existing metric data for %s\n", metric_name);
 
 	// Add the metric data to the batch
 	yagra_metric_data_t *metric_data = malloc(sizeof(yagra_metric_data_t));
@@ -286,7 +287,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		return 0;
 	}
 
-  printf("Creating metrics byte buffer\n");
+	YAGRA_LOG(batch->conn, "Sending metrics data\n");
 
 	// Calculate the maximum length of the buffer, assuming 64 for length of
 	// each metric value when converted to string (TODO: make this accurate)
@@ -299,7 +300,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		temp >>= 8;
 		body_length_bytes++;
 	}
-	printf("Estimated max length: %lu, bytes required: %d\n", max_len, body_length_bytes);
+	YAGRA_LOG(batch->conn, "Estimated max length: %lu, bytes required: %d\n", max_len, body_length_bytes);
 
 	// Make sure we can represent the length of the max_len in a single byte
 	assert(body_length_bytes < 256);
@@ -319,7 +320,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
-		printf("Send buffer overflow, %d\n", buffer_len);
+		YAGRA_LOG(batch->conn, "Send buffer overflow, %d\n", buffer_len);
 		return -1;
 	}
 
@@ -337,7 +338,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	send_response_code = send(batch->conn->sock, buffer, header_len + buffer_len, 0);
 
 	if(send_response_code < 0) {
-		printf("Error sending metrics data, error code %d: errno %i\n", send_response_code, errno);
+		YAGRA_LOG(batch->conn, "Error sending metrics data, error code %d: errno %i\n", send_response_code, errno);
 		return -1;
 	}
 
@@ -349,7 +350,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		metric_data = next;
 	}
 
-	printf("Metrics data sent\n");
+	YAGRA_LOG(batch->conn, "Metrics data sent\n");
 
   return 0;
 }
