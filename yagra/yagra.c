@@ -202,6 +202,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 	yagra_metric_data_t *metric_data = malloc(sizeof(yagra_metric_data_t));
 	metric_data->metric_name = metric->name;
 	metric_data->value = value;
+	metric_data->next = NULL;
 
 	// If there was no existing metric data, add it to the start of the list
 	if (last_metric_data == NULL) {
