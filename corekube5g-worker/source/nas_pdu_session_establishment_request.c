@@ -29,9 +29,12 @@ int nas_pdu_session_establishment_fetch_pdu_ip(uint32_t amf_ue_ngap_id, uint32_t
     ogs_asn_uint32_to_OCTET_STRING( (uint32_t) amf_ue_ngap_id, &amf_ue_ngap_id_buf);
 
     // fetch the PDN IP from the database
+    unsigned long long start_time = get_microtime();
     corekube_db_pulls_t db_pulls;
     int db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 1, PDN_IP);
     ogs_assert(db == OGS_OK);
+    unsigned long long end_time = get_microtime();
+    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
 
     // store the fetched values in the return structure
     OCTET_STRING_t pdn_ip_str;

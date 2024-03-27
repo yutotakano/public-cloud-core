@@ -239,6 +239,7 @@ int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
     // fetch the KAMF (stored as KASME1 and KASME2) and DL / UL counts from the DB
     corekube_db_pulls_t db_pulls;
     int db;
+    unsigned long long start_time = get_microtime();
     if (includeCounts == NAS_COUNTS_BOTH_UL_DL)
         db = db_access(&db_pulls, MME_UE_S1AP_ID, amf_ue_ngap_id_buf.buf, 0, 4, KASME_1, KASME_2, EPC_NAS_SEQUENCE_NUMBER, UE_NAS_SEQUENCE_NUMBER);
     else if (includeCounts == NAS_COUNTS_JUST_DL)
@@ -250,6 +251,8 @@ int nas_security_fetch_keys(nas_ngap_params_t * params, int includeCounts) {
         return OGS_ERROR;
     }
     ogs_assert(db == OGS_OK);
+    unsigned long long end_time = get_microtime();
+    yagra_observe_metric(NULL, "db_access_latency", (int)(end_time - start_time));
 
     // store the KNAS_INT, KNAS_ENC and DL count in the NAS params
     int store_keys = nas_security_store_keys_in_params(&db_pulls, params->nas_security_params);

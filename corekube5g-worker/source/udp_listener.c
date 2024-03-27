@@ -262,6 +262,7 @@ int main(int argc, char const *argv[])
 	yagra_define_metric(&metrics_conn, "send_latency", "Time taken to send message", YAGRA_AGGREGATION_TYPE_AVERAGE);
 	yagra_define_metric(&metrics_conn, "uplink_packets", "Number of uplink packets received", YAGRA_AGGREGATION_TYPE_SUM);
 	yagra_define_metric(&metrics_conn, "downlink_packets", "Number of downlink packets sent", YAGRA_AGGREGATION_TYPE_SUM);
+	yagra_define_metric(&metrics_conn, "db_access_latency", "Time taken to access the DB", YAGRA_AGGREGATION_TYPE_AVERAGE);
 
 	start_listener((char *)argv[1], &metrics_conn, use_threads);
 

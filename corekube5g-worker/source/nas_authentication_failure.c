@@ -21,9 +21,12 @@ int nas_handle_authentication_failure(ogs_nas_5gs_authentication_failure_t *mess
     ogs_asn_uint32_to_OCTET_STRING( (uint32_t) *(params->amf_ue_ngap_id), &amf_ue_ngap_id_buf);
 
     // fetch the RAND, KEY, OPC, and MOB_IDENT (stored in KNH_1 - TODO!)
+    unsigned long long start_time = get_microtime();
     corekube_db_pulls_t db_pulls;
     int db = db_access(&db_pulls, MME_UE_S1AP_ID, (uint8_t *) amf_ue_ngap_id_buf.buf, 0, 4, RAND, KEY, OPC, KNH_1);
     ogs_assert(db == OGS_OK);
+    unsigned long long end_time = get_microtime();
+    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
 
     // generate the new SQN from RAND, Key and OPC
     uint8_t new_sqn[OGS_SQN_LEN];
@@ -55,10 +58,14 @@ int nas_handle_authentication_failure(ogs_nas_5gs_authentication_failure_t *mess
 
     // store the KAMF in the DB, and set the NAS UL / DL counts to zero
     uint8_t zero_nas_count[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    start_time = get_microtime();
     // TODO: pulling the SPGW_IP is for debug purposes only
     corekube_db_pulls_t db_pulls2;
     int storeKamf = db_access(&db_pulls2, MME_UE_S1AP_ID, (uint8_t *) amf_ue_ngap_id_buf.buf, 4, 1, KASME_1, kamf, KASME_2, kamf+16, EPC_NAS_SEQUENCE_NUMBER, zero_nas_count, UE_NAS_SEQUENCE_NUMBER, zero_nas_count, SPGW_IP);
     ogs_assert(storeKamf == OGS_OK);
+    end_time = get_microtime();
+    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
 
     ogs_nas_5gs_authentication_request_t auth_request_params;
     auth_request_params.ngksi.tsc = CoreKube_NGKSI_TSC;

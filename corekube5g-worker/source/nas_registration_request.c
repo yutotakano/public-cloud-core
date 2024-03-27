@@ -27,10 +27,14 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
     uint8_t mob_ident_buffer[16];
     memcpy(mob_ident_buffer, &(mob_ident.length), 2);
     memcpy(mob_ident_buffer+2, mob_ident.buffer, mob_ident.length);
+
+    unsigned long long start_time = get_microtime();
     corekube_db_pulls_t db_pulls;
     // TODO: we are using the KNH_1 for the MOB_IDENT
     int db = db_access(&db_pulls, IMSI, (uint8_t *) imsi, 2, 4, ENB_UE_S1AP_ID, ran_ue_ngap_id_buf.buf, KNH_1, mob_ident_buffer, MME_UE_S1AP_ID, RAND, KEY, OPC);
     ogs_assert(db == OGS_OK);
+    unsigned long long end_time = get_microtime();
+    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
 
     // free the RAN_UE_NGAP_ID buffer
     ogs_free(ran_ue_ngap_id_buf.buf);
@@ -53,10 +57,14 @@ int nas_handle_registration_request(ogs_nas_5gs_registration_request_t *message,
 
     // store the KAMF in the DB, and set the NAS UL / DL counts to zero
     uint8_t zero_nas_count[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    start_time = get_microtime();
     // TODO: pulling the SPGW_IP is for debug purposes only
     corekube_db_pulls_t db_pulls2;
     int storeKamf = db_access(&db_pulls2, IMSI, (uint8_t *) imsi, 4, 1, KASME_1, kamf, KASME_2, kamf+16, EPC_NAS_SEQUENCE_NUMBER, zero_nas_count, UE_NAS_SEQUENCE_NUMBER, zero_nas_count, SPGW_IP);
     ogs_assert(storeKamf == OGS_OK);
+    end_time = get_microtime();
+    yagra_observe_metric(response->batch, "db_access_latency", (int)(end_time - start_time));
 
     ogs_nas_5gs_authentication_request_t auth_request_params;
     auth_request_params.ngksi.tsc = CoreKube_NGKSI_TSC;
