@@ -173,7 +173,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 	// Check if the metric is already in the batch
 	yagra_metric_data_t *existing_metric_data = data->metric_data;
 	while(existing_metric_data != NULL) {
-		if(existing_metric_data->metric_index == metric_index) {
+		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
 		existing_metric_data = existing_metric_data->next;
@@ -193,7 +193,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 
 	// Add the metric data to the batch
 	yagra_metric_data_t *metric_data = malloc(sizeof(yagra_metric_data_t));
-	metric_data->metric_index = metric_index;
+	metric_data->metric_name = metric->name;
 	metric_data->value = value;
 
 	// Traverse to the end of the list
@@ -256,26 +256,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	// Linked list traversal of metrics data
 	yagra_metric_data_t *metrics_data = batch->metric_data;
 	while (metrics_data != NULL) {
-		// Go through the linked list of metric defs to find the name of this metric
-		yagra_metric_t *metric = batch->conn->metrics;
-		unsigned int i = 0;
-		while(metric != NULL) {
-			if(i == metrics_data->metric_index) {
-				break;
-			}
-			metric = metric->next;
-			i++;
-		}
-		if (metric == NULL)
-		{
-			// This should not happen since the metric name is checked when adding to
-			// the batch
-			printf("Could not find metric with index %d\n", metrics_data->metric_index);
-			printf("Skipping.");
-			continue;
-		}
-
-		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metric->name, metrics_data->value);
+		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metrics_data->metric_name, metrics_data->value);
 
 		metrics_data = metrics_data->next;
 	}
@@ -347,7 +328,7 @@ void yagra_print_batch(yagra_batch_data_t * batch)
 	printf("Batch Metrics (%d items): ", batch->num_metrics);
 	yagra_metric_data_t *metric = batch->metric_data;
 	while(metric != NULL) {
-		printf("Metric: %d, ", metric->metric_index);
+		printf("Metric: %d, ", metric->metric_name);
 		printf("Value: %d\n", metric->value);
 		metric = metric->next;
 	}
