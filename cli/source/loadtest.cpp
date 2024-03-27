@@ -142,6 +142,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     // Perform collection every 5 seconds until 1000 seconds have passed
     int total_points = 200;
     LOG_TRACE_L3(logger, "Collecting 200 points of data.");
+    bool has_begun = false; // only extend experiment before any data
     for (int i = 0; i < total_points; i++)
     {
       LOG_INFO(
@@ -160,7 +161,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         );
         // Latency doesn't get collected until the first UE is connected, and
         // there's no meaning to reducing timer before that point.
-        if (!result)
+        if (!has_begun && !result)
         {
           LOG_INFO(
             logger,
@@ -168,6 +169,8 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
           );
           total_points += 1;
         }
+        if (result)
+          has_begun = true;
       }
       if (parser.get<bool>("--collect-worker-count"))
       {
