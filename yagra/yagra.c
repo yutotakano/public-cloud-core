@@ -245,13 +245,14 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 
 	int header_len = 2 + 1 + body_length_bytes;
 
-	for (int i = 0; i < batch->num_metrics; i++) {
-		yagra_metric_data_t *metric_data = &batch->metric_data[i];
-		// Go through the linked list of metrics to find the name of this metric
+	// Linked list traversal of metrics data
+	yagra_metric_data_t *metrics_data = batch->metric_data;
+	while (metrics_data != NULL) {
+		// Go through the linked list of metric defs to find the name of this metric
 		yagra_metric_t *metric = batch->conn->metrics;
 		unsigned int i = 0;
-		while(metric != NULL && i < batch->num_metrics) {
-			if(i == metric_data->metric_index) {
+		while(metric != NULL) {
+			if(i == metrics_data->metric_index) {
 				break;
 			}
 			metric = metric->next;
@@ -261,12 +262,14 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		{
 			// This should not happen since the metric name is checked when adding to
 			// the batch
-			printf("Could not find metric with index %d\n", metric_data->metric_index);
+			printf("Could not find metric with index %d\n", metrics_data->metric_index);
 			printf("Skipping.");
 			continue;
 		}
 
-		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metric->name, metric_data->value);
+		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metric->name, metrics_data->value);
+
+		metrics_data = metrics_data->next;
 	}
   // buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
 	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
