@@ -86,7 +86,7 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 
 	int header_len = 4;
 
-	buffer_len += sprintf(buffer + header_len + buffer_len, "name:%s|", metric_name);
+	buffer_len += sprintf(buffer + header_len + buffer_len, "name:amf_%s|", metric_name);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "description:%s|", metric_description);
 	printf("Buffer: %s\n", buffer);
 
@@ -120,7 +120,6 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 	strncpy(metric->name, metric_name, YAGRA_MAX_METRIC_NAME_LENGTH);
 	// Make sure we terminate with NUL
 	metric->name[YAGRA_MAX_METRIC_NAME_LENGTH - 1] = '\0';
-
 	metric->type = aggregation_type;
 
 	// Traverse to the end of the list
@@ -156,7 +155,6 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 	yagra_metric_t *metric = data->conn->metrics;
 	int metric_index = 0;
 	while(metric != NULL) {
-		printf("Comparing %s to %s\n", metric->name, metric_name);
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
 		}
@@ -178,6 +176,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 		existing_metric_data = existing_metric_data->next;
 	}
 
+	// Found, so perform aggregation strategy
 	if(existing_metric_data != NULL) {
 		yagra_batch_aggregation_strategy type = metric->type;
 		// Update the existing metric data using the aggregation type
