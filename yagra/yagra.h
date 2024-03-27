@@ -32,14 +32,16 @@
 // multiple collections with the same ID. 
 typedef enum {
     YAGRA_AGGREGATION_TYPE_KEEP_FIRST,
+    YAGRA_AGGREGATION_TYPE_KEEP_LAST,
     // Keep the minimum value of all collections with the same ID
     YAGRA_AGGREGATION_TYPE_MIN,
     // Keep the maximum value of all collections with the same ID
     YAGRA_AGGREGATION_TYPE_MAX,
     // Keep the average value of all collections with the same ID
     YAGRA_AGGREGATION_TYPE_AVERAGE,
-    // Keep a count of all collections with the same ID
-    YAGRA_AGGREGATION_TYPE_COUNT
+    // Keep a sum of all collections with the same ID
+    YAGRA_AGGREGATION_TYPE_SUM,
+    YAGRA_AGGREGATION_TYPE_NONE
 } yagra_batch_aggregation_strategy;
 
 // forward-declare the yagra_metric_t struct

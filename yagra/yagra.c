@@ -191,9 +191,48 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 		printf("Found existing metric data for %s\n", metric_name);
 		yagra_batch_aggregation_strategy type = metric->type;
 		// Update the existing metric data using the aggregation type
-		// TODO: use the aggregation type
-		existing_metric_data->value = value + existing_metric_data->value;
-		return 0;
+		if (type == YAGRA_AGGREGATION_TYPE_KEEP_FIRST)
+		{
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_KEEP_LAST)
+		{
+			existing_metric_data->value = value;
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_SUM)
+		{
+			existing_metric_data->value = value + existing_metric_data->value;
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_MIN)
+		{
+			existing_metric_data->value = value < existing_metric_data->value ? value : existing_metric_data->value;
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_MAX)
+		{
+			existing_metric_data->value = value > existing_metric_data->value ? value : existing_metric_data->value;
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_AVERAGE)
+		{
+			// The extra_data field is used to store the count of the number of times
+			// this metric has been observed. This is used to calculate the average.
+			unsigned int *count = (unsigned int *) existing_metric_data->extra_data;
+			existing_metric_data->value = (value + (existing_metric_data->value) * (*count)) / (*count + 1);
+			*count = *count + 1;
+			return 0;
+		}
+		else if (type == YAGRA_AGGREGATION_TYPE_NONE)
+		{
+			// Don't do anything or return early, just treat as another metric
+		}
+		else
+		{
+			printf("Unknown aggregation type %d\n", type);
+			return -1;
+		}
 	}
 
 	printf("Adding metric data for %s\n", metric_name);
