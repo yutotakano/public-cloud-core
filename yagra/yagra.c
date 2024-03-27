@@ -67,6 +67,14 @@ yagra_conn_t yagra_init(char * host, int port)
 void yagra_finalize(yagra_conn_t * conn)
 {
 	close(conn->sock);
+
+	// Free all metrics
+	yagra_metric_t *metric = conn->metrics;
+	while(metric != NULL) {
+		yagra_metric_t *next = metric->next;
+		free(metric);
+		metric = next;
+	}
 }
 
 unsigned long long get_microtime()
