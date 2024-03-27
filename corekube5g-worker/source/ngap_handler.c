@@ -22,19 +22,19 @@ int ngap_handler_entrypoint(void *incoming, int incoming_len, message_handler_re
         return OGS_OK;
     }
     unsigned long long decode_end = get_microtime();
-    yagra_observe_metric(response->batch, "decode_latency", (int)(decode_end - decode_start));
 
     // Handle the decoded message
     int message_handle = ngap_message_handler(&incoming_ngap, response);
     ogs_assert(message_handle == OGS_OK); // Failed to handle NGAP message
     unsigned long long handle_end = get_microtime();
-    yagra_observe_metric(response->batch, "handle_latency", (int)(handle_end - decode_end));
 
     // handle the outgoing messages, if there are any
     for (int i = 0; i < response->num_responses; i++) {
         int m_to_b = message_to_bytes(response->responses[i], (ogs_pkbuf_t **) &response->responses[i]);
         ogs_assert(m_to_b == OGS_OK); // Failed to encode outgoing NGAP message
     }
+    yagra_observe_metric(response->batch, "decode_latency", (int)(decode_end - decode_start));
+    yagra_observe_metric(response->batch, "handle_latency", (int)(handle_end - decode_end));
     yagra_observe_metric(response->batch, "encode_latency", (int)(get_microtime() - handle_end));
 
     // Free up memory
