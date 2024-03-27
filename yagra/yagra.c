@@ -203,14 +203,19 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 	metric_data->metric_name = metric->name;
 	metric_data->value = value;
 
-	// Traverse to the end of the list
+	// If there was no existing metric data, add it to the start of the list
 	if (last_metric_data == NULL) {
 		data->metric_data = metric_data;
 		data->num_metrics++;
 		return 0;
 	}
 
-	// Add the new metric data to the end of the list
+	// Add the new metric data to the end of the list. last_metrics_data could've
+	// been at the middle if we broke out of the loop early, so we need to traverse
+	// to the end of the list.
+	while (last_metric_data->next != NULL) {
+		last_metric_data = last_metric_data->next;
+	}
 	last_metric_data->next = metric_data;
 
 	// Increase the counter
