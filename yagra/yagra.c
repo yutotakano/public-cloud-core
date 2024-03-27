@@ -312,7 +312,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	// Linked list traversal of metrics data
 	yagra_metric_data_t *metrics_data = batch->metric_data;
 	while (metrics_data != NULL) {
-		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metrics_data->metric_name, metrics_data->value);
+		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%ld|", metrics_data->metric_name, metrics_data->value);
 
 		metrics_data = metrics_data->next;
 	}
@@ -370,8 +370,8 @@ void yagra_print_batch(yagra_batch_data_t * batch)
 	printf("Batch Metrics (%d items): ", batch->num_metrics);
 	yagra_metric_data_t *metric = batch->metric_data;
 	while(metric != NULL) {
-		printf("Metric: %d, ", metric->metric_name);
-		printf("Value: %d\n", metric->value);
+		printf("Metric: %s, ", metric->metric_name);
+		printf("Value: %ld\n", metric->value);
 		metric = metric->next;
 	}
 }
