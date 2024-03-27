@@ -194,6 +194,15 @@ void start_listener(char * mme_ip_address, yagra_conn_t * metrics_conn, int use_
 
 }
 
+void ogs_callback(char *message, ...) {
+	char buffer[256];
+	va_list args;
+	va_start(args, message);
+	vsnprintf(buffer, sizeof(buffer), message, args);
+	va_end(args);
+	ogs_info("Yagra: %s", buffer);
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -235,7 +244,7 @@ int main(int argc, char const *argv[])
 	ogs_pkbuf_default_create(&config);
 
 	// connecto to the metrics server
-	metrics_conn = yagra_init((char *)argv[5], 0);
+	metrics_conn = yagra_init((char *)argv[5], 0, ogs_callback);
 	ogs_assert(metrics_conn.sock != -1);
 	ogs_info("Metrics socket configured correctly.\n");
 
