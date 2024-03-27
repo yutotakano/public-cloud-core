@@ -172,10 +172,12 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 
 	// Check if the metric is already in the batch
 	yagra_metric_data_t *existing_metric_data = data->metric_data;
+	yagra_metric_data_t *last_metric_data = NULL;
 	while(existing_metric_data != NULL) {
 		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
+		last_metric_data = existing_metric_data;
 		existing_metric_data = existing_metric_data->next;
 	}
 
@@ -197,15 +199,10 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 	metric_data->value = value;
 
 	// Traverse to the end of the list
-	yagra_metric_data_t *last_metric_data = data->metric_data;
 	if (last_metric_data == NULL) {
 		data->metric_data = metric_data;
 		data->num_metrics++;
 		return 0;
-	}
-
-	while (last_metric_data->next != NULL) {
-		last_metric_data = last_metric_data->next;
 	}
 
 	// Add the new metric data to the end of the list
