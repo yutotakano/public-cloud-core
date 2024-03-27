@@ -248,6 +248,8 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 
 	for (int i = 0; i < batch->num_metrics; i++) {
 		yagra_metric_data_t *metric = &batch->metric_data[i];
+		printf("Metric: %d, Value: %d\n", metric->metric_index, metric->value);
+		printf("Metric Name: %s\n", batch->conn->metrics[metric->metric_index].name);
 		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", batch->conn->metrics[metric->metric_index].name, metric->value);
 	}
   // buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
