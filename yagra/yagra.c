@@ -263,6 +263,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 			// the batch
 			printf("Could not find metric with index %d\n", metric_data->metric_index);
 			printf("Skipping.");
+			continue;
 		}
 
 		buffer_len += sprintf(buffer + header_len + buffer_len, "amf_%s:%d|", metric->name, metric_data->value);
