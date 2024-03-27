@@ -231,12 +231,13 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	unsigned long max_len = (YAGRA_MAX_METRIC_NAME_LENGTH + 64) * batch->num_metrics;
 
 	// Determine amount of bytes required to represent max_len in binary
-	int body_length_bytes = 0;
+	unsigned int body_length_bytes = 0;
 	unsigned long temp = max_len;
 	while(temp > 0) {
 		temp >>= 8;
 		body_length_bytes++;
 	}
+	printf("Estimated max length: %lu, bytes required: %d\n", max_len, body_length_bytes);
 
 	// Make sure we can represent the length of the max_len in a single byte
 	assert(body_length_bytes < 256);
@@ -299,7 +300,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	buffer[2] = body_length_bytes;
 
 	for (int i = 0; i < body_length_bytes; i++) {
-		buffer[3 + i] = (max_len >> (i * 8)) & 0xFF;
+		buffer[3 + i] = (buffer_len >> (i * 8)) & 0xFF;
 	}
 
 	send_response_code = send(batch->conn->sock, buffer, header_len + buffer_len, 0);
