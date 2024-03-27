@@ -24,6 +24,7 @@ jobs:
       core_metrics_bus: ${{ github.event.inputs.force || steps.filter.outputs.core_metrics_bus }}
       ran_controller: ${{ github.event.inputs.force || steps.filter.outputs.ran_controller }}
       ran_slave: ${{ github.event.inputs.force || steps.filter.outputs.ran_slave }}
+      yagra: ${{ github.event.inputs.force || steps.filter.outputs.yagra }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -51,6 +52,8 @@ jobs:
               - 'ran-emulator/headers/**'
               - 'ran-emulator/source/**'
               - 'ran-emulator/Makefile'
+            yagra:
+              - 'yagra/**'
 
   # =========================================================
   # CoreKube DB
@@ -153,7 +156,7 @@ jobs:
   # =========================================================
   build_corekube_worker:
     needs: changes
-    if: ${{ needs.changes.outputs.corekube_worker == 'true' || needs.changes.outputs.libck == 'true' }}
+    if: ${{ needs.changes.outputs.corekube_worker == 'true' || needs.changes.outputs.libck == 'true' || needs.changes.outputs.yagra == 'true'}}
     name: Build and push CoreKube Worker
     runs-on: ubuntu-latest
     permissions:
