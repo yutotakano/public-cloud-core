@@ -152,7 +152,7 @@ yagra_batch_data_t yagra_init_batch(yagra_conn_t * conn)
 	return batch;
 }
 
-int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int value)
+int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t value)
 {
 	// Find the metric in the global list
 	yagra_metric_t *metric = data->conn->metrics;

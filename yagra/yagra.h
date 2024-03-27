@@ -64,7 +64,7 @@ typedef struct yagra_metric_data {
     // Index into the global metrics list for the name and type of this metric.
     char * metric_name;
     // The current value of this metric.
-    int value;
+    uint64_t value;
     // Extra data as necessary for the aggregation of the metric, e.g. a count.
     void * extra_data;
     // Pointer to the next metric in the list.
@@ -156,7 +156,7 @@ int yagra_define_metric(yagra_conn_t * conn, char * metric_name, char * metric_d
  * @param value 
  * @return int 
  */
-int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int value);
+int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t value);
 
 void yagra_print_metrics(yagra_conn_t * conn);
 
