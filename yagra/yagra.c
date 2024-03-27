@@ -82,13 +82,10 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 	int buffer_len = 0;
 	int send_response_code = 0;
 
-	printf("Creating register byte buffer for %s, %s\n", metric_name, metric_description);
-
 	int header_len = 4;
 
 	buffer_len += sprintf(buffer + header_len + buffer_len, "name:amf_%s|", metric_name);
 	buffer_len += sprintf(buffer + header_len + buffer_len, "description:%s|", metric_description);
-	printf("Buffer: %s\n", buffer);
 
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
@@ -111,8 +108,6 @@ int yagra_define_metric(yagra_conn_t * data, char * metric_name, char * metric_d
 		printf("Error sending register data, error code %d: errno %i\n", send_response_code, errno);
 		return -1;
 	}
-
-	printf("Register data sent\n");
 
 	// Finally, add to the list of metrics by first creating the metric data
 	yagra_metric_t *metric = malloc(sizeof(yagra_metric_t));
