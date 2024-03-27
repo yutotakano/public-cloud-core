@@ -55,9 +55,5 @@ RUN make
 
 FROM ubuntu:bionic
 
-# Install gdb
-RUN apt-get update
-RUN apt-get -y install gdb
-
 COPY --from=build /corekube_worker/corekube_udp_worker /
 COPY --from=build /corekube_worker/bin /bin/
