@@ -157,7 +157,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 	// Find the metric in the global list
 	yagra_metric_t *metric = data->conn->metrics;
 	unsigned int metric_index = 0;
-	while(metric != NULL) {
+	while(metric != NULL) { // bounded by the number of metrics
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
 		}
@@ -173,7 +173,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 	// Check if the metric is already in the batch
 	yagra_metric_data_t *existing_metric_data = data->metric_data;
 	yagra_metric_data_t *last_metric_data = NULL;
-	while(existing_metric_data != NULL) {
+	while(existing_metric_data != NULL) { // bounded by the number of data
 		if(existing_metric_data->metric_name == metric_name) {
 			break;
 		}
@@ -257,22 +257,6 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 
 		metrics_data = metrics_data->next;
 	}
-  // buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_start_time:%llu|", stats->start_time);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ue_id:%ld|", stats->ue_id);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_ngap_type:%d|", stats->ngap_message_type);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_type:%d|", stats->nas_message_type);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_invalid:%d|", stats->invalid);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_latency:%d|", stats->latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_decode_latency:%d|", stats->decode_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_handle_latency:%d|", stats->handle_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_decode_latency:%d|", stats->nas_decode_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_handle_latency:%d|", stats->nas_handle_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_nas_encode_latency:%d|", stats->nas_encode_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_build_latency:%d|", stats->response_build_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_encode_latency:%d|", stats->encode_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_send_latency:%d|", stats->send_latency);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_responses:%d|", stats->num_responses);
-	// buffer_len += sprintf(buffer + header_len + buffer_len, "amf_message_end_time:%llu\n", stats->end_time);
 
 	// Sanity check length of buffer
 	if(header_len + buffer_len > 512) {
@@ -305,6 +289,8 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		free(metric_data);
 		metric_data = next;
 	}
+
+	printf("Metrics data sent\n");
 
   return 0;
 }
