@@ -69,6 +69,7 @@ void *process_message(void *raw_args) {
 	ogs_free(args->buffer);
 
 	ogs_info("New SCTP message received.");
+	yagra_observe_metric(&batch, "uplink_packets", 1);
 	if (ogs_log_get_domain_level(__corekube_log_domain) >= OGS_LOG_TRACE)
 		ogs_log_hexdump(OGS_LOG_INFO, buffer, args->num_bytes_received);
 
@@ -85,7 +86,7 @@ void *process_message(void *raw_args) {
 	ogs_assert(outcome == OGS_OK); // Failed to handle the message
 
 	unsigned long long send_start = get_microtime();
-	yagra_observe_metric(&batch, "num_responses", response.num_responses);
+	yagra_observe_metric(&batch, "downlink_packets", response.num_responses);
 	if (response.num_responses == 0)
 		ogs_info("Finished handling NO_RESPONSE message");
 
@@ -259,7 +260,8 @@ int main(int argc, char const *argv[])
 	yagra_define_metric(&metrics_conn, "response_build_latency", "Time taken to build a response message", YAGRA_AGGREGATION_TYPE_AVERAGE);
 	yagra_define_metric(&metrics_conn, "encode_latency", "Time taken to encode NGAP message", YAGRA_AGGREGATION_TYPE_AVERAGE);
 	yagra_define_metric(&metrics_conn, "send_latency", "Time taken to send message", YAGRA_AGGREGATION_TYPE_AVERAGE);
-	yagra_define_metric(&metrics_conn, "num_responses", "Number of responses sent",  YAGRA_AGGREGATION_TYPE_COUNT);
+	yagra_define_metric(&metrics_conn, "uplink_packets", "Number of uplink packets received", YAGRA_AGGREGATION_TYPE_SUM);
+	yagra_define_metric(&metrics_conn, "downlink_packets", "Number of downlink packets sent", YAGRA_AGGREGATION_TYPE_SUM);
 
 	start_listener((char *)argv[1], &metrics_conn, use_threads);
 
