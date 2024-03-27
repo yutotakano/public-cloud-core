@@ -1,42 +1,87 @@
 #include "asio.hpp"
 #include "prometheus/counter.h"
 #include "prometheus/exposer.h"
-#include "prometheus/histogram.h"
 #include "prometheus/registry.h"
 #include "prometheus/summary.h"
 #include <iostream>
 #include <variant>
 
-using MetricFamilyVariant = std::variant<
-  prometheus::Family<prometheus::Counter> &,
-  prometheus::Family<prometheus::Gauge> &,
-  prometheus::Family<prometheus::Histogram> &,
-  prometheus::Family<prometheus::Summary> &>;
+class MultiTypeMetricRef
+{
+public:
+  MultiTypeMetricRef() = default;
+  virtual ~MultiTypeMetricRef() = default;
+  enum class Type
+  {
+    Counter,
+    Gauge,
+    Summary
+  };
+  prometheus::Family<prometheus::Counter> *Counter() { return m_counter; }
+
+  prometheus::Family<prometheus::Gauge> *Gauge() { return m_gauge; }
+
+  prometheus::Family<prometheus::Summary> *Summary() { return m_summary; }
+
+  Type type() const { return m_type; }
+
+  void set_type(Type type) { m_type = type; }
+
+  MultiTypeMetricRef(prometheus::Family<prometheus::Counter> *counter)
+      : m_counter(counter), m_type(Type::Counter)
+  {
+  }
+
+  MultiTypeMetricRef(prometheus::Family<prometheus::Gauge> *gauge)
+      : m_gauge(gauge), m_type(Type::Gauge)
+  {
+  }
+
+  MultiTypeMetricRef(prometheus::Family<prometheus::Summary> *summary)
+      : m_summary(summary), m_type(Type::Summary)
+  {
+  }
+
+private:
+  prometheus::Family<prometheus::Counter> *m_counter;
+  prometheus::Family<prometheus::Gauge> *m_gauge;
+  prometheus::Family<prometheus::Summary> *m_summary;
+  Type m_type;
+};
+
+auto quantiles =
+  prometheus::Summary::Quantiles{{0.5, 0.05}, {0.7, 0.03}, {0.90, 0.01}};
 
 // Forward-declare the function that will process incoming messages
 void process_metric_definition(
-  asio::ip::tcp::socket socket,
+  asio::ip::tcp::socket &socket,
   std::shared_ptr<prometheus::Exposer> exposer,
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    metrics
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics,
+  std::mutex &metrics_mutex,
+  std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries
 );
 
 void process_metric_batch_observation(
-  asio::ip::tcp::socket socket,
+  asio::ip::tcp::socket &socket,
   std::shared_ptr<prometheus::Exposer> exposer,
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    metrics
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics
 );
 
-std::mutex registries_mutex;
+void register_metric(
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics,
+  std::mutex &metrics_mutex,
+  std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries,
+  std::shared_ptr<prometheus::Exposer> exposer,
+  std::string metric_name,
+  std::string metric_description
+);
+
 void threadWorker(
   asio::ip::tcp::socket socket,
   std::shared_ptr<prometheus::Exposer> exposer,
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    metrics
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics,
+  std::mutex &metrics_mutex,
+  std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries
 )
 {
   std::cout << "Accepted connection from " << socket.remote_endpoint()
@@ -44,11 +89,11 @@ void threadWorker(
   // For the header, read it into an unsigned array or otherwise overflows over
   // 127 will become negative
   std::array<uint8_t, 16> header_buffer;
-  std::array<char, 1024> buffer;
   std::size_t bytes_transferred;
-  while (true)
+
+  try
   {
-    try
+    while (true)
     {
       // Wait until we see a two-byte sequence of 0x99 0x99.
       // We process the bytes one by one to avoid missing the sequence by
@@ -80,42 +125,48 @@ void threadWorker(
       if (header_buffer[0] == 0x98)
       {
         std::cout << "Received metric definition message" << std::endl;
-        process_metric_definition(std::move(socket), exposer, metrics);
+        process_metric_definition(
+          socket,
+          exposer,
+          metrics,
+          metrics_mutex,
+          captive_registries
+        );
       }
       else
       {
         std::cout << "Received metric batch observation message" << std::endl;
-        process_metric_batch_observation(std::move(socket), exposer, metrics);
+        process_metric_batch_observation(socket, exposer, metrics);
       }
     }
-    catch (std::system_error &e)
+  }
+  catch (std::system_error &e)
+  {
+    std::error_code error = e.code();
+    if (error == asio::error::eof)
     {
-      std::error_code error = e.code();
-      if (error == asio::error::eof)
-      {
-        std::cout << "Connection closed by peer (EOF received)" << std::endl;
-      }
-      else
-      {
-        std::cerr << "Exception: " << e.what() << std::endl;
-      }
-      return;
+      std::cout << "Connection closed by peer (EOF received)" << std::endl;
     }
+    else
+    {
+      std::cerr << "Exception (caught): " << e.what() << std::endl;
+    }
+    return;
   }
 }
 
 void process_metric_definition(
-  asio::ip::tcp::socket socket,
+  asio::ip::tcp::socket &socket,
   std::shared_ptr<prometheus::Exposer> exposer,
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    metrics
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics,
+  std::mutex &metrics_mutex,
+  std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries
 )
 {
   // Read length of remaining message
   size_t bytes_transferred = 0;
 
-  std::array<uint8_t, 16> header_buffer;
+  std::array<uint8_t, 1> header_buffer;
   std::array<char, 1024> buffer;
 
   // Read the third byte of the message to get the length of the body
@@ -159,32 +210,41 @@ void process_metric_definition(
     {
       // Process each metric
       std::istringstream metric_stream(metric);
-      std::string metric_name;
-      std::string metric_value;
-      std::getline(metric_stream, metric_name, ':');
-      std::getline(metric_stream, metric_value);
+      std::string key_name;
+      std::string key_value;
+      std::getline(metric_stream, key_name, ':');
+      std::getline(metric_stream, key_value);
 
-      if (metric_name == "metric_name")
+      if (key_name == "name")
       {
-        metric_name = metric_value;
+        metric_name = key_value;
       }
-      else if (metric_name == "metric_description")
+      else if (key_name == "description")
       {
-        metric_description = metric_value;
+        metric_description = key_value;
       }
     }
 
+    std::cout << "Registering metric " << metric_name << std::endl;
+
     // Register the metric
-    register_metric(metrics, exposer, metric_name, metric_description);
+    register_metric(
+      metrics,
+      metrics_mutex,
+      captive_registries,
+      exposer,
+      metric_name,
+      metric_description
+    );
   }
+
+  std::cout << "Finished processing metric definition" << std::endl;
 }
 
 void process_metric_batch_observation(
-  asio::ip::tcp::socket socket,
+  asio::ip::tcp::socket &socket,
   std::shared_ptr<prometheus::Exposer> exposer,
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    metrics
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics
 )
 {
   // Read length of remaining message
@@ -238,7 +298,6 @@ void process_metric_batch_observation(
   std::cout << "Received " << bytes_transferred << " bytes" << std::endl;
 
   // Process the body
-  std::string message(buffer.data(), bytes_transferred);
   // Each line of the message is  metric in the format:
   // ue_id:value|message_type:value|metric_key1:metric_value1|metric_key2:metric_value2|...
   std::string message(buffer.data(), bytes_transferred);
@@ -255,13 +314,11 @@ void process_metric_batch_observation(
     std::string ngap_message_type;
     std::string nas_message_type;
 
-    // Increment the uplink packet counter for every metric batch observation
+    // Increment the uplink packet counter for every metric batch observaftion
     // TODO: change this to a regular metric itself
-    if (auto packet_counter = std::get_if<prometheus::Family<prometheus::Counter>>(
-          metrics->at("uplink_packets").get()
-        ))
+    if (metrics.find("uplink_packets") != metrics.end() && metrics.at("uplink_packets").type() == MultiTypeMetricRef::Type::Counter)
     {
-      packet_counter->Add({}).Increment();
+      metrics.at("uplink_packets").Counter()->Add({}).Increment();
     }
 
     while (std::getline(line_stream, metric, '|'))
@@ -273,8 +330,11 @@ void process_metric_batch_observation(
       std::getline(metric_stream, metric_name, ':');
       std::getline(metric_stream, metric_value);
 
+      std::cout << "Processing metric " << metric_name << " with value "
+                << metric_value << std::endl;
+
       // Get the right counter for the metric
-      if (metrics->find(metric_name) == metrics->end())
+      if (metrics.find(metric_name) == metrics.end())
       {
         std::cerr << "Metric " << metric_name << " not found, ignoring."
                   << std::endl;
@@ -298,39 +358,51 @@ void process_metric_batch_observation(
         nas_message_type = metric_value;
       }
 
-      auto family = metrics->at(metric_name);
+      MultiTypeMetricRef family = metrics.at(metric_name);
 
       // Get the metric family for the metric, making sure it handles all
       // possible variant types for the prometheus family
-      if (auto counter_family = std::get_if<prometheus::Family<prometheus::Counter>>(family.get()))
+      if (family.type() == MultiTypeMetricRef::Type::Counter)
       {
-        counter_family->Add({}).Increment(std::stod(metric_value));
+        family.Counter()
+          ->Add(
+            {{"ngap_type", ngap_message_type}, {"nas_type", nas_message_type}}
+          )
+          .Increment(std::stod(metric_value));
       }
-      else if (auto gauge_family = std::get_if<prometheus::Family<prometheus::Gauge>>(family.get()))
+      else if (family.type() == MultiTypeMetricRef::Type::Gauge)
       {
-        gauge_family->Add({}).Set(std::stod(metric_value));
+        family.Gauge()
+          ->Add(
+            {{"ngap_type", ngap_message_type}, {"nas_type", nas_message_type}}
+          )
+          .Set(std::stod(metric_value));
       }
-      else if (auto histogram_family = std::get_if<prometheus::Family<prometheus::Histogram>>(family.get()))
+      else if (family.type() == MultiTypeMetricRef::Type::Summary)
       {
-        histogram_family->Add({}).Observe(std::stod(metric_value));
-      }
-      else if (auto summary_family = std::get_if<prometheus::Family<prometheus::Summary>>(family.get()))
-      {
-        summary_family->Add({}).Observe(std::stod(metric_value));
+        family.Summary()
+          ->Add(
+            {{"ngap_type", ngap_message_type}, {"nas_type", nas_message_type}},
+            quantiles
+          )
+          .Observe(std::stod(metric_value));
       }
     }
   }
+
+  std::cout << "Finished processing metric batch observation" << std::endl;
 }
 
 int main(int argc, char *argv[])
 {
   auto exposer = std::make_shared<prometheus::Exposer>("0.0.0.0:8080");
 
-  auto metrics = std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>();
+  auto metrics = std::unordered_map<std::string, MultiTypeMetricRef>();
+  std::mutex metrics_mutex;
 
-  auto quantiles =
-    prometheus::Summary::Quantiles{{0.5, 0.05}, {0.7, 0.03}, {0.90, 0.01}};
+  // Create a list of registries to keep them alive while we refer to their
+  // metrics by raw pointer through MultiTypeMetricRef
+  std::vector<std::shared_ptr<prometheus::Registry>> captive_registries;
 
   // Run a TCP receiver socket to receive messages from the core
   asio::io_context io_context;
@@ -345,7 +417,15 @@ int main(int argc, char *argv[])
     // Use socket_ptr to pass the socket to the worker thread
     asio::ip::tcp::socket socket(io_context);
     acceptor.accept(socket);
-    std::thread(threadWorker, std::move(socket), exposer, metrics).detach();
+    std::thread(
+      threadWorker,
+      std::move(socket),
+      exposer,
+      std::ref(metrics),
+      std::ref(metrics_mutex),
+      std::ref(captive_registries)
+    )
+      .detach();
   }
 
   return 0;
@@ -359,20 +439,21 @@ int main(int argc, char *argv[])
  * @param metric_description
  */
 void register_metric(
-  std::shared_ptr<
-    std::unordered_map<std::string, std::shared_ptr<MetricFamilyVariant>>>
-    &registries,
+  std::unordered_map<std::string, MultiTypeMetricRef> &metrics,
+  std::mutex &metrics_mutex,
+  std::vector<std::shared_ptr<prometheus::Registry>> &captive_registries,
   std::shared_ptr<prometheus::Exposer> exposer,
   std::string metric_name,
   std::string metric_description
 )
 {
-  // Get a lock on the map since this function can be called from multiple
-  // threads
-  std::lock_guard<std::mutex> lock(registries_mutex);
+  // Lock the mutex to prevent adding two of the same metric at the same time
+  // concurrently
+  std::lock_guard<std::mutex> lock(metrics_mutex);
 
   // Check if the metric already exists
-  if (registries->find(metric_name) != registries->end())
+  // Loop through all registries to check if the metric already exists
+  if (metrics.find(metric_name) != metrics.end())
   {
     std::cerr << "Metric " << metric_name << " already exists, ignoring."
               << std::endl;
@@ -382,19 +463,23 @@ void register_metric(
   // Create a new registry
   auto registry = std::make_shared<prometheus::Registry>();
 
-  // Register the metric
-  auto metric = std::make_shared<prometheus::Family<prometheus::Counter>>(
-    prometheus::BuildCounter()
-      .Name(metric_name)
-      .Help(metric_description)
-      .Register(*registry)
-  );
+  // Register the metric. The registry owns the reference to the metric, and
+  // will live as long as the registry does.
+  auto &metric = prometheus::BuildCounter()
+                   .Name(metric_name)
+                   .Help(metric_description)
+                   .Register(*registry);
 
-  // Add the registry to the map
-  registries->emplace(metric_name, metric);
+  // Add a reference of the registry to the map. The metric is owned by the
+  // registry, so we can safely store a reference to the metric in the map as
+  // long as the registry is alive.
+  metrics[metric_name] = MultiTypeMetricRef{&metric};
 
   std::cout << "Registered metric " << metric_name << std::endl;
 
   // Ask the exposer to add the contents of the registry to the HTTP server
   exposer->RegisterCollectable(registry);
+
+  // Keep the registry alive by storing it in a global list
+  captive_registries.push_back(registry);
 }

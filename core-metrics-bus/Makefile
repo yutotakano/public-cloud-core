@@ -1,5 +1,5 @@
 CC := g++
-CPPFLAGS := -Iinclude -Iexternal/prometheus_install/include
+CPPFLAGS := -Iinclude -Iexternal/prometheus_install/include -std=c++17
 CFLAGS := -Wall
 LDFLAGS := -Lexternal/prometheus_install/lib
 LDLIBS := -lpthread -lprometheus-cpp-pull -lprometheus-cpp-core
