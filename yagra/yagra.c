@@ -153,7 +153,7 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, int valu
 {
 	// Find the metric in the global list
 	yagra_metric_t *metric = data->conn->metrics;
-	int metric_index = 0;
+	unsigned int metric_index = 0;
 	while(metric != NULL) {
 		if(strcmp(metric->name, metric_name) == 0) {
 			break;
@@ -252,7 +252,7 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 		// Go through the linked list of metrics to find the name of this metric
 		yagra_metric_t *metric = batch->conn->metrics;
 		unsigned int i = 0;
-		while(metric != NULL) {
+		while(metric != NULL && i < batch->num_metrics) {
 			if(i == metric_data->metric_index) {
 				break;
 			}
@@ -309,6 +309,14 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	if(send_response_code < 0) {
 		printf("Error sending metrics data, error code %d: errno %i\n", send_response_code, errno);
 		return -1;
+	}
+
+	// Free the metric data within the batch
+	yagra_metric_data_t *metric_data = batch->metric_data;
+	while(metric_data != NULL) {
+		yagra_metric_data_t *next = metric_data->next;
+		free(metric_data);
+		metric_data = next;
 	}
 
   return 0;
