@@ -181,7 +181,6 @@ void process_metric_definition(
   std::uint16_t body_length = 0;
   body_length |= static_cast<std::uint16_t>(header_buffer[0]);
   body_length |= static_cast<std::uint16_t>(header_buffer[1]) << 8;
-  std::cout << "Body length: " << unsigned(body_length) << std::endl;
 
   // Read the body
   bytes_transferred = asio::read(socket, asio::buffer(buffer, body_length));
@@ -227,8 +226,6 @@ void process_metric_definition(
       }
     }
 
-    std::cout << "Registering metric " << metric_name << std::endl;
-
     // Register the metric
     register_metric(
       metrics,
@@ -265,7 +262,6 @@ void process_metric_batch_observation(
 
   // Parse the length of header
   std::uint8_t header_length = static_cast<std::uint8_t>(header_buffer[0]);
-  std::cout << "Header length: " << unsigned(header_length) << std::endl;
 
   // Read the header
   bytes_transferred =
