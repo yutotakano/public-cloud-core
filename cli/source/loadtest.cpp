@@ -17,6 +17,10 @@ std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
   auto parser = std::make_unique<argparse::ArgumentParser>("loadtest");
   parser->add_description("Run a loadtest on the current deployment.");
   parser->add_argument("--file").help("Definition file for Nervion load");
+  parser->add_argument("--info")
+    .help("Print current metrics and exit.")
+    .default_value(false)
+    .implicit_value(true);
   parser->add_argument("--incremental")
     .help("Duration of incremental scaling")
     .scan<'i', int>();
@@ -68,6 +72,28 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     // Stop the current loadtest
     auto completion_future = stop_nervion_controller(info.value());
     completion_future.get();
+    return;
+  }
+
+  if (parser.get<bool>("--info"))
+  {
+    LOG_TRACE_L3(logger, "Printing current metrics.");
+    auto latency_data =
+      collect_avg_latency(0, info->ck_prometheus_elb_url + ":9090");
+    auto worker_data =
+      collect_worker_count(0, info->ck_prometheus_elb_url + ":9090");
+    auto throughput_data =
+      collect_avg_throughput(0, info->ck_prometheus_elb_url + ":9090");
+    auto cost_data = collect_cost(0, info->ck_kubecost_prometheus_elb_url);
+    for (auto &data : {latency_data, worker_data, throughput_data, cost_data})
+    {
+      for (auto &item : data)
+      {
+        if (item.first == "time")
+          continue;
+        LOG_INFO(logger, "{}: {}", item.first, item.second);
+      }
+    }
     return;
   }
 
@@ -161,14 +187,11 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
       );
       if (parser.get<bool>("--collect-avg-latency"))
       {
-        bool result = collect_avg_latency(
-          i * 5,
-          info->ck_prometheus_elb_url + ":9090",
-          experiment_name
-        );
+        auto data =
+          collect_avg_latency(i * 5, info->ck_prometheus_elb_url + ":9090");
         // Latency doesn't get collected until the first UE is connected, and
         // there's no meaning to reducing timer before that point.
-        if (!has_begun && !result)
+        if (!has_begun && data.size() == 0)
         {
           LOG_INFO(
             logger,
@@ -176,36 +199,71 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
           );
           total_points += 1;
         }
-        if (result)
+        if (data.size() > 0)
           has_begun = true;
+        write_to_csv(experiment_name + "_latency.csv", data);
       }
       if (parser.get<bool>("--collect-worker-count"))
       {
-        collect_worker_count(
-          i * 5,
-          info->ck_prometheus_elb_url + ":9090",
-          experiment_name
-        );
+        auto data =
+          collect_worker_count(i * 5, info->ck_prometheus_elb_url + ":9090");
+        write_to_csv(experiment_name + "_worker_count.csv", data);
       }
       if (parser.get<bool>("--collect-avg-throughput"))
       {
-        collect_avg_throughput(
-          i * 5,
-          info->ck_prometheus_elb_url + ":9090",
-          experiment_name
-        );
+        auto data =
+          collect_avg_throughput(i * 5, info->ck_prometheus_elb_url + ":9090");
+        write_to_csv(experiment_name + "_throughput.csv", data);
       }
       if (parser.get<bool>("--collect-cost"))
       {
-        collect_cost(
-          i * 5,
-          info->ck_kubecost_prometheus_elb_url,
-          experiment_name
-        );
+        auto data = collect_cost(i * 5, info->ck_kubecost_prometheus_elb_url);
+        write_to_csv(experiment_name + "_cost.csv", data);
       }
       std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
+}
+
+bool LoadTestApp::write_to_csv(
+  std::string filename,
+  std::vector<std::pair<std::string, std::string>> data
+)
+{
+  bool file_exists = std::filesystem::exists(filename);
+
+  std::ofstream file(filename, std::ios::app);
+  if (!file.is_open())
+  {
+    LOG_ERROR(logger, "Could not open file: {}", filename);
+    return false;
+  }
+
+  // If file doesn't exist, write headers
+  if (!file_exists)
+  {
+    for (auto &item : data)
+    {
+      file << item.first << ",";
+    }
+    file << std::endl;
+  }
+
+  // Append data
+  for (auto &item : data)
+  {
+    file << item.second << ",";
+  }
+  file << std::endl;
+
+  file.close();
+  if (!file.good())
+  {
+    LOG_ERROR(logger, "Error writing to file: {}", filename);
+    return false;
+  }
+
+  return true;
 }
 
 std::string
@@ -219,7 +277,7 @@ LoadTestApp::get_prometheus_value(std::string url, std::string query)
 
   if (res.status_code != 200)
   {
-    LOG_ERROR(logger, "cpr::Get() failed: {}", res.error.message);
+    LOG_ERROR(logger, "cpr::Get() failed: {}", res.text);
     return "";
   }
 
@@ -256,10 +314,10 @@ LoadTestApp::get_prometheus_value_float(std::string url, std::string query)
   return std::stof(value);
 }
 
-bool LoadTestApp::collect_avg_latency(
+std::vector<std::pair<std::string, std::string>>
+LoadTestApp::collect_avg_latency(
   int time_since_start,
-  std::string prometheus_url,
-  std::string experiment_name
+  std::string prometheus_url
 )
 {
   LOG_TRACE_L3(logger, "Collecting average latency.");
@@ -269,7 +327,7 @@ bool LoadTestApp::collect_avg_latency(
   if (!latency.has_value())
   {
     LOG_TRACE_L3(logger, "Latency not available currently. Skipping.");
-    return false;
+    return {};
   }
 
   std::optional<int> decode_latency =
@@ -356,39 +414,24 @@ bool LoadTestApp::collect_avg_latency(
     send_latency = 0;
   }
 
-  // Write to file
-  LOG_TRACE_L3(logger, "Writing results to _latency csv.");
-  std::ofstream latency_file(
-    experiment_name + "_latency.csv",
-    std::ios::app | std::ios::out
-  );
-  latency_file << time_since_start << ", " << latency.value() << ", "
-               << decode_latency.value() << ", " << handle_latency.value()
-               << ", " << nas_decode_latency.value() << ", "
-               << nas_handle_latency.value() << ", "
-               << nas_encode_latency.value() << ", " << build_latency.value()
-               << ", " << encode_latency.value() << ", " << send_latency.value()
-               << std::endl;
-  latency_file.close();
-  if (!latency_file.good())
-  {
-    LOG_ERROR(
-      logger,
-      "Error writing to file {}: {}",
-      experiment_name + "_latency.csv",
-      strerror(errno)
-    );
-    return false;
-  }
-  LOG_TRACE_L3(logger, "Finished writing data.");
-
-  return true;
+  return {
+    {"time", std::to_string(time_since_start)},
+    {"latency", std::to_string(latency.value())},
+    {"decode_latency", std::to_string(decode_latency.value())},
+    {"handle_latency", std::to_string(handle_latency.value())},
+    {"nas_decode_latency", std::to_string(nas_decode_latency.value())},
+    {"nas_handle_latency", std::to_string(nas_handle_latency.value())},
+    {"nas_encode_latency", std::to_string(nas_encode_latency.value())},
+    {"build_latency", std::to_string(build_latency.value())},
+    {"encode_latency", std::to_string(encode_latency.value())},
+    {"send_latency", std::to_string(send_latency.value())}
+  };
 }
 
-bool LoadTestApp::collect_avg_throughput(
+std::vector<std::pair<std::string, std::string>>
+LoadTestApp::collect_avg_throughput(
   int time_since_start,
-  std::string prometheus_url,
-  std::string experiment_name
+  std::string prometheus_url
 )
 {
   LOG_TRACE_L3(logger, "Collecting uplink throughput rate.");
@@ -408,34 +451,16 @@ bool LoadTestApp::collect_avg_throughput(
     )
       .value_or(0);
 
-  // Write to file
-  LOG_TRACE_L3(logger, "Writing results to _throughput csv.");
-  std::ofstream throughput_file(
-    experiment_name + "_throughput.csv",
-    std::ios::app | std::ios::out
-  );
-  throughput_file << time_since_start << ", " << uplink_packets_rate << ", "
-                  << downlink_packets_rate << std::endl;
-  throughput_file.close();
-  if (!throughput_file.good())
-  {
-    LOG_ERROR(
-      logger,
-      "Error writing to file {}: {}",
-      experiment_name + "_throughput.csv",
-      strerror(errno)
-    );
-    return false;
-  }
-  LOG_TRACE_L3(logger, "Finished writing data.");
-
-  return true;
+  return {
+    {"uplink_packets_rate", std::to_string(uplink_packets_rate)},
+    {"downlink_packets_rate", std::to_string(downlink_packets_rate)}
+  };
 }
 
-bool LoadTestApp::collect_worker_count(
+std::vector<std::pair<std::string, std::string>>
+LoadTestApp::collect_worker_count(
   int time_since_start,
-  std::string prometheus_url,
-  std::string experiment_name
+  std::string prometheus_url
 )
 {
   LOG_TRACE_L3(logger, "Collecting worker count.");
@@ -447,38 +472,27 @@ bool LoadTestApp::collect_worker_count(
     )
       .value_or(0);
 
-  // Write to file
-  LOG_TRACE_L3(logger, "Writing results to _worker_count csv.");
-  std::ofstream worker_count_file(
-    experiment_name + "_worker_count.csv",
-    std::ios::app | std::ios::out
-  );
-  worker_count_file << time_since_start << ", " << worker_count << std::endl;
-  worker_count_file.close();
-  if (!worker_count_file.good())
-  {
-    LOG_ERROR(
-      logger,
-      "Error writing to file {}: {}",
-      experiment_name + "_worker_count.csv",
-      strerror(errno)
-    );
-    return false;
-  }
-  LOG_TRACE_L3(logger, "Finished writing data.");
+  int node_count =
+    get_prometheus_value_int(
+      prometheus_url,
+      "cluster_autoscaler_nodes_count{state=\"ready\"}"
+    )
+      .value_or(0);
 
-  return true;
+  return {
+    {"time", std::to_string(time_since_start)},
+    {"time", std::to_string(time_since_start)},
+    {"worker_count", std::to_string(worker_count)},
+    {"node_count", std::to_string(node_count)}
+  };
 }
 
-bool LoadTestApp::collect_cost(
-  int time_since_start,
-  std::string prometheus_url,
-  std::string experiment_name
-)
+std::vector<std::pair<std::string, std::string>>
+LoadTestApp::collect_cost(int time_since_start, std::string prometheus_url)
 {
   LOG_TRACE_L3(logger, "Collecting hourly management cost.");
   // Collect data from the Prometheus server
-  std::optional<int> eks_mgmt_cost = get_prometheus_value_float(
+  std::optional<float> eks_mgmt_cost = get_prometheus_value_float(
     prometheus_url,
     "kubecost_cluster_management_cost"
   );
@@ -491,7 +505,26 @@ bool LoadTestApp::collect_cost(
     eks_mgmt_cost = 0;
   }
 
-  std::optional<int> node_cost =
+  // Get cumulative cost from the start of the experiment.
+  std::optional<float> eks_mgmt_cum_cost = time_since_start > 0
+    ? get_prometheus_value_float(
+        prometheus_url,
+        "sum(avg_over_time(kubecost_cluster_management_cost[" +
+          std::to_string(time_since_start) + "s])) / (60 * 60 / " +
+          std::to_string(time_since_start) + ")"
+      )
+    : 0;
+  if (!eks_mgmt_cum_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Cumulative cluster management cost not available currently. Assuming 0."
+    );
+    eks_mgmt_cum_cost = 0;
+  }
+
+  // Hourly node cost
+  std::optional<float> node_cost =
     get_prometheus_value_float(prometheus_url, "sum(node_total_hourly_cost)");
   if (!node_cost.has_value())
   {
@@ -499,7 +532,26 @@ bool LoadTestApp::collect_cost(
     node_cost = 0;
   }
 
-  std::optional<int> lb_cost = get_prometheus_value_float(
+  // Get cumulative node cost from the start of the experiment.
+  std::optional<float> node_cum_cost = time_since_start > 0
+    ? get_prometheus_value_float(
+        prometheus_url,
+        "sum(avg_over_time(node_total_hourly_cost[" +
+          std::to_string(time_since_start) + "s])) / (60 * 60 / " +
+          std::to_string(time_since_start) + ")"
+      )
+    : 0;
+  if (!node_cum_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Cumulative node cost not available currently. Assuming 0."
+    );
+    node_cum_cost = 0;
+  }
+
+  // Get current hourly load balancer cost
+  std::optional<float> lb_cost = get_prometheus_value_float(
     prometheus_url,
     "sum(kubecost_load_balancer_cost)"
   );
@@ -512,7 +564,29 @@ bool LoadTestApp::collect_cost(
     lb_cost = 0;
   }
 
-  std::optional<int> egress_cost = get_prometheus_value_float(
+  // Get cumulative cost from the start of the experiment.
+  // We calculate the average hourly cost during the experiment so far, then
+  // divide by the number of seconds in an hour to get the secondly rate, then
+  // multiply by the number of seconds in the time since the start of the
+  // experiment.
+  std::optional<float> lb_cum_cost = time_since_start
+    ? get_prometheus_value_float(
+        prometheus_url,
+        "sum(avg_over_time(kubecost_load_balancer_cost[" +
+          std::to_string(time_since_start) + "s])) / (60 * 60 / " +
+          std::to_string(time_since_start) + ")"
+      )
+    : 0;
+  if (!lb_cum_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Cumulative load balancer cost not available currently. Assuming 0."
+    );
+    lb_cum_cost = 0;
+  }
+
+  std::optional<float> egress_cost = get_prometheus_value_float(
     prometheus_url,
     "sum(kubecost_network_internet_egress_cost)"
   );
@@ -525,29 +599,36 @@ bool LoadTestApp::collect_cost(
     egress_cost = 0;
   }
 
-  // Write to file
-  LOG_TRACE_L3(logger, "Writing results to _cost csv.");
-  std::ofstream cost_file(
-    experiment_name + "_cost.csv",
-    std::ios::app | std::ios::out
-  );
-  cost_file << time_since_start << ", " << eks_mgmt_cost.value() << ", "
-            << node_cost.value() << ", " << lb_cost.value() << ", "
-            << egress_cost.value() << std::endl;
-  cost_file.close();
-  if (!cost_file.good())
-  {
-    LOG_ERROR(
-      logger,
-      "Error writing to file {}: {}",
-      experiment_name + "_cost.csv",
-      strerror(errno)
-    );
-    return false;
-  }
-  LOG_TRACE_L3(logger, "Finished writing data.");
+  std::optional<float> egress_cum_cost = time_since_start > 0
+    ? get_prometheus_value_float(
+        prometheus_url,
+        "sum(avg_over_time(kubecost_network_internet_egress_cost[" +
+          std::to_string(time_since_start) + "s])) / (60 * 60 / " +
+          std::to_string(time_since_start) + ")"
+      )
+    : 0;
 
-  return true;
+  return {
+    {"time", std::to_string(time_since_start)},
+    {"eks_mgmt_cost", std::to_string(eks_mgmt_cost.value())},
+    {"eks_mgmt_cum_cost", std::to_string(eks_mgmt_cum_cost.value())},
+    {"node_cost", std::to_string(node_cost.value())},
+    {"node_cum_cost", std::to_string(node_cum_cost.value())},
+    {"lb_cost", std::to_string(lb_cost.value())},
+    {"lb_cum_cost", std::to_string(lb_cum_cost.value())},
+    {"egress_cost", std::to_string(egress_cost.value())},
+    {"egress_cum_cost", std::to_string(egress_cum_cost.value())},
+    {"total_cost",
+     std::to_string(
+       eks_mgmt_cost.value() + node_cost.value() + lb_cost.value() +
+       egress_cost.value()
+     )},
+    {"total_cum_cost",
+     std::to_string(
+       eks_mgmt_cum_cost.value() + node_cum_cost.value() + lb_cum_cost.value() +
+       egress_cum_cost.value()
+     )}
+  };
 }
 
 std::future<void> LoadTestApp::stop_nervion_controller(deployment_info_s info)

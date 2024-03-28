@@ -67,65 +67,54 @@ private:
   );
 
   /**
-   * @brief Query the Prometheus API for the average latency seen very recently,
-   * and write the results to a CSV file determined by the experiment name.
+   * @brief Query the Prometheus API for the average latency seen very recently.
    *
    * @param time_since_start
    * @param prometheus_url
-   * @param experiment_name
-   * @return bool True if the query was successful, false otherwise.
+   * @return std::vector<std::pair<std::string, std::string>> A vector of data
+   * name and value pairs. Empty if latency is not available.
    */
-  bool collect_avg_latency(
-    int time_since_start,
-    std::string prometheus_url,
-    std::string experiment_name
-  );
+  std::vector<std::pair<std::string, std::string>>
+  collect_avg_latency(int time_since_start, std::string prometheus_url);
 
   /**
    * @brief Query the Prometheus API for the number of worker pods seen very
-   * recently, and write the results to a file determined by the experiment
-   * name.
+   * recently.
    *
    * @param time_since_start
    * @param prometheus_url
-   * @param experiment_name
-   * @return bool True if the query was successful, false otherwise.
+   * @return std::vector<std::pair<std::string, std::string>> A vector of data
+   * name and value pairs.
    */
-  bool collect_worker_count(
-    int time_since_start,
-    std::string prometheus_url,
-    std::string experiment_name
-  );
+  std::vector<std::pair<std::string, std::string>>
+  collect_worker_count(int time_since_start, std::string prometheus_url);
 
   /**
-   * @brief  Query the Prometheus API for the average network throughput seen
-   * very recently, and write the results to a file determined by the experiment
-   * name.
+   * @brief  Query the Prometheus API for the average network throughput as
+   * averaged as a rate per second based on the last 5 seconds of data.
    *
    * @param time_since_start
    * @param prometheus_url
-   * @param experiment_name
-   * @return bool True if the query was successful, false otherwise.
+   * @return std::vector<std::pair<std::string, std::string>> A vector of data
+   * name and value pairs.
    */
-  bool collect_avg_throughput(
-    int time_since_start,
-    std::string prometheus_url,
-    std::string experiment_name
-  );
+  std::vector<std::pair<std::string, std::string>>
+  collect_avg_throughput(int time_since_start, std::string prometheus_url);
 
   /**
    * @brief Query the KubeCost Prometheus server for the cost of the cluster.
    *
    * @param time_since_start
    * @param prometheus_url
-   * @param experiment_name
-   * @return true
-   * @return false
+   * @return std::vector<std::pair<std::string, std::string>> A vector of data
+   * name and value pairs.
    */
-  bool collect_cost(
-    int time_since_start,
-    std::string prometheus_url,
-    std::string experiment_name
+  std::vector<std::pair<std::string, std::string>>
+  collect_cost(int time_since_start, std::string prometheus_url);
+
+  bool write_to_csv(
+    std::string file_name,
+    std::vector<std::pair<std::string, std::string>> data
   );
 
   quill::Logger *logger;
