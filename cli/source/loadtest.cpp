@@ -220,7 +220,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         auto data =
           collect_worker_count(i * 5, info->ck_prometheus_elb_url + ":9090");
         write_to_csv(experiment_name + "_worker_count.csv", data);
-        LOG_INFO(logger, "UE count: {}", data[2].second);
+        LOG_INFO(logger, "UE count: {}", data[3].second);
       }
       if (parser.get<bool>("--collect-avg-throughput"))
       {
@@ -462,7 +462,7 @@ LoadTestApp::collect_avg_throughput(
   float uplink_packets_rate =
     get_prometheus_value_float(
       prometheus_url,
-      "rate(amf_uplink_packets_total[5s])"
+      "sum(rate(amf_uplink_packets_total[5s]))"
     )
       .value_or(0);
 
@@ -470,7 +470,7 @@ LoadTestApp::collect_avg_throughput(
   float downlink_packets_rate =
     get_prometheus_value_float(
       prometheus_url,
-      "rate(amf_downlink_packets_total[5s])"
+      "sum(rate(amf_downlink_packets_total[5s]))"
     )
       .value_or(0);
 
@@ -698,7 +698,7 @@ void LoadTestApp::post_nervion_controller(
     cpr::Multipart{
       {"mme_ip", info.ck_frontend_ip},
       {"cp_mode", "true"},
-      {"threads", "100"},
+      {"threads", "10"},
       {"scale_minutes", std::to_string(incremental_duration)},
       {"multi_ip", ""},
       {"config", cpr::File{file_path, file_name}},
