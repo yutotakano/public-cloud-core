@@ -168,6 +168,21 @@ void start_listener(char * mme_ip_address, yagra_conn_t * metrics_conn, int use_
 		n = recvfrom(sock_udp, (char *)buffer, BUFFER_LEN, MSG_WAITALL, ( struct sockaddr *) client_addr, &from_len); 
 		ogs_assert(n > 0); // No longer connected to eNB
 
+		// To test CoreKube resiliency, we allow the message to be purposefully
+		// invalid and crash the program if it is 3 bytes long and the first byte
+		// is 0x03
+		if (n == 3 && buffer[0] == 0x03) {
+			ogs_error("Received invalid message of length 3");
+			ogs_assert(0);
+		}
+
+		// Similarly, we allow a message to cause a cpu spike if the first byte is
+		// 0x04
+		if (n == 3 && buffer[0] == 0x04) {
+			ogs_error("Received invalid message of length 4");
+			while (1) {}
+		}
+
 		// setup the arguments to be passed
 		// to the multithreaded function
 		args->buffer = buffer;
