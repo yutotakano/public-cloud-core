@@ -67,14 +67,17 @@ int db_buffer_input_size(int numPush, int numPull) {
 int form_db_request(uint8_t *buffer, va_list ap, ITEM_TYPE dbKey, uint8_t * dbKeyValue, int numPush, int numPull) {
     ogs_info("Forming DB request");
 
+    ogs_info("a");
     uint8_t * ptr = add_identifier(buffer, dbKey, dbKeyValue);
 
+    ogs_info("b");
 	for(int i = 0; i < numPush; i++) {
 		ITEM_TYPE type = (ITEM_TYPE) va_arg(ap, int);
 		uint8_t * item = va_arg(ap, uint8_t*);
 		ptr = push_item(ptr, type, item);
 	}
 
+    ogs_info("c");
     *ptr = 0;
     ptr++;
     for(int i = 0; i < numPull; i++) {
@@ -82,6 +85,7 @@ int form_db_request(uint8_t *buffer, va_list ap, ITEM_TYPE dbKey, uint8_t * dbKe
 		ptr = pull_item(ptr, item);
 	}
 
+    ogs_info("d");
     *ptr = EOM;
     ptr++;
 
