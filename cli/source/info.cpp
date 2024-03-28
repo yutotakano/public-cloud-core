@@ -31,6 +31,11 @@ void InfoApp::info_command_handler(argparse::ArgumentParser &parser)
   LOG_INFO(logger, "IP (within VPC) of CK frontend: {}", info->ck_frontend_ip);
   LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
   LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
+  LOG_INFO(
+    logger,
+    "KubeCost Prometheus: http://{}:80",
+    info->ck_kubecost_prometheus_elb_url
+  );
 }
 
 bool InfoApp::check_contexts_exist()
@@ -115,10 +120,13 @@ std::optional<deployment_info_s> InfoApp::get_info()
         .run_kubectl(
           {"get",
            "services",
+           "-A",
            "-o",
            "jsonpath={.items[?(@.metadata.name==\"corekube-grafana\")].status."
            "loadBalancer.ingress[0].hostname} "
            "{.items[?(@.metadata.name==\"corekube-prometheus-loadbalancer\")]."
+           "status.loadBalancer.ingress[0].hostname} "
+           "{.items[?(@.metadata.name==\"kubecost-prometheus-loadbalancer\")]."
            "status.loadBalancer.ingress[0].hostname}"},
           false
         )
@@ -131,6 +139,7 @@ std::optional<deployment_info_s> InfoApp::get_info()
     auto ck_grafana_public_dns = ck_service_hostnames[0];
     // Get the public DNS of the CK Prometheus service.
     auto ck_prometheus_public_dns = ck_service_hostnames[1];
+    auto ck_kubecost_prometheus_public_dns = ck_service_hostnames[2];
 
     // Get the public DNS of the Nervion controller service.
     auto nervion_controller_public_dns =
@@ -149,6 +158,7 @@ std::optional<deployment_info_s> InfoApp::get_info()
       .ck_grafana_elb_url = ck_grafana_public_dns,
       .ck_prometheus_elb_url = ck_prometheus_public_dns,
       .nv_controller_elb_url = nervion_controller_public_dns,
+      .ck_kubecost_prometheus_elb_url = ck_kubecost_prometheus_public_dns,
       .ck_frontend_ip = frontend_ip,
     };
   }

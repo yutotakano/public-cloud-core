@@ -113,6 +113,21 @@ private:
     std::string experiment_name
   );
 
+  /**
+   * @brief Query the KubeCost Prometheus server for the cost of the cluster.
+   *
+   * @param time_since_start
+   * @param prometheus_url
+   * @param experiment_name
+   * @return true
+   * @return false
+   */
+  bool collect_cost(
+    int time_since_start,
+    std::string prometheus_url,
+    std::string experiment_name
+  );
+
   quill::Logger *logger;
   Executor executor;
   InfoApp info_app;

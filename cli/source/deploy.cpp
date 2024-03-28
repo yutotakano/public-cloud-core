@@ -133,6 +133,11 @@ void DeployApp::deploy_command_handler(argparse::ArgumentParser &parser)
   );
   LOG_INFO(logger, "Grafana: http://{}:3000", info->ck_grafana_elb_url);
   LOG_INFO(logger, "Nervion: http://{}:8080", info->nv_controller_elb_url);
+  LOG_INFO(
+    logger,
+    "KubeCost Prometheus: http://{}:80",
+    info->ck_kubecost_prometheus_elb_url
+  );
   LOG_INFO(logger, "Next: publicore loadtest --file <file_path>");
 }
 

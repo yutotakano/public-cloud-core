@@ -36,6 +36,10 @@ std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
     .help("Collect average CPU usage during the loadtest into a file")
     .default_value(false)
     .implicit_value(true);
+  parser->add_argument("--collect-cost")
+    .help("Collect cost during the loadtest into a file")
+    .default_value(false)
+    .implicit_value(true);
   parser->add_argument("--collect-worker-count")
     .help("Collect worker count during the loadtest into a file")
     .default_value(false)
@@ -83,14 +87,16 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     parser.get<bool>("--collect-avg-latency") ||
     parser.get<bool>("--collect-avg-throughput") ||
     parser.get<bool>("--collect-avg-cpu") ||
-    parser.get<bool>("--collect-worker-count")
+    parser.get<bool>("--collect-worker-count") ||
+    parser.get<bool>("--collect-cost")
   )
   {
     // Abort if files already exist
     if ((std::filesystem::exists(experiment_name + "_latency.csv") ||
          std::filesystem::exists(experiment_name + "_throughput.csv") ||
          std::filesystem::exists(experiment_name + "_cpu.csv") ||
-         std::filesystem::exists(experiment_name + "_worker_count.csv")))
+         std::filesystem::exists(experiment_name + "_worker_count.csv") ||
+         std::filesystem::exists(experiment_name + "_cost.csv")))
     {
       LOG_ERROR(
         logger,
@@ -136,7 +142,8 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
     parser.get<bool>("--collect-avg-latency") ||
     parser.get<bool>("--collect-avg-throughput") ||
     parser.get<bool>("--collect-avg-cpu") ||
-    parser.get<bool>("--collect-worker-count")
+    parser.get<bool>("--collect-worker-count") ||
+    parser.get<bool>("--collect-cost")
   )
   {
     // Perform collection every 5 seconds until 1000 seconds have passed
@@ -156,7 +163,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
       {
         bool result = collect_avg_latency(
           i * 5,
-          info->ck_prometheus_elb_url,
+          info->ck_prometheus_elb_url + ":9090",
           experiment_name
         );
         // Latency doesn't get collected until the first UE is connected, and
@@ -176,7 +183,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
       {
         collect_worker_count(
           i * 5,
-          info->ck_prometheus_elb_url,
+          info->ck_prometheus_elb_url + ":9090",
           experiment_name
         );
       }
@@ -184,7 +191,15 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
       {
         collect_avg_throughput(
           i * 5,
-          info->ck_prometheus_elb_url,
+          info->ck_prometheus_elb_url + ":9090",
+          experiment_name
+        );
+      }
+      if (parser.get<bool>("--collect-cost"))
+      {
+        collect_cost(
+          i * 5,
+          info->ck_kubecost_prometheus_elb_url,
           experiment_name
         );
       }
@@ -198,7 +213,7 @@ LoadTestApp::get_prometheus_value(std::string url, std::string query)
 {
   // Collect data from the Prometheus server
   cpr::Response res = cpr::Get(
-    cpr::Url{url + ":9090/api/v1/query"},
+    cpr::Url{url + "/api/v1/query"},
     cpr::Parameters{{"query", query}}
   );
 
@@ -456,6 +471,86 @@ bool LoadTestApp::collect_worker_count(
       logger,
       "Error writing to file {}: {}",
       experiment_name + "_worker_count.csv",
+      strerror(errno)
+    );
+    return false;
+  }
+  LOG_TRACE_L3(logger, "Finished writing data.");
+
+  return true;
+}
+
+bool LoadTestApp::collect_cost(
+  int time_since_start,
+  std::string prometheus_url,
+  std::string experiment_name
+)
+{
+  LOG_TRACE_L3(logger, "Collecting hourly management cost.");
+  // Collect data from the Prometheus server
+  std::optional<int> eks_mgmt_cost = get_prometheus_value_float(
+    prometheus_url,
+    "kubecost_cluster_management_cost"
+  );
+  if (!eks_mgmt_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Cluster management cost not available currently. Assuming 0."
+    );
+    eks_mgmt_cost = 0;
+  }
+
+  std::optional<int> node_cost =
+    get_prometheus_value_float(prometheus_url, "sum(node_total_hourly_cost)");
+  if (!node_cost.has_value())
+  {
+    LOG_TRACE_L3(logger, "Node cost not available currently. Assuming 0.");
+    node_cost = 0;
+  }
+
+  std::optional<int> lb_cost = get_prometheus_value_float(
+    prometheus_url,
+    "sum(kubecost_load_balancer_cost)"
+  );
+  if (!lb_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Load balancer cost not available currently. Assuming 0."
+    );
+    lb_cost = 0;
+  }
+
+  std::optional<int> egress_cost = get_prometheus_value_float(
+    prometheus_url,
+    "sum(kubecost_network_internet_egress_cost)"
+  );
+  if (!egress_cost.has_value())
+  {
+    LOG_TRACE_L3(
+      logger,
+      "Network egress cost not available currently. Assuming 0."
+    );
+    egress_cost = 0;
+  }
+
+  // Write to file
+  LOG_TRACE_L3(logger, "Writing results to _cost csv.");
+  std::ofstream cost_file(
+    experiment_name + "_cost.csv",
+    std::ios::app | std::ios::out
+  );
+  cost_file << time_since_start << ", " << eks_mgmt_cost.value() << ", "
+            << node_cost.value() << ", " << lb_cost.value() << ", "
+            << egress_cost.value() << std::endl;
+  cost_file.close();
+  if (!cost_file.good())
+  {
+    LOG_ERROR(
+      logger,
+      "Error writing to file {}: {}",
+      experiment_name + "_cost.csv",
       strerror(errno)
     );
     return false;
