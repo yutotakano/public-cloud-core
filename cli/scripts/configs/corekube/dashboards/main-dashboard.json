@@ -1269,7 +1269,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "count(node_total_hourly_cost{instance_type=\"c5.large\"})",
+          "expr": "count by (instance_type) (node_total_hourly_cost)",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
