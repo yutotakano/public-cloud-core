@@ -78,12 +78,16 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
   if (parser.get<bool>("--info"))
   {
     LOG_TRACE_L3(logger, "Printing current metrics.");
+    LOG_INFO(logger, "Retrieving latency data.");
     auto latency_data =
       collect_avg_latency(0, info->ck_prometheus_elb_url + ":9090");
+    LOG_INFO(logger, "Retrieving worker count data.");
     auto worker_data =
       collect_worker_count(0, info->ck_prometheus_elb_url + ":9090");
+    LOG_INFO(logger, "Retrieving throughput data.");
     auto throughput_data =
       collect_avg_throughput(0, info->ck_prometheus_elb_url + ":9090");
+    LOG_INFO(logger, "Retrieving cost data.");
     auto cost_data = collect_cost(0, info->ck_kubecost_prometheus_elb_url);
     for (auto &data : {latency_data, worker_data, throughput_data, cost_data})
     {
@@ -199,9 +203,13 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
           );
           total_points += 1;
         }
+        else
+        {
+          write_to_csv(experiment_name + "_latency.csv", data);
+        }
+        // If data exists, set it so that we don't extend the experiment again
         if (data.size() > 0)
           has_begun = true;
-        write_to_csv(experiment_name + "_latency.csv", data);
       }
       if (parser.get<bool>("--collect-worker-count"))
       {
@@ -452,6 +460,7 @@ LoadTestApp::collect_avg_throughput(
       .value_or(0);
 
   return {
+    {"time", std::to_string(time_since_start)},
     {"uplink_packets_rate", std::to_string(uplink_packets_rate)},
     {"downlink_packets_rate", std::to_string(downlink_packets_rate)}
   };
@@ -479,11 +488,15 @@ LoadTestApp::collect_worker_count(
     )
       .value_or(0);
 
+  int ue_count =
+    get_prometheus_value_int(prometheus_url, "coremon_ue_count_last_5_seconds")
+      .value_or(0);
+
   return {
     {"time", std::to_string(time_since_start)},
-    {"time", std::to_string(time_since_start)},
     {"worker_count", std::to_string(worker_count)},
-    {"node_count", std::to_string(node_count)}
+    {"node_count", std::to_string(node_count)},
+    {"ue_count", std::to_string(ue_count)}
   };
 }
 
@@ -492,141 +505,95 @@ LoadTestApp::collect_cost(int time_since_start, std::string prometheus_url)
 {
   LOG_TRACE_L3(logger, "Collecting hourly management cost.");
   // Collect data from the Prometheus server
-  std::optional<float> eks_mgmt_cost = get_prometheus_value_float(
-    prometheus_url,
-    "kubecost_cluster_management_cost"
-  );
-  if (!eks_mgmt_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Cluster management cost not available currently. Assuming 0."
-    );
-    eks_mgmt_cost = 0;
-  }
+  float eks_mgmt_cost =
+    get_prometheus_value_float(
+      prometheus_url,
+      "kubecost_cluster_management_cost"
+    )
+      .value_or(0);
 
   // Get cumulative cost from the start of the experiment.
-  std::optional<float> eks_mgmt_cum_cost = time_since_start > 0
+  float eks_mgmt_cum_cost = time_since_start > 0
     ? get_prometheus_value_float(
         prometheus_url,
         "sum(avg_over_time(kubecost_cluster_management_cost[" +
           std::to_string(time_since_start) + "s])) / (60 * 60 / " +
           std::to_string(time_since_start) + ")"
       )
+        .value_or(0)
     : 0;
-  if (!eks_mgmt_cum_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Cumulative cluster management cost not available currently. Assuming 0."
-    );
-    eks_mgmt_cum_cost = 0;
-  }
 
   // Hourly node cost
-  std::optional<float> node_cost =
-    get_prometheus_value_float(prometheus_url, "sum(node_total_hourly_cost)");
-  if (!node_cost.has_value())
-  {
-    LOG_TRACE_L3(logger, "Node cost not available currently. Assuming 0.");
-    node_cost = 0;
-  }
+  float node_cost =
+    get_prometheus_value_float(prometheus_url, "sum(node_total_hourly_cost)")
+      .value_or(0);
 
   // Get cumulative node cost from the start of the experiment.
-  std::optional<float> node_cum_cost = time_since_start > 0
+  float node_cum_cost = time_since_start > 0
     ? get_prometheus_value_float(
         prometheus_url,
         "sum(avg_over_time(node_total_hourly_cost[" +
           std::to_string(time_since_start) + "s])) / (60 * 60 / " +
           std::to_string(time_since_start) + ")"
       )
+        .value_or(0)
     : 0;
-  if (!node_cum_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Cumulative node cost not available currently. Assuming 0."
-    );
-    node_cum_cost = 0;
-  }
 
   // Get current hourly load balancer cost
-  std::optional<float> lb_cost = get_prometheus_value_float(
-    prometheus_url,
-    "sum(kubecost_load_balancer_cost)"
-  );
-  if (!lb_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Load balancer cost not available currently. Assuming 0."
-    );
-    lb_cost = 0;
-  }
+  float lb_cost =
+    get_prometheus_value_float(
+      prometheus_url,
+      "sum(kubecost_load_balancer_cost)"
+    )
+      .value_or(0);
 
   // Get cumulative cost from the start of the experiment.
   // We calculate the average hourly cost during the experiment so far, then
   // divide by the number of seconds in an hour to get the secondly rate, then
   // multiply by the number of seconds in the time since the start of the
   // experiment.
-  std::optional<float> lb_cum_cost = time_since_start
+  float lb_cum_cost = time_since_start
     ? get_prometheus_value_float(
         prometheus_url,
         "sum(avg_over_time(kubecost_load_balancer_cost[" +
           std::to_string(time_since_start) + "s])) / (60 * 60 / " +
           std::to_string(time_since_start) + ")"
       )
+        .value_or(0)
     : 0;
-  if (!lb_cum_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Cumulative load balancer cost not available currently. Assuming 0."
-    );
-    lb_cum_cost = 0;
-  }
 
-  std::optional<float> egress_cost = get_prometheus_value_float(
-    prometheus_url,
-    "sum(kubecost_network_internet_egress_cost)"
-  );
-  if (!egress_cost.has_value())
-  {
-    LOG_TRACE_L3(
-      logger,
-      "Network egress cost not available currently. Assuming 0."
-    );
-    egress_cost = 0;
-  }
+  float egress_cost =
+    get_prometheus_value_float(
+      prometheus_url,
+      "sum(kubecost_network_internet_egress_cost)"
+    )
+      .value_or(0);
 
-  std::optional<float> egress_cum_cost = time_since_start > 0
+  float egress_cum_cost = time_since_start > 0
     ? get_prometheus_value_float(
         prometheus_url,
         "sum(avg_over_time(kubecost_network_internet_egress_cost[" +
           std::to_string(time_since_start) + "s])) / (60 * 60 / " +
           std::to_string(time_since_start) + ")"
       )
+        .value_or(0)
     : 0;
 
   return {
     {"time", std::to_string(time_since_start)},
-    {"eks_mgmt_cost", std::to_string(eks_mgmt_cost.value())},
-    {"eks_mgmt_cum_cost", std::to_string(eks_mgmt_cum_cost.value())},
-    {"node_cost", std::to_string(node_cost.value())},
-    {"node_cum_cost", std::to_string(node_cum_cost.value())},
-    {"lb_cost", std::to_string(lb_cost.value())},
-    {"lb_cum_cost", std::to_string(lb_cum_cost.value())},
-    {"egress_cost", std::to_string(egress_cost.value())},
-    {"egress_cum_cost", std::to_string(egress_cum_cost.value())},
+    {"eks_mgmt_cost", std::to_string(eks_mgmt_cost)},
+    {"eks_mgmt_cum_cost", std::to_string(eks_mgmt_cum_cost)},
+    {"node_cost", std::to_string(node_cost)},
+    {"node_cum_cost", std::to_string(node_cum_cost)},
+    {"lb_cost", std::to_string(lb_cost)},
+    {"lb_cum_cost", std::to_string(lb_cum_cost)},
+    {"egress_cost", std::to_string(egress_cost)},
+    {"egress_cum_cost", std::to_string(egress_cum_cost)},
     {"total_cost",
-     std::to_string(
-       eks_mgmt_cost.value() + node_cost.value() + lb_cost.value() +
-       egress_cost.value()
-     )},
+     std::to_string(eks_mgmt_cost + node_cost + lb_cost + egress_cost)},
     {"total_cum_cost",
      std::to_string(
-       eks_mgmt_cum_cost.value() + node_cum_cost.value() + lb_cum_cost.value() +
-       egress_cum_cost.value()
+       eks_mgmt_cum_cost + node_cum_cost + lb_cum_cost + egress_cum_cost
      )}
   };
 }
