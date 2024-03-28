@@ -1,0 +1,24 @@
+# Most of KubeCost configuration is done via the Terraform helm chart.
+# We only expose it via a LoadBalancer service to access the Prometheus server
+# during the loadtest.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubecost-prometheus-loadbalancer
+  namespace: kubecost
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  labels:
+    app: kubecost-prometheus
+spec:
+  type: LoadBalancer
+  selector:
+    app: prometheus
+    release: aws-kubecost
+  ports:
+  - port: 80
+    targetPort: 9090
+    protocol: TCP
