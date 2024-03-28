@@ -1715,6 +1715,127 @@
       ],
       "title": "Hourly Cluster Cost",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "description": "Network traffic by pod",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 47
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(irate(container_network_receive_bytes_total\n  {namespace!=\"\"}\n  [$__rate_interval])) \nby (namespace, pod)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{namespace}}/{{pod}}<- in",
+          "metric": "container_cpu",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "editorMode": "code",
+          "expr": "- sum(irate(container_network_transmit_bytes_total\n  {namespace!=\"\"}\n  [$__rate_interval])) \nby (namespace, pod)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{cluster_id}} {{namespace}}/{{pod}}-> out",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": "",
+      "title": "Network IO",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -1724,13 +1845,13 @@
     "list": []
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "CoreKube Dashboard",
   "uid": "be3d8ddb-7d64-4ac5-b27c-3b771e5ec831",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
