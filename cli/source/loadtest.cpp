@@ -48,6 +48,10 @@ std::unique_ptr<argparse::ArgumentParser> LoadTestApp::loadtest_arg_parser()
     .help("Collect worker count during the loadtest into a file")
     .default_value(false)
     .implicit_value(true);
+  parser->add_argument("--cause-panic")
+    .help("Cause a crash 400 and 700 seconds in to test resilience")
+    .default_value(false)
+    .implicit_value(true);
   parser->add_argument("--experiment-name")
     .help("Name of the experiment")
     .default_value(Utils::current_time());
@@ -216,6 +220,7 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         auto data =
           collect_worker_count(i * 5, info->ck_prometheus_elb_url + ":9090");
         write_to_csv(experiment_name + "_worker_count.csv", data);
+        LOG_INFO(logger, "UE count: {}", data[2].second);
       }
       if (parser.get<bool>("--collect-avg-throughput"))
       {
@@ -228,6 +233,16 @@ void LoadTestApp::loadtest_command_handler(argparse::ArgumentParser &parser)
         auto data = collect_cost(i * 5, info->ck_kubecost_prometheus_elb_url);
         write_to_csv(experiment_name + "_cost.csv", data);
       }
+
+      // If it has been 400 or 700 seconds since has_begun was true,
+      // cause a crash by sending 3 bytes: 0x03 0x00 0x00 to the frontend at
+      // port 38412 over SCTP.
+      if (has_begun && (total_points - i) == 120)
+      {
+        LOG_INFO(logger, "Causing a crash with 600 seconds remaining.");
+        cause_anomaly(info.value().ck_frontend_ip, 0x03);
+      }
+
       std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
@@ -712,4 +727,12 @@ void LoadTestApp::post_nervion_controller(
     }
     throw std::runtime_error("Failed to start loadtest.");
   }
+}
+
+void LoadTestApp::cause_anomaly(std::string ip, uint8_t type)
+{
+  // Send the anomaly to the frontend
+  LOG_INFO(logger, "Sending anomaly to the frontend.");
+
+  // In the future, POST to nervion to cause the anomaly
 }

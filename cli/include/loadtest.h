@@ -117,6 +117,14 @@ private:
     std::vector<std::pair<std::string, std::string>> data
   );
 
+  /**
+   * @brief Cause an anomaly in the core.
+   *
+   * @param frontend_ip
+   * @param type 0x03 for crash, 0x04 for CPU spike.
+   */
+  void cause_anomaly(std::string frontend_ip, uint8_t type);
+
   quill::Logger *logger;
   Executor executor;
   InfoApp info_app;
