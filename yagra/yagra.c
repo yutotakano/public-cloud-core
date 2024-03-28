@@ -250,6 +250,17 @@ int yagra_observe_metric(yagra_batch_data_t * data, char * metric_name, uint64_t
 	metric_data->metric_name = metric->name;
 	metric_data->value = value;
 	metric_data->next = NULL;
+	// Store any extra data required for aggregation
+	if (metric->type == YAGRA_AGGREGATION_TYPE_AVERAGE)
+	{
+		unsigned int *count = malloc(sizeof(unsigned int));
+		*count = 1;
+		metric_data->extra_data = count;
+	}
+	else
+	{
+		metric_data->extra_data = NULL;
+	}
 
 	// If there was no existing metric data, add it to the start of the list
 	if (last_metric_data == NULL) {
@@ -344,6 +355,10 @@ int yagra_send_batch(yagra_batch_data_t *batch)
 	yagra_metric_data_t *metric_data = batch->metric_data;
 	while(metric_data != NULL) {
 		yagra_metric_data_t *next = metric_data->next;
+		// Free any extra data
+		if (metric_data->extra_data != NULL) {
+			free(metric_data->extra_data);
+		}
 		free(metric_data);
 		metric_data = next;
 	}
