@@ -63,10 +63,22 @@ forecasting:
   fullImageName: public.ecr.aws/kubecost/kubecost-modeling:v0.1.5
 
 networkCosts:
-  enabled: false
+  enabled: true
   image:
     repository: public.ecr.aws/kubecost/kubecost-network-costs
     tag: v0.17.3
+  prometheusScrape: true
+  config:
+    services:
+      # google-cloud-services: when set to true, enables labeling traffic metrics with google cloud
+      # service endpoints
+      google-cloud-services: false
+      # amazon-web-services: when set to true, enables labeling traffic metrics with amazon web service
+      # endpoints.
+      amazon-web-services: true
+      # azure-cloud-services: when set to true, enables labeling traffic metrics with azure cloud service
+      # endpoints
+      azure-cloud-services: false
 
 clusterController:
   enabled: false
