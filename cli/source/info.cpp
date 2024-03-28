@@ -113,6 +113,16 @@ std::optional<deployment_info_s> InfoApp::get_info()
           false
         )
         .future.get();
+    // ubectl(
+    //   {"get",
+    //    "nodes",
+    //    "-l",
+    //    "frontend=true",
+    //    "-o",
+    //    "jsonpath={.items[0].status.addresses[?(@.type==\"ExternalIP\")]."
+    //    "address}"},
+    //   false
+    // )
 
     // Get the public DNS of various services
     auto ck_service_hostnames_str =
