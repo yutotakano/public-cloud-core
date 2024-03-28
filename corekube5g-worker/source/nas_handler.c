@@ -26,7 +26,6 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
     ogs_info("NAS Message converted to bytes");
 
     unsigned long long nas_decode_end_time = get_microtime();
-    yagra_observe_metric(response->batch, "nas_decode_latency", (int)(nas_decode_end_time - nas_start_time));
     int handle_outcome;
     switch (messageType) {
         case OGS_NAS_EXTENDED_PROTOCOL_DISCRIMINATOR_5GMM:
@@ -40,13 +39,14 @@ int nas_handler_entrypoint(NGAP_NAS_PDU_t *nasPdu, nas_ngap_params_t *params, me
             return OGS_ERROR;
     }
     unsigned long long nas_handle_end_time = get_microtime();
-    yagra_observe_metric(response->batch, "nas_handle_latency", (int)(nas_handle_end_time - nas_start_time));
 
     yagra_observe_metric(response->batch, "nas_message_type", params->nas_message_type);
 
     ogs_assert(handle_outcome == OGS_OK);
 
     int status = nas_message_to_bytes(params, response);
+    yagra_observe_metric(response->batch, "nas_decode_latency", (int)(nas_decode_end_time - nas_start_time));
+    yagra_observe_metric(response->batch, "nas_handle_latency", (int)(nas_handle_end_time - nas_start_time));
     yagra_observe_metric(response->batch, "nas_encode_latency", (int)(get_microtime() - nas_handle_end_time));
 
     return status;
