@@ -275,6 +275,24 @@ resource "helm_release" "ck_cluster_autoscaler" {
     name  = "sslCertPath"
     value = "/etc/ssl/certs/ca-bundle.crt"
   }
+
+  
+  set {
+    name  = "podAnnotations.prometheus\\.io/scrape"
+    value = "true"
+    type  = "string"
+  }
+
+  set {
+    name  = "podAnnotations.prometheus\\.io/path"
+    value = "/metrics"
+  }
+
+  set {
+    name  = "podAnnotations.prometheus\\.io/port"
+    value = "8085"
+    type  = "string"
+  }
 }
 
 
