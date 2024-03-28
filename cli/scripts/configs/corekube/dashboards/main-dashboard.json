@@ -269,7 +269,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(amf_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink Rate\", \"\", \"\")",
+          "expr": "label_replace(sum(rate(amf_uplink_packets_total[$__rate_interval])), \"name\", \"Uplink Rate\", \"\", \"\")",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -286,7 +286,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(amf_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink Rate\", \"\", \"\")",
+          "expr": "label_replace(sum(rate(amf_downlink_packets_total[$__rate_interval])), \"name\", \"Downlink Rate\", \"\", \"\")",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -419,7 +419,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(amf_downlink_packets_total[$__rate_interval]), \"name\", \"Downlink\", \"\", \"\")",
+          "expr": "label_replace(sum(rate(amf_downlink_packets_total[$__rate_interval])), \"name\", \"Downlink\", \"\", \"\")",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -435,7 +435,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "label_replace(rate(amf_uplink_packets_total[$__rate_interval]), \"name\", \"Uplink\", \"\", \"\")",
+          "expr": "label_replace(sum(rate(amf_uplink_packets_total[$__rate_interval])), \"name\", \"Uplink\", \"\", \"\")",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -521,7 +521,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus-datasource-1"
+        "uid": "kubecost-prometheus-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -606,12 +606,13 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus-datasource-1"
+            "uid": "kubecost-prometheus-datasource"
           },
           "disableTextWrap": false,
           "editorMode": "code",
           "expr": "label_replace(label_replace(label_replace(coremon_cpu_usage{namespace=\"default\", container_name!=\"corekube-core-monitor\"}, \"name\", \"Worker $1\", \"pod_name\", \"corekube-worker-[^-]+-(.*)\"), \"name\", \"Frontend\", \"pod_name\", \"corekube-frontend-[^-]+-(.*)\"), \"name\", \"DB\", \"pod_name\", \"corekube-db-[^-]+-(.*)\")",
           "fullMetaSearch": false,
+          "hide": false,
           "includeNullMetadata": true,
           "instant": false,
           "legendFormat": "{{name}}",
@@ -805,7 +806,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(avg (amf_message_latency{nas_type!=\"0\"}), \"name\", \"Average Latency\", \"\", \"\")",
+          "expr": "label_replace(avg (amf_latency{nas_type!=\"0\"}), \"name\", \"Average Latency\", \"\", \"\")",
           "hide": false,
           "instant": false,
           "legendFormat": "{{name}}",
@@ -902,7 +903,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(avg by(nas_type) (amf_message_latency{nas_type!=\"0\"}), \"name\", \"Registration Request\", \"nas_type\", \"65\"), \"name\", \"Registration Complete\", \"nas_type\", \"67\"), \"name\", \"Authentication\", \"nas_type\", \"87\"), \"name\", \"Registration Accept\", \"nas_type\", \"94\"), \"name\", \"5G PDU Session\", \"nas_type\", \"193\"), \"name\", \"Deregistration\", \"nas_type\", \"69\"))",
+          "expr": "(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(avg by(nas_type) (amf_latency{nas_type!=\"0\"}), \"name\", \"Registration Request\", \"nas_type\", \"65\"), \"name\", \"Registration Complete\", \"nas_type\", \"67\"), \"name\", \"Authentication\", \"nas_type\", \"87\"), \"name\", \"Registration Accept\", \"nas_type\", \"94\"), \"name\", \"5G PDU Session\", \"nas_type\", \"193\"), \"name\", \"Deregistration\", \"nas_type\", \"69\"))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1181,6 +1182,539 @@
       ],
       "title": "Hourly Cost by Instance Type",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "count(node_total_hourly_cost{instance_type=\"c5.large\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Number of EC2 Instances",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "rate(kubecost_pod_network_ingress_bytes_total{namespace=\"default\"}[$__rate_interval]) or rate(kubecost_pod_network_ingress_bytes_total{namespace=\"corekube-frontend\"}[$__rate_interval])",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Ingress Total Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "rate(kubecost_pod_network_egress_bytes_total{namespace=\"default\"}[$__rate_interval]) or rate(kubecost_pod_network_egress_bytes_total{namespace=\"corekube-frontend\"}[$__rate_interval])",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Egress Total Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "(sum(kubecost_cluster_management_cost) + sum(node_total_hourly_cost) + sum(kubecost_load_balancer_cost) + sum(kubecost_network_internet_egress_cost))",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Cost for last hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "kubecost-prometheus-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "kubecost_cluster_management_cost",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "node_total_hourly_cost",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "kubecost_load_balancer_cost",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "kubecost_network_internet_egress_cost",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "D",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "kubecost-prometheus-datasource"
+          },
+          "expr": "",
+          "hide": false,
+          "instant": false,
+          "range": true,
+          "refId": "E"
+        }
+      ],
+      "title": "Hourly Cluster Cost",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -1190,13 +1724,13 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "CoreKube Dashboard",
   "uid": "be3d8ddb-7d64-4ac5-b27c-3b771e5ec831",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
