@@ -264,30 +264,24 @@ bool LoadTestApp::collect_avg_latency(
 {
   LOG_TRACE_L3(logger, "Collecting average latency.");
   // Collect data from the Prometheus server
-  std::optional<int> latency = get_prometheus_value_int(
-    prometheus_url,
-    "avg(amf_latency{nas_type!=\"0\"})"
-  );
+  std::optional<int> latency =
+    get_prometheus_value_int(prometheus_url, "avg(amf_latency >= 0)");
   if (!latency.has_value())
   {
     LOG_TRACE_L3(logger, "Latency not available currently. Skipping.");
     return false;
   }
 
-  std::optional<int> decode_latency = get_prometheus_value_int(
-    prometheus_url,
-    "avg(amf_decode_latency{nas_type!=\"0\"})"
-  );
+  std::optional<int> decode_latency =
+    get_prometheus_value_int(prometheus_url, "avg(amf_decode_latency >= 0)");
   if (!decode_latency.has_value())
   {
     LOG_TRACE_L3(logger, "Decode latency not available currently. Assuming 0.");
     decode_latency = 0;
   }
 
-  std::optional<int> handle_latency = get_prometheus_value_int(
-    prometheus_url,
-    "avg(amf_handle_latency{nas_type!=\"0\"})"
-  );
+  std::optional<int> handle_latency =
+    get_prometheus_value_int(prometheus_url, "avg(amf_handle_latency >= 0)");
   if (!handle_latency.has_value())
   {
     LOG_TRACE_L3(logger, "Handle latency not available currently. Assuming 0.");
@@ -296,7 +290,7 @@ bool LoadTestApp::collect_avg_latency(
 
   std::optional<int> nas_decode_latency = get_prometheus_value_int(
     prometheus_url,
-    "avg(amf_nas_decode_latency{nas_type!=\"0\"})"
+    "avg(amf_nas_decode_latency >= 0)"
   );
   if (!nas_decode_latency.has_value())
   {
@@ -309,7 +303,7 @@ bool LoadTestApp::collect_avg_latency(
 
   std::optional<int> nas_handle_latency = get_prometheus_value_int(
     prometheus_url,
-    "avg(amf_nas_handle_latency{nas_type!=\"0\"})"
+    "avg(amf_nas_handle_latency >= 0)"
   );
   if (!nas_handle_latency.has_value())
   {
@@ -322,7 +316,7 @@ bool LoadTestApp::collect_avg_latency(
 
   std::optional<int> nas_encode_latency = get_prometheus_value_int(
     prometheus_url,
-    "avg(amf_nas_encode_latency{nas_type!=\"0\"})"
+    "avg(amf_nas_encode_latency >= 0)"
   );
   if (!nas_encode_latency.has_value())
   {
@@ -335,7 +329,7 @@ bool LoadTestApp::collect_avg_latency(
 
   std::optional<int> build_latency = get_prometheus_value_int(
     prometheus_url,
-    "avg(amf_response_build_latency{nas_type!=\"0\"})"
+    "avg(amf_response_build_latency >= 0)"
   );
   if (!build_latency.has_value())
   {
@@ -346,20 +340,16 @@ bool LoadTestApp::collect_avg_latency(
     build_latency = 0;
   }
 
-  std::optional<int> encode_latency = get_prometheus_value_int(
-    prometheus_url,
-    "avg(amf_encode_latency{nas_type!=\"0\"})"
-  );
+  std::optional<int> encode_latency =
+    get_prometheus_value_int(prometheus_url, "avg(amf_encode_latency >= 0)");
   if (!encode_latency.has_value())
   {
     LOG_TRACE_L3(logger, "Encode latency not available currently. Assuming 0.");
     encode_latency = 0;
   }
 
-  std::optional<int> send_latency = get_prometheus_value_int(
-    prometheus_url,
-    "avg(amf_send_latency{nas_type!=\"0\"})"
-  );
+  std::optional<int> send_latency =
+    get_prometheus_value_int(prometheus_url, "avg(amf_send_latency >= 0)");
   if (!send_latency.has_value())
   {
     LOG_TRACE_L3(logger, "Send latency not available currently. Assuming 0.");
